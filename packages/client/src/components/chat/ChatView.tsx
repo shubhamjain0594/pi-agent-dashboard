@@ -67,6 +67,7 @@ const InlineTerminalCard = lazy(() =>
 
 import type { ToolContext } from "../tool-renderers/index.js";
 import { withDefaultFileLink } from "../tool-renderers/make-tool-context.js";
+import { AttachmentRecovery } from "./AttachmentRecovery.js";
 import { BashOutputCard } from "./BashOutputCard.js";
 import { CollapsedToolGroup } from "./CollapsedToolGroup.js";
 import { CommandFeedbackCard } from "./CommandFeedbackCard.js";
@@ -197,7 +198,7 @@ interface Props {
   /** Current sparse override for the session, or `undefined`. */
 }
 
-function ImageAttachments({
+export function ImageAttachments({
   images,
   onImageLoad,
   sessionId,
@@ -228,33 +229,17 @@ function ImageAttachments({
           // image exists, so a block may be pending (no bytes yet) or failed.
           // Rendering a data URL for those would show a broken-image glyph.
           // See change: fit-attachments-for-display (D3/D12, test-plan #F1 #F3).
-          if (img.attachmentState === "pending") {
+          if (img.attachmentState === "pending" || img.attachmentState === "failed") {
             return (
-              <div
+              <AttachmentRecovery
                 key={i}
-                data-testid="attachment-pending"
-                // `aria-label` on a roleless generic is ignored by assistive
-                // tech. `role="img"` makes this stand-in for the image expose
-                // its name, matching the real <img> it will become.
-                role="img"
-                className="min-w-[80px] min-h-[80px] w-[120px] h-[80px] rounded border border-white/20 bg-white/5 animate-pulse flex items-center justify-center text-[10px] text-white/40"
-                aria-label={`Attachment ${i + 1} loading`}
-              >
-                loading
-              </div>
-            );
-          }
-          if (img.attachmentState === "failed") {
-            return (
-              <div
-                key={i}
-                data-testid="attachment-failed"
-                className="min-w-[80px] min-h-[80px] w-[120px] h-[80px] rounded border border-red-500/40 bg-red-500/5 flex items-center justify-center text-[10px] text-red-300/70 text-center px-1"
-                role="img"
-                aria-label={`Attachment ${i + 1} failed to load`}
-              >
-                image unavailable
-              </div>
+                sessionId={sessionId}
+                attachmentId={img.attachmentId}
+                failed={img.attachmentState === "failed"}
+                index={i}
+                onImageLoad={onImageLoad}
+                onZoom={(src) => setLightboxSrc({ src, alt: `Attachment ${i + 1}` })}
+              />
             );
           }
           const src = `data:${img.mimeType};base64,${img.data}`;

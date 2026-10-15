@@ -4,6 +4,7 @@ One row per file.
 
 | File | Purpose |
 |------|---------|
+| `stale-attachment-recovery.spec.ts` | Pending-image replay without a completion event: saved-original recovery and bounded failure with manual retry. Mocks only replay and the attachment response. |
 | `editor-session-filter.spec.ts` | Editor filter regression with deterministic filesystem/diff responses: unrelated folders hidden, changed ancestors auto-expanded, full tree restored, 13px unwrapped diff and Split toggle. |
 | `acp-automation.spec.ts` | ACP L3. → see `acp-automation.spec.ts.AGENTS.md` |
 | `acp-permission.spec.ts` | ACP L3. → see `acp-permission.spec.ts.AGENTS.md` |
