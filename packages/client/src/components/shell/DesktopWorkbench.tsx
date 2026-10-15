@@ -60,6 +60,7 @@ export function DesktopWorkbench({
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const isHome = location === "/";
+  const isSession = location.startsWith("/session/");
   const settings = location.startsWith("/settings");
   const openSearch = useCallback(() => {
     if (document.querySelector('dialog[open], [role="dialog"]')) return;
@@ -161,7 +162,7 @@ export function DesktopWorkbench({
 
   return (
     <div className="desktop-workbench" data-testid="desktop-workbench">
-      <header className="workbench-titlebar">
+      {!isSession && <header className="workbench-titlebar">
         <button
           type="button"
           className="workbench-brand"
@@ -206,7 +207,7 @@ export function DesktopWorkbench({
         >
           <Icon path={mdiPageLayoutSidebarLeft} size={0.75} />
         </button>
-      </header>
+      </header>}
       <div className="workbench-body">
         <nav
           className="workbench-rail"

@@ -43,7 +43,7 @@ import { CappedViewer } from "./CappedViewer.js";
 import { EditorPaneTabLabelSlot, useShellSessionOrNull } from "@blackbelt-technology/dashboard-plugin-runtime";
 import { PluginTabHost, pluginTabPrefix } from "./PluginTabHost.js";
 import { pseudoTabRegistry } from "./pseudo-tab-registry.js";
-import { isPseudoTabViewer, type OpenPathViewer } from "./viewer-kinds.js";
+import { isPseudoTabViewer } from "./viewer-kinds.js";
 import { TabActions, type TabActionTarget } from "./TabActions.js";
 import { SessionTodosPanel } from "../session/SessionTodosPanel.js";
 import { SessionChangesPanel } from "../diff/SessionChangesPanel.js";
@@ -237,80 +237,71 @@ export function EditorPane() {
         <button type="button" aria-pressed={workPanel === "changes"} onClick={() => openChanges?.()} data-testid="inspector-changes">{t("common.changes", undefined, "Changes")}{sessionDiff?.data && <span>{sessionDiff.data.files.length}</span>}</button>
         <button type="button" aria-pressed={workPanel === "tasks"} onClick={() => openTasks?.()} data-testid="inspector-tasks">{t("review.tasks", undefined, "Tasks")}{taskCount != null && <span>{taskCount}</span>}</button>
         <button type="button" aria-pressed={workPanel === "editor"} onClick={() => setWorkPanel?.("editor")} data-testid="inspector-editor">{t("editor.editorTitle", undefined, "Editor")}</button>
+        {workPanel === "editor" && (
+          <div className="session-work-tools">
+            <button
+              type="button"
+              onClick={() => setTreeVisible(!treeVisible)}
+              aria-pressed={treeVisible}
+              aria-label={t("editor.toggleFileTree", undefined, "Toggle file tree")}
+              data-testid="tree-toggle"
+              className={[
+                "flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium",
+                treeVisible
+                  ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
+                  : "text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
+              ].join(" ")}
+              title={treeVisible ? t("editor.hideFileTree", undefined, "Hide file tree") : t("editor.showFileTree", undefined, "Show file tree")}
+            >
+              <Icon path={mdiFileTreeOutline} size={0.7} />
+              <span>{t("common.files", undefined, "Files")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: "openFile", path: "live:preview", viewer: "live-server" })}
+              data-testid="live-preview-launch"
+              className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+              title={t("editor.previewLocalDevServer", undefined, "Preview a local dev server")}
+            >
+              <Icon path={mdiWeb} size={0.7} />
+            </button>
+            <button
+              type="button"
+              onClick={() => terminal.createTerminal()}
+              data-testid="new-terminal-launch"
+              className="text-[var(--text-tertiary)] hover:text-cyan-400"
+              title={t("terminal.newTerminal", undefined, "New Terminal")}
+            >
+              <Icon path={mdiConsoleLine} size={0.7} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchOpen((v) => !v)}
+              aria-pressed={searchOpen}
+              data-testid="editor-search-toggle"
+              className={searchOpen ? "text-blue-400" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}
+              title={t("editor.searchShortcutHint", undefined, "Search (Cmd-P / Cmd-Shift-F)")}
+            >
+              <Icon path={mdiMagnify} size={0.7} />
+            </button>
+            {tabActionTarget && <TabActions target={tabActionTarget} systemOpen={caps.systemOpen} />}
+            {activeTab && (
+              <button
+                type="button"
+                onClick={() => setRefreshNonce((n) => n + 1)}
+                className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                title={t("editor.reloadFile", undefined, "Reload file")}
+              >
+                <Icon path={mdiRefresh} size={0.7} />
+              </button>
+            )}
+          </div>
+        )}
         <button type="button" className="session-work-close" onClick={() => updateSplit({ mode: "closed" })} aria-label={t("review.closeInspector", undefined, "Close session inspector")}><Icon path={mdiClose} size={0.65} /></button>
       </nav>
       {workPanel === "changes" && <div className="session-work-scroll"><SessionChangesPanel onOpenDiff={openDiffTab} /></div>}
       {workPanel === "tasks" && <div className="session-work-scroll"><SessionTodosPanel key={sessionId} snapshot={todoSnapshot} /></div>}
       <div className="editor-workspace min-h-0 min-w-0 flex-1 flex-col" style={{ display: workPanel === "editor" ? "flex" : "none" }}>
-      {/* Header */}
-      <div className="editor-workspace-header flex shrink-0 items-center gap-2 border-b border-[var(--border-primary)] px-3 py-2">
-        <button
-          type="button"
-          onClick={() => setTreeVisible(!treeVisible)}
-          aria-pressed={treeVisible}
-          aria-label={t("editor.toggleFileTree", undefined, "Toggle file tree")}
-          data-testid="tree-toggle"
-          className={[
-            "flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium",
-            treeVisible
-              ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
-              : "text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
-          ].join(" ")}
-          title={treeVisible ? t("editor.hideFileTree", undefined, "Hide file tree") : t("editor.showFileTree", undefined, "Show file tree")}
-        >
-          <Icon path={mdiFileTreeOutline} size={0.7} />
-          <span>{t("common.files", undefined, "Files")}</span>
-        </button>
-        <span title={activePath?.replace(/^diff:/, "")} className="editor-workspace-path truncate text-sm font-medium">{activePath?.replace(/^diff:/, "") ?? t("editor.editorTitle", undefined, "Editor")}</span>
-        <span className="flex-1" />
-        <button
-          type="button"
-          onClick={() => dispatch({ type: "openFile", path: "live:preview", viewer: "live-server" })}
-          data-testid="live-preview-launch"
-          className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-          title={t("editor.previewLocalDevServer", undefined, "Preview a local dev server")}
-        >
-          <Icon path={mdiWeb} size={0.7} />
-        </button>
-        <button
-          type="button"
-          onClick={() => terminal.createTerminal()}
-          data-testid="new-terminal-launch"
-          className="text-[var(--text-tertiary)] hover:text-cyan-400"
-          title={t("terminal.newTerminal", undefined, "New Terminal")}
-        >
-          <Icon path={mdiConsoleLine} size={0.7} />
-        </button>
-        <button
-          type="button"
-          onClick={() => setSearchOpen((v) => !v)}
-          aria-pressed={searchOpen}
-          data-testid="editor-search-toggle"
-          className={searchOpen ? "text-blue-400" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}
-          title={t("editor.searchShortcutHint", undefined, "Search (Cmd-P / Cmd-Shift-F)")}
-        >
-          <Icon path={mdiMagnify} size={0.7} />
-        </button>
-        {tabActionTarget && <TabActions target={tabActionTarget} systemOpen={caps.systemOpen} />}
-        {activeTab && (
-          <button
-            type="button"
-            onClick={() => setRefreshNonce((n) => n + 1)}
-            className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-            title={t("editor.reloadFile", undefined, "Reload file")}
-          >
-            <Icon path={mdiRefresh} size={0.7} />
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => updateSplit({ mode: "closed" })}
-          className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-          title={t("editor.closeEditor", undefined, "Close editor")}
-        >
-          <Icon path={mdiClose} size={0.7} />
-        </button>
-      </div>
 
       {/* Tabs */}
       {state.openFiles.length > 0 && (

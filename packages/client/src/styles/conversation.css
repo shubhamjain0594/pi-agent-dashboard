@@ -84,12 +84,15 @@
 .desktop-workbench .conversation-transcript [data-testid="reasoning-body"] { background: transparent; box-shadow: none; border: 0; border-left: 1px solid var(--border-secondary); border-radius: 0; padding: 8px 16px; }
 .desktop-workbench .conversation-transcript [data-testid="reasoning-body"] .markdown-content { font-size: 13px; color: var(--text-secondary); }
 
-/* Keep the chart available without reserving a whole strip of the viewport. */
-.desktop-workbench .conversation-usage { flex-shrink: 0; border-bottom: 1px solid var(--border-primary); background: var(--bg-secondary); }
-.desktop-workbench .conversation-usage > summary { display: flex; align-items: center; gap: 8px; padding: 4px 16px; cursor: pointer; font-size: 11px; color: var(--text-tertiary); list-style: none; }
+/* Usage shares the session header; its chart overlays rather than reflows chat. */
+.desktop-workbench .conversation-usage { flex-shrink: 0; }
+.desktop-workbench .conversation-usage > summary { display: flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; color: var(--text-tertiary); list-style: none; white-space: nowrap; }
+.desktop-workbench .conversation-usage > summary:hover,
+.desktop-workbench .conversation-usage[open] > summary { background: var(--bg-hover); color: var(--text-primary); }
 .desktop-workbench .conversation-usage > summary::before { content: "›"; font-size: 14px; }
 .desktop-workbench .conversation-usage[open] > summary::before { transform: rotate(90deg); }
-.desktop-workbench .conversation-usage > summary > span { margin-left: auto; font-variant-numeric: tabular-nums; }
+.desktop-workbench .conversation-usage > summary > span { font-variant-numeric: tabular-nums; }
+.desktop-workbench .conversation-usage-content { position: absolute; top: calc(100% + 4px); right: 8px; z-index: var(--z-popover); width: min(640px, calc(100% - 16px)); max-height: 60vh; overflow: auto; background: var(--bg-secondary); border: 1px solid var(--border-secondary); border-radius: 6px; box-shadow: 0 8px 24px var(--bg-overlay); }
 .conversation-context-details > summary { display: none; }
 .desktop-workbench .conversation-context-details { margin: 0; padding: 0 max(var(--conversation-gutter), calc((100% - var(--conversation-width)) / 2)); background: var(--bg-secondary); }
 .desktop-workbench .conversation-context-details > summary { display: flex; padding: 4px 0; cursor: pointer; font-size: 11px; color: var(--text-tertiary); list-style: none; gap: 8px; }
@@ -97,7 +100,7 @@
 .desktop-workbench .conversation-context-details[open] > summary::before { content: "−"; }
 .desktop-workbench .conversation-context-controls { padding: 8px 0; gap: 8px 12px; }
 
-.desktop-workbench .conversation-session-header { min-height: 40px; padding: 6px 16px; gap: 8px; flex-shrink: 0; flex-wrap: wrap; background: var(--bg-secondary); }
+.desktop-workbench .conversation-session-header { position: relative; min-height: 36px; padding: 3px 12px; gap: 6px; flex-shrink: 0; flex-wrap: wrap; background: var(--bg-secondary); }
 .desktop-workbench .conversation-session-name { min-width: 0; flex: 1; font-size: 13px; }
 .desktop-workbench .conversation-session-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .desktop-workbench .conversation-session-header button { box-shadow: none; font-size: 11px; }
@@ -151,6 +154,7 @@
   .desktop-workbench .conversation-message-actions { opacity: 1; }
 }
 @media (pointer: coarse) {
+  .desktop-workbench .conversation-usage > summary { min-height: 44px; }
   .desktop-workbench .conversation-message-actions button { min-width: 44px; min-height: 44px; }
   .desktop-workbench .conversation-assistant-message > .conversation-message-actions,
   .desktop-workbench .conversation-user-message .conversation-message-actions { position: static; min-height: 44px; margin-top: 4px; }

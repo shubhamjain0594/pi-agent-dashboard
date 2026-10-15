@@ -4,7 +4,7 @@ Files in this directory. One row per source file. See change: fold-oversized-age
 
 | File | Purpose |
 |------|---------|
-| `DesktopWorkbench.tsx` | Desktop activity rail, title/search bar, live connection footer, and keyboard-accessible quick-open dialog. Keeps App's tracked navigation and existing content providers. |
+| `DesktopWorkbench.tsx` | Desktop activity rail, live connection footer and keyboard-accessible quick-open dialog. Title/search bar remains on overview/settings but is omitted on session routes, which already own a session header; search/sidebar actions remain in the rail. Keeps App's tracked navigation and providers. |
 | `WorkspaceExplorer.tsx` | Compact desktop project/session tree, newest activity first within each project. Ended groups preview 10 sessions with Show all; search and older selections bypass the limit. Filter, project collapse, session creation and selection. Detailed-view toggle retains the original SessionList controls. |
 | `WorkspaceOverview.tsx` | Live workspace home: attention-first session list, activity counts and project shortcuts. Preserves first-run onboarding and mobile landing. |
 | `LandingPage.tsx` | Onboarding landing: vertical stepper (connect provider → create first project → start session), inline project-name form in Step ②, peer-install status on Step ① done row… → see `LandingPage.tsx.AGENTS.md` |

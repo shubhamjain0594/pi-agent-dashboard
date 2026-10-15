@@ -30,6 +30,8 @@ import { CountBadges } from "./CountBadges.js";
 import { PiBelowFloorWarning } from "./PiBelowFloorWarning.js";
 
 interface Props {
+  /** Desktop usage disclosure shares the header row instead of a separate strip. */
+  usage?: React.ReactNode;
   session?: DashboardSession;
   state: SessionState;
   onRename?: (sessionId: string, name: string) => void;
@@ -338,7 +340,7 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
-export function SessionHeader({ session, state, onRename, showBack, onBack, mobileActions, commands, onSendPrompt, openspecChanges, onAttachProposal, onDetachProposal, hasFileChanges, onOpenDiffView, onRefresh, onReadArtifact, onOpenExtensionModulePicker, onResume, allTags, onSetTags, onSeekToCard }: Props) {
+export function SessionHeader({ usage, session, state, onRename, showBack, onBack, mobileActions, commands, onSendPrompt, openspecChanges, onAttachProposal, onDetachProposal, hasFileChanges, onOpenDiffView, onRefresh, onReadArtifact, onOpenExtensionModulePicker, onResume, allTags, onSetTags, onSeekToCard }: Props) {
   const [now, setNow] = useState(Date.now());
   const [isRenaming, setIsRenaming] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -466,6 +468,7 @@ export function SessionHeader({ session, state, onRename, showBack, onBack, mobi
           dropped from the header (both already render on the session card); the
           pi version segment below is kept as the only per-session pi surface. */}
       <LayoutModeSwitch />
+      {usage}
       {session.piBelowFloor ? <PiBelowFloorWarning session={session} /> : null}
       <YoloSessionIndicator cwd={session.cwd} />
       <VaultBindingsChip sessionId={session.id} />

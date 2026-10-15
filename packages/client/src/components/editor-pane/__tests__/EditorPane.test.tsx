@@ -7,7 +7,7 @@
  * See change: improve-content-editor (tasks §3.3).
  */
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Terminal keep-alive probes (change: add-lazy-terminal-diff-bootstrap). The
@@ -124,6 +124,43 @@ function UnreadProbe() {
     </>
   );
 }
+
+describe("EditorPane — compact inspector chrome", () => {
+  it("keeps file tools in the inspector navigation with one close and no path heading", () => {
+    const { container } = render(
+      <SplitWorkspaceProvider sessionId="compact-tools" cwd="/proj" orientation="h">
+        <EditorPane />
+        <UnreadProbe />
+      </SplitWorkspaceProvider>,
+    );
+    fireEvent.click(screen.getByTestId("open-a"));
+    const nav = screen.getByRole("navigation", { name: "Session inspector views" });
+    for (const id of ["tree-toggle", "editor-search-toggle", "new-terminal-launch", "live-preview-launch"]) {
+      expect(within(nav).getByTestId(id)).toBeTruthy();
+    }
+    expect(within(nav).getByRole("button", { name: "Reload file" })).toBeTruthy();
+    expect(within(nav).getAllByRole("button", { name: /close/i })).toHaveLength(1);
+    expect(screen.queryByTitle("Close editor")).toBeNull();
+    expect(container.querySelector(".editor-workspace-header, .editor-workspace-path")).toBeNull();
+    expect(nav.textContent).not.toContain("a.ts");
+    expect(screen.getByRole("tab", { name: "a.ts" }).title).toBe("a.ts");
+    expect(nav.contains(screen.getByRole("tablist"))).toBe(false);
+    fireEvent.click(within(nav).getByRole("button", { name: "Close session inspector" }));
+    expect(localStorage.getItem("pi-dashboard:split:compact-tools")).toContain('"mode":"closed"');
+  });
+
+  it.each(["changes", "tasks"])("shows only view navigation and close in %s", (view) => {
+    renderPane(`compact-${view}`);
+    fireEvent.click(screen.getByTestId(`inspector-${view}`));
+    const nav = screen.getByRole("navigation", { name: "Session inspector views" });
+    expect(within(nav).getAllByRole("button")).toHaveLength(4);
+    for (const id of ["tree-toggle", "editor-search-toggle", "new-terminal-launch", "live-preview-launch"]) {
+      expect(screen.queryByTestId(id)).toBeNull();
+    }
+    fireEvent.click(screen.getByTestId("inspector-editor"));
+    expect(within(nav).getByTestId("tree-toggle")).toBeTruthy();
+  });
+});
 
 describe("EditorPane — unread affordance (non-disruptive-file-open F16/F17)", () => {
   function renderWithProbe(sessionId = "sUnread") {
@@ -269,6 +306,21 @@ describe("EditorPane — terminal keep-alive (lazy layer + activation latch)", (
     await screen.findByTestId("terminal-view-t1");
     fireEvent.click(screen.getByTestId("close-t1"));
     await waitFor(() => expect(screen.queryByTestId("terminal-view-t1")).toBeNull());
+  });
+
+  it("keeps the terminal and editor subtree mounted across inspector views", async () => {
+    renderTerminalPane("inspector-keep-alive", ["t1"]);
+    fireEvent.click(screen.getByTestId("open-t1"));
+    const terminal = await screen.findByTestId("terminal-view-t1");
+    const workspace = terminal.closest(".editor-workspace");
+    for (const view of ["changes", "tasks"]) {
+      fireEvent.click(screen.getByTestId(`inspector-${view}`));
+      expect(screen.getByTestId("terminal-view-t1")).toBe(terminal);
+      expect((workspace as HTMLElement).style.display).toBe("none");
+    }
+    fireEvent.click(screen.getByTestId("inspector-editor"));
+    expect((workspace as HTMLElement).style.display).toBe("flex");
+    expect(mockMountCounts.t1).toBe(1);
   });
 
   it("D3: a persisted terminal tab does NOT mount the layer until it is activated", async () => {

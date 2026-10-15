@@ -1,5 +1,7 @@
 # SessionHeader.tsx — index
 
+Optional desktop `usage` slot shares the session row. App supplies the preference-gated stats disclosure as an anchored overlay, not a separate strip. Mobile ignores the slot. Escape closes the usage overlay without changing transcript layout.
+
 Desktop secondary controls (Seek, version, tags, proposal and module actions) live in the named native `conversation-header-more` disclosure. Layout switch, changed-files, Resume/Fork, refresh and security indicators stay visible. Narrow surfaces wrap controls and render the disclosure body in flow to avoid clipping. Mobile header is unchanged.
 
 Session chat header (desktop + mobile). Renders name/rename (`InlineRenameInput`), model, thinking level, pi version, `FooterSegmentSlot`, OpenSpec attach/detach (`SearchableSelectDialog`), changed-files, Resume/Fork pill pair (ended + `sessionFile`), refresh. Mobile path delegates to `MobileHeader` + `MobileActionMenu`. Exports `SessionHeader`. Changed-files summary chip `ChangedFilesChip` calls `openChanges()` (Changes rail); `/session/:id/diff` takeover retained as fallback. See change: add-change-summary-table.

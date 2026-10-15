@@ -12,7 +12,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createInitialState } from "../../lib/chat/event-reducer.js";
-import { SplitWorkspaceProvider } from "../split/SplitWorkspaceContext.js";
+let SplitWorkspaceProvider: typeof import("../split/SplitWorkspaceContext.js")["SplitWorkspaceProvider"];
 
 afterEach(() => {
   cleanup();
@@ -36,6 +36,7 @@ function makeSession(overrides?: Partial<DashboardSession>): DashboardSession {
 
 async function loadDesktopHeader() {
   vi.doMock("../../hooks/useMobile.js", () => ({ useMobile: () => false }));
+  ({ SplitWorkspaceProvider } = await import("../split/SplitWorkspaceContext.js"));
   const mod = await import("../session/SessionHeader.js");
   return mod.SessionHeader;
 }
@@ -51,6 +52,15 @@ function renderInProvider(node: React.ReactElement) {
 const FOLLOWS = Node.DOCUMENT_POSITION_FOLLOWING;
 
 describe("SessionHeader layout redesign (F4)", () => {
+  it("hosts usage controls in the same session header instead of a separate strip", async () => {
+    const SessionHeader = await loadDesktopHeader();
+    renderInProvider(
+      <SessionHeader session={makeSession()} state={createInitialState()}
+        usage={<details data-testid="usage-slot"><summary>Session usage</summary><div>Usage chart</div></details>} />,
+    );
+    expect(screen.getByTestId("usage-slot").closest(".conversation-session-header")).toBeTruthy();
+  });
+
   it("orders back → name → mode-switch → Seek, before the flex spacer", async () => {
     const SessionHeader = await loadDesktopHeader();
     renderInProvider(

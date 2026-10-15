@@ -1,4 +1,29 @@
 /* Desktop editor density. Theme tokens keep light and custom themes intact. */
+.session-work-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-left: auto;
+}
+.session-work-tools button {
+  flex-shrink: 0;
+}
+/* Override the generic inspector padding without adding a second toolbar. */
+.desktop-workbench .session-work-tabs {
+  min-height: 34px;
+  gap: 2px;
+  padding: 2px 6px;
+}
+.desktop-workbench .session-work-tabs button {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 3px 6px;
+  white-space: nowrap;
+}
+.session-work-tabs:has(.session-work-tools) .session-work-close {
+  margin-left: 0;
+}
 .desktop-workbench .editor-workspace {
   overflow: hidden;
   font-size: 12px;
@@ -11,30 +36,15 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border-secondary) transparent;
 }
-.desktop-workbench .editor-workspace-header {
-  min-height: 36px;
-  gap: 8px;
-  padding: 4px 10px;
-}
-.desktop-workbench .editor-workspace-path {
-  min-width: 0;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--text-secondary);
-}
-.desktop-workbench .editor-workspace-header > button {
-  flex-shrink: 0;
-  min-height: 28px;
-}
 .desktop-workbench .editor-workspace [role="tablist"] {
   min-width: 0;
   scrollbar-width: thin;
 }
 .desktop-workbench .editor-workspace [role="tab"] {
   flex-shrink: 0;
-  min-height: 34px;
+  min-height: 32px;
   max-width: 210px;
-  padding: 6px 12px;
+  padding: 5px 12px;
   font-size: 12px;
   border-top: 1px solid transparent;
 }
@@ -62,6 +72,8 @@
   line-height: 19px;
 }
 .desktop-workbench .code-diff-panel {
+  container-type: inline-size;
+  container-name: code-diff;
   overflow: hidden;
   background: var(--bg-primary);
 }
@@ -83,6 +95,11 @@
   min-height: 25px;
   padding: 3px 8px;
   white-space: nowrap;
+}
+@container code-diff (max-width: 520px) {
+  .desktop-workbench .code-diff-control-label { display: none; }
+  .desktop-workbench .code-diff-toolbar button { min-width: 28px; padding-inline: 6px; }
+  .desktop-workbench .code-diff-toolbar button svg { margin-right: 0; }
 }
 .desktop-workbench .code-diff-content {
   scrollbar-width: thin;
@@ -116,14 +133,16 @@
 .desktop-workbench .code-diff-panel .diff-tailwindcss-wrapper [data-state] {
   color: var(--text-secondary);
 }
-.desktop-workbench .code-diff-panel .diff-table-scroll-container {
-  /* The library sets Menlo inline; use the same bundled face as our editor. */
-  font-family: var(--workbench-font-mono) !important;
-}
 @media (pointer: coarse) {
-  .desktop-workbench .editor-workspace-header > button,
   .desktop-workbench .editor-workspace [role="tab"],
   .desktop-workbench .code-diff-toolbar button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .session-work-tabs button,
+  .desktop-workbench .session-work-tabs button,
+  .desktop-workbench .editor-workspace [role="tab"] button {
+    min-width: 44px;
     min-height: 44px;
   }
   .desktop-workbench [data-testid="session-only-toggle"] {

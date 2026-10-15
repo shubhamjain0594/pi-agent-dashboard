@@ -2,6 +2,9 @@ import { expect, test } from "./fixtures.js";
 import { spawnFreshGitSession } from "./helpers/index.js";
 
 test("editor session-only filter hides unrelated folders and preserves readable diffs", async ({ page }) => {
+  await page.route("**/api/preferences/display", (route) => route.fulfill({ json: {
+    displayPrefs: { tokenStatsBar: true, contextUsageBar: true },
+  } }));
   // Deterministic filesystem/diff boundary; use the real app, editor and renderer.
   await page.route("**/api/session-diff?*", (route) => route.fulfill({ json: {
     success: true,
@@ -40,6 +43,20 @@ test("editor session-only filter hides unrelated folders and preserves readable 
   await expect(tree.locator('[data-row=".github"]')).toBeVisible();
 
   const diff = page.locator(".code-diff-panel");
+  // Desktop session chrome uses one session row and one inspector toolbar.
+  await expect(page.locator(".workbench-titlebar")).toHaveCount(0);
+  await expect(page.locator(".editor-workspace-header")).toHaveCount(0);
+  expect((await page.locator(".conversation-session-header").boundingBox())!.height).toBeLessThanOrEqual(40);
+  expect((await page.locator(".session-work-tabs").boundingBox())!.height).toBeLessThanOrEqual(36);
+  const beforeUsage = await diff.boundingBox();
+  await page.locator(".conversation-session-header .conversation-usage > summary").click();
+  await expect(page.locator(".conversation-usage-content")).toBeVisible();
+  expect((await diff.boundingBox())!.y).toBe(beforeUsage!.y);
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".conversation-usage")).not.toHaveAttribute("open");
+  await page.getByRole("button", { name: "Quick open", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
   await expect(diff.locator(".unified-diff-view-normal")).toBeVisible();
   await expect(diff.locator(".diff-table-scroll-container")).toHaveCSS("font-size", "13px");
   await expect(diff.locator(".code-diff-toolbar")).toHaveCSS("font-size", "11px");

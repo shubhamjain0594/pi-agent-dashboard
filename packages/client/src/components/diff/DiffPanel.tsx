@@ -278,10 +278,12 @@ export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
         {/* View mode toggle */}
         <div className="flex border border-[var(--border-primary)] rounded overflow-hidden">
           <button
+            aria-label={i18nT("diff.diff", undefined, "Diff")}
+            title={i18nT("diff.diff", undefined, "Diff")}
             className={`px-2 py-0.5 ${viewMode === "diff" ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
             onClick={() => setViewMode("diff")}
           >
-            <Icon path={mdiCompare} size={0.45} className="inline mr-0.5" />{i18nT("diff.diff", undefined, "Diff")}
+            <Icon path={mdiCompare} size={0.45} className="inline mr-0.5" /><span className="code-diff-control-label">{i18nT("diff.diff", undefined, "Diff")}</span>
           </button>
           {/* The File view fetches /api/session-file, which 403s for out-of-cwd
               paths (previewable:false). Hide the toggle so it is unreachable.
@@ -289,28 +291,33 @@ export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
           {file.previewable !== false && (
             <button
               data-testid="file-view-toggle"
+              aria-label={i18nT("common.file", undefined, "File")}
+              title={i18nT("common.file", undefined, "File")}
               className={`px-2 py-0.5 ${viewMode === "file" ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
               onClick={() => setViewMode("file")}
             >
-              <Icon path={mdiFileOutline} size={0.45} className="inline mr-0.5" />{i18nT("common.file", undefined, "File")}
+              <Icon path={mdiFileOutline} size={0.45} className="inline mr-0.5" /><span className="code-diff-control-label">{i18nT("common.file", undefined, "File")}</span>
             </button>
           )}
           <button
             data-testid="regions-toggle"
+            aria-label={i18nT("diff.regions", undefined, "Regions")}
             disabled={!regionsAvailable}
             className={`px-2 py-0.5 ${viewMode === "regions" ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"} ${!regionsAvailable ? "cursor-not-allowed opacity-40" : ""}`}
             onClick={() => regionsAvailable && setViewMode("regions")}
-            title={regionsAvailable ? undefined : i18nT("diff.regionsUnavailable", undefined, "Regions needs a git diff")}
+            title={regionsAvailable ? i18nT("diff.regions", undefined, "Regions") : i18nT("diff.regionsUnavailable", undefined, "Regions needs a git diff")}
           >
-            <Icon path={mdiViewSequential} size={0.45} className="inline mr-0.5" />{i18nT("diff.regions", undefined, "Regions")}
+            <Icon path={mdiViewSequential} size={0.45} className="inline mr-0.5" /><span className="code-diff-control-label">{i18nT("diff.regions", undefined, "Regions")}</span>
           </button>
           {filePreviewAvailable && (
             <button
               data-testid="file-preview-toggle"
+              aria-label={i18nT("diff.preview", undefined, "Preview")}
+              title={i18nT("diff.preview", undefined, "Preview")}
               className={`px-2 py-0.5 ${viewMode === "filePreview" ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
               onClick={() => setViewMode("filePreview")}
             >
-              <Icon path={mdiEyeOutline} size={0.45} className="inline mr-0.5" />{i18nT("diff.preview", undefined, "Preview")}
+              <Icon path={mdiEyeOutline} size={0.45} className="inline mr-0.5" /><span className="code-diff-control-label">{i18nT("diff.preview", undefined, "Preview")}</span>
             </button>
           )}
         </div>
@@ -319,16 +326,20 @@ export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
         {viewMode === "diff" && (
           <div className="flex border border-[var(--border-primary)] rounded overflow-hidden">
             <button
+              aria-label={i18nT("common.split", undefined, "Split")}
+              title={i18nT("common.split", undefined, "Split")}
               className={`px-2 py-0.5 ${diffMode === DiffModeEnum.Split ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
               onClick={() => setDiffMode(DiffModeEnum.Split)}
             >
-              <Icon path={mdiViewSplitVertical} size={0.45} className="inline mr-0.5" />{i18nT("common.split", undefined, "Split")}
+              <Icon path={mdiViewSplitVertical} size={0.45} className="inline mr-0.5" /><span className="code-diff-control-label">{i18nT("common.split", undefined, "Split")}</span>
             </button>
             <button
+              aria-label={i18nT("diff.unified", undefined, "Unified")}
+              title={i18nT("diff.unified", undefined, "Unified")}
               className={`px-2 py-0.5 ${diffMode === DiffModeEnum.Unified ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"}`}
               onClick={() => setDiffMode(DiffModeEnum.Unified)}
             >
-              <Icon path={mdiViewSequential} size={0.45} className="inline mr-0.5" />{i18nT("diff.unified", undefined, "Unified")}
+              <Icon path={mdiViewSequential} size={0.45} className="inline mr-0.5" /><span className="code-diff-control-label">{i18nT("diff.unified", undefined, "Unified")}</span>
             </button>
           </div>
         )}

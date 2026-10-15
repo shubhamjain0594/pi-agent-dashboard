@@ -2370,6 +2370,41 @@ export default function App() {
         onOpenDiffView={() => navigate(buildSessionDiffUrl(selectedId))}
         onOpenExtensionModulePicker={() => setExtensionModulePickerOpen(true)}
         onRefresh={() => handleRefreshChat(selectedId)}
+        usage={!isMobile && (() => {
+          const showStats = selectedSession?.displayPrefsOverride?.tokenStatsBar ?? displayPrefs?.tokenStatsBar ?? true;
+          const showContextBar = selectedSession?.displayPrefsOverride?.contextUsageBar ?? displayPrefs?.contextUsageBar ?? true;
+          if (!showStats && !showContextBar) return null;
+          return (
+            <details className="conversation-usage" key={selectedId}
+              onKeyDown={(event) => {
+                if (event.key !== "Escape") return;
+                event.preventDefault();
+                event.stopPropagation();
+                event.currentTarget.open = false;
+                event.currentTarget.querySelector("summary")?.focus();
+              }}
+              onBlur={(event) => {
+                if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false;
+              }}
+            >
+              <summary title={t("session.usageDetails", undefined, "Session usage")}>{t("session.usageDetails", undefined, "Session usage")}<span>{selectedState.cost > 0 ? `$${selectedState.cost.toFixed(2)}` : ""}</span></summary>
+              <div className="conversation-usage-content">
+                <TokenStatsBar
+                  turnStats={selectedState.turnStats}
+                  contextUsage={selectedContextUsage}
+                  tokensIn={selectedState.tokensIn}
+                  tokensOut={selectedState.tokensOut}
+                  cacheRead={selectedState.cacheRead}
+                  cacheWrite={selectedState.cacheWrite}
+                  cost={selectedState.cost}
+                  onTurnClick={(turnIndex) => chatViewRef.current?.scrollToTurn(turnIndex)}
+                  showStats={showStats}
+                  showContextBar={showContextBar}
+                />
+              </div>
+            </details>
+          );
+        })()}
       />
       {/* Mobile info strip */}
       {isMobile && selectedSession && (
@@ -2408,34 +2443,6 @@ export default function App() {
           )}
         </div>
       )}
-      {!isMobile && (() => {
-        // Effective pref = override ?? global ?? true (default visible while
-        // prefs load). "Token stats bar" gates the butterfly chart + stats;
-        // "Context usage bar" independently gates the progress bar.
-        // See change: configurable-chat-display.
-        const statsOverride = selectedSession?.displayPrefsOverride?.tokenStatsBar;
-        const showStats = statsOverride ?? displayPrefs?.tokenStatsBar ?? true;
-        const ctxOverride = selectedSession?.displayPrefsOverride?.contextUsageBar;
-        const showContextBar = ctxOverride ?? displayPrefs?.contextUsageBar ?? true;
-        if (!showStats && !showContextBar) return null;
-        return (
-          <details className="conversation-usage" key={selectedId}>
-          <summary>{t("session.usageDetails", undefined, "Session usage")}<span>{selectedState.cost > 0 ? `$${selectedState.cost.toFixed(2)}` : ""}</span></summary>
-          <TokenStatsBar
-            turnStats={selectedState.turnStats}
-            contextUsage={selectedContextUsage}
-            tokensIn={selectedState.tokensIn}
-            tokensOut={selectedState.tokensOut}
-            cacheRead={selectedState.cacheRead}
-            cacheWrite={selectedState.cacheWrite}
-            cost={selectedState.cost}
-            onTurnClick={(turnIndex) => chatViewRef.current?.scrollToTurn(turnIndex)}
-            showStats={showStats}
-            showContextBar={showContextBar}
-          />
-          </details>
-        );
-      })()}
       {/* This chain reads LIVE route matches and is still load-bearing: on
           desktop `/session/:id/diff` and the `/folder/:cwd/pi-resources`
           redirect reach their surface through here, because `ShellContent`

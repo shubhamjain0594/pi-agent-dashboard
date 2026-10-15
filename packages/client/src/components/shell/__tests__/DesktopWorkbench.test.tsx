@@ -1,6 +1,8 @@
 import type { DashboardSession } from "@blackbelt-technology/pi-dashboard-shared/types.js";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Router } from "wouter";
+import { memoryLocation } from "wouter/memory-location";
 import { DesktopWorkbench } from "../DesktopWorkbench.js";
 
 beforeEach(() => {
@@ -18,11 +20,13 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function setup() {
+function setup(sessionPage = false) {
+  const location = memoryLocation({ path: sessionPage ? "/session/one" : "/" });
   const onSelect = vi.fn();
   const navigate = vi.fn();
   const onToggleSidebar = vi.fn();
   render(
+    <Router hook={location.hook}>
     <DesktopWorkbench
       sessions={[
         {
@@ -43,12 +47,22 @@ function setup() {
       onAddFolder={vi.fn()}
     >
       <div>Existing workspace</div>
-    </DesktopWorkbench>,
+    </DesktopWorkbench>
+    </Router>,
   );
   return { onSelect, navigate, onToggleSidebar };
 }
 
 describe("DesktopWorkbench", () => {
+  it("removes the redundant titlebar on session pages while keeping rail search and sidebar controls", () => {
+    const { onToggleSidebar } = setup(true);
+    expect(document.querySelector(".workbench-titlebar")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Quick open" }));
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Toggle sessions" }));
+    expect(onToggleSidebar).toHaveBeenCalledOnce();
+  });
+
   it("preserves its existing surface and renders real connection state", () => {
     setup();
     expect(screen.getByText("Existing workspace")).toBeTruthy();
