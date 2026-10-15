@@ -8,14 +8,17 @@ const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../..
 describe("workbench typography", () => {
   it("bundles variable fonts locally instead of depending on system installs or a font CDN", () => {
     expect(css).toContain('@fontsource-variable/inter/files/inter-latin-standard-normal.woff2');
-    expect(css).toContain('@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2');
-    expect(css.match(/font-display: swap/g)).toHaveLength(4);
+    expect(css).toContain('font-family: "Iosevka Extended"');
+    expect(css).toContain('/fonts/iosevka/extended-regular.woff2');
+    expect(css).toContain('font-family: "Iosevka Term"');
+    expect(css).toContain('/fonts/iosevka/term-regular.woff2');
+    expect(css.match(/font-display: swap/g)).toHaveLength(10);
     expect(css).not.toMatch(/https?:\/\//);
   });
 
   it("keeps UI and technical typography separate with usable fallbacks", () => {
     expect(css).toMatch(/--workbench-font-sans:\s*"Inter Variable"[^;]*sans-serif/);
-    expect(css).toMatch(/--workbench-font-mono:\s*"JetBrains Mono Variable"[^;]*monospace/);
+    expect(css).toMatch(/--workbench-font-mono:\s*"Iosevka Extended"[^;]*monospace/);
     expect(css).toContain("font-family: var(--workbench-font-sans)");
     expect(css).toContain("font-family: var(--workbench-font-mono)");
     expect(css).toContain("font-variant-numeric: tabular-nums");

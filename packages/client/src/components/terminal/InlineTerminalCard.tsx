@@ -1,5 +1,6 @@
 import { mdiConsoleLine } from "@mdi/js";
 import { Icon } from "@mdi/react";
+import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React, { useCallback, useEffect, useRef } from "react";
 import "@xterm/xterm/css/xterm.css";
@@ -38,15 +39,34 @@ function FrozenTranscript({ transcript }: { transcript: string }) {
     const terminal = new Terminal({
       scrollback: 10000,
       fontSize: 13,
-      fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Monaco, monospace",
+      fontFamily: "'Iosevka Term', Menlo, Monaco, monospace",
+      fontWeight: "normal",
+      lineHeight: 1.35,
       theme: getTerminalTheme(),
       cursorBlink: false,
       disableStdin: true,
       allowProposedApi: true,
     });
-    terminal.open(containerRef.current);
-    terminal.write(transcript);
-    return () => terminal.dispose();
+    const container = containerRef.current;
+    const fitAddon = new FitAddon();
+    terminal.loadAddon(fitAddon);
+    let disposed = false;
+    const open = () => {
+      if (disposed) return;
+      terminal.open(container);
+      fitAddon.fit();
+      terminal.write(transcript);
+    };
+    // Replay with the final cell metrics, not the fallback font's dimensions.
+    if (document.fonts) {
+      void document.fonts.load('13px "Iosevka Term"').then(open, open);
+    } else {
+      open();
+    }
+    return () => {
+      disposed = true;
+      terminal.dispose();
+    };
   }, [transcript]);
 
   return (

@@ -115,6 +115,7 @@ export default function MonacoBuffer({ cwd, path, line }: ViewerProps) {
   const handleMount: OnMount = (editor, m) => {
     editorRef.current = editor;
     monacoRef.current = m;
+    void document.fonts?.load('13px "Iosevka Extended"').then(() => m.editor.remeasureFonts()).catch(() => {});
     if (line && line > 0) {
       editor.revealLineInCenter(line);
       editor.setPosition({ lineNumber: line, column: 1 });
@@ -147,8 +148,8 @@ export default function MonacoBuffer({ cwd, path, line }: ViewerProps) {
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
         fontSize: 13,
-        fontFamily: '"JetBrains Mono Variable", "SFMono-Regular", Consolas, monospace',
-        lineHeight: 20,
+        fontFamily: '"Iosevka Extended", "SFMono-Regular", Consolas, monospace',
+        lineHeight: 21,
         wordWrap: "off",
         padding: { top: 12, bottom: 12 },
         lineNumbersMinChars: 3,

@@ -51,7 +51,9 @@ export function TerminalView({ terminalId, visible, onTitle, onClose, terminalNa
     const terminal = new Terminal({
       scrollback: 10000,
       fontSize: 13,
-      fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Monaco, monospace",
+      fontFamily: "'Iosevka Term', Menlo, Monaco, monospace",
+      fontWeight: "normal",
+      lineHeight: 1.35,
       theme: getTerminalTheme(),
       // No cursor blink — avoids a recurring per-second repaint while a terminal
       // tab is open and idle. Matches InlineTerminalCard. See change:
@@ -63,7 +65,7 @@ export function TerminalView({ terminalId, visible, onTitle, onClose, terminalNa
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
 
-    terminal.open(containerRef.current);
+    const container = containerRef.current;
 
     // Connect WebSocket. While identity is enforced the host requires a
     // principal-bearing single-use ticket for the terminal scope too (18.13), so
@@ -82,6 +84,7 @@ export function TerminalView({ terminalId, visible, onTitle, onClose, terminalNa
       sock.binaryType = "arraybuffer";
 
       sock.addEventListener("open", () => {
+        if (cancelled) return;
         const attachAddon = new AttachAddon(sock);
         terminal.loadAddon(attachAddon);
         attachRef.current = attachAddon;
@@ -96,20 +99,32 @@ export function TerminalView({ terminalId, visible, onTitle, onClose, terminalNa
       });
 
       sock.addEventListener("close", () => {
+        if (cancelled) return;
         terminal.write("\r\n\x1b[90m[Terminal disconnected]\x1b[0m\r\n");
       });
       wsRef.current = sock;
     };
 
-    if (getApiBearer()) {
-      mintWsTicket("terminal")
-        .then((ticket) => connect(ticket ? appendWsTicket(wsUrl, ticket) : wsUrl))
-        // A failed mint is a connection error shown in the terminal, never an unhandled rejection.
-        .catch(() => {
-          if (!cancelled) terminal.write("\r\n\x1b[90m[Terminal connection failed]\x1b[0m\r\n");
-        });
+    const open = () => {
+      if (cancelled) return;
+      terminal.open(container);
+      if (getApiBearer()) {
+        mintWsTicket("terminal")
+          .then((ticket) => connect(ticket ? appendWsTicket(wsUrl, ticket) : wsUrl))
+          // A failed mint is a connection error shown in the terminal, never an unhandled rejection.
+          .catch(() => {
+            if (!cancelled) terminal.write("\r\n\x1b[90m[Terminal connection failed]\x1b[0m\r\n");
+          });
+      } else {
+        connect(wsUrl);
+      }
+    };
+
+    // Measure only after the bundled face is ready; this does not restart the socket.
+    if (document.fonts) {
+      void document.fonts.load('13px "Iosevka Term"').then(open, open);
     } else {
-      connect(wsUrl);
+      open();
     }
 
     // Title change listener

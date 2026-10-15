@@ -52,6 +52,7 @@ export function MarkdownEditor({ value, onChange, readOnly = false }: Props) {
       beforeMount={handleBeforeMount}
       onMount={(_editor, m) => {
         monacoRef.current = m;
+        void document.fonts?.load('13px "Iosevka Extended"').then(() => m.editor.remeasureFonts()).catch(() => {});
       }}
       onChange={(v) => onChange(v ?? "")}
       loading={<div className="p-4 text-sm text-[var(--text-tertiary)]">Loading editor…</div>}
@@ -62,6 +63,8 @@ export function MarkdownEditor({ value, onChange, readOnly = false }: Props) {
         wordWrap: "on",
         scrollBeyondLastLine: false,
         fontSize: 13,
+        fontFamily: '"Iosevka Extended", "SFMono-Regular", Consolas, monospace',
+        lineHeight: 21,
         automaticLayout: true,
       }}
     />
