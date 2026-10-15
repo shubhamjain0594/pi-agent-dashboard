@@ -1,0 +1,132 @@
+/* Desktop editor density. Theme tokens keep light and custom themes intact. */
+.desktop-workbench .editor-workspace {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-secondary) transparent;
+}
+.desktop-workbench .editor-workspace * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-secondary) transparent;
+}
+.desktop-workbench .editor-workspace-header {
+  min-height: 36px;
+  gap: 8px;
+  padding: 4px 10px;
+}
+.desktop-workbench .editor-workspace-path {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.desktop-workbench .editor-workspace-header > button {
+  flex-shrink: 0;
+  min-height: 28px;
+}
+.desktop-workbench .editor-workspace [role="tablist"] {
+  min-width: 0;
+  scrollbar-width: thin;
+}
+.desktop-workbench .editor-workspace [role="tab"] {
+  flex-shrink: 0;
+  min-height: 34px;
+  max-width: 210px;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-top: 1px solid transparent;
+}
+.desktop-workbench .editor-workspace [role="tab"][aria-selected="true"] {
+  border-top-color: var(--accent-blue);
+}
+.desktop-workbench [data-testid="changes-rail-section"] {
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  padding: 7px 10px;
+  font-size: 11px;
+}
+.desktop-workbench [data-testid="session-only-toggle"] {
+  gap: 5px;
+  white-space: nowrap;
+}
+.desktop-workbench [data-testid="session-only-toggle"] input {
+  accent-color: var(--accent-blue);
+}
+.desktop-workbench [data-file-rail] [data-row] {
+  min-height: 27px;
+}
+.desktop-workbench [data-file-rail] [data-row] > button {
+  font-size: 12px;
+  line-height: 19px;
+}
+.desktop-workbench .code-diff-panel {
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+.desktop-workbench .code-diff-toolbar {
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  min-height: 38px;
+  padding: 6px 10px;
+  font-size: 11px;
+}
+.desktop-workbench .code-diff-path {
+  min-width: 80px;
+  font-size: 11px;
+}
+.desktop-workbench .code-diff-toolbar > div {
+  flex-shrink: 0;
+}
+.desktop-workbench .code-diff-toolbar button {
+  min-height: 25px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+.desktop-workbench .code-diff-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-secondary) transparent;
+}
+/* Higher specificity than the diff library's per-theme rules, including its
+   lazy-loaded stylesheet. Do not override syntax-token colors. */
+.desktop-workbench .code-diff-panel .diff-tailwindcss-wrapper .diff-style-root {
+  --diff-border--: var(--border-primary);
+  --diff-plain-content--: var(--bg-primary);
+  --diff-empty-content--: var(--bg-secondary);
+  --diff-plain-lineNumber--: var(--bg-secondary);
+  --diff-expand-content--: var(--bg-secondary);
+  --diff-expand-lineNumber--: var(--bg-secondary);
+  --diff-plain-lineNumber-color--: var(--text-tertiary);
+  --diff-expand-lineNumber-color--: var(--text-tertiary);
+  --diff-hunk-content-color--: var(--text-tertiary);
+  --diff-add-content--: color-mix(in srgb, var(--accent-green) 9%, var(--bg-primary));
+  --diff-del-content--: color-mix(in srgb, var(--accent-red) 9%, var(--bg-primary));
+  --diff-add-lineNumber--: color-mix(in srgb, var(--accent-green) 13%, var(--bg-secondary));
+  --diff-del-lineNumber--: color-mix(in srgb, var(--accent-red) 13%, var(--bg-secondary));
+  --diff-add-content-highlight--: color-mix(in srgb, var(--accent-green) 20%, var(--bg-primary));
+  --diff-del-content-highlight--: color-mix(in srgb, var(--accent-red) 20%, var(--bg-primary));
+  --diff-hunk-content--: color-mix(in srgb, var(--accent-blue) 6%, var(--bg-primary));
+  --diff-hunk-lineNumber--: var(--bg-secondary);
+  font-family: var(--workbench-font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  tab-size: 4;
+}
+.desktop-workbench .code-diff-panel .diff-tailwindcss-wrapper [data-state] {
+  color: var(--text-secondary);
+}
+.desktop-workbench .code-diff-panel .diff-table-scroll-container {
+  /* The library sets Menlo inline; use the same bundled face as our editor. */
+  font-family: var(--workbench-font-mono) !important;
+}
+@media (pointer: coarse) {
+  .desktop-workbench .editor-workspace-header > button,
+  .desktop-workbench .editor-workspace [role="tab"],
+  .desktop-workbench .code-diff-toolbar button {
+    min-height: 44px;
+  }
+  .desktop-workbench [data-testid="session-only-toggle"] {
+    min-height: 44px;
+  }
+}

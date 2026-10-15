@@ -1,4 +1,5 @@
 @import "./conversation.css";
+@import "./editor.css";
 
 /* Bundled Latin WOFF2 variable faces; no third-party requests at runtime.
    Licenses ship in public/font-licenses/. Swap keeps text visible during load. */

@@ -16,7 +16,7 @@ import type { FileDiffEntry } from "@blackbelt-technology/pi-dashboard-shared/di
 import { fileKind, type ViewerKind } from "@blackbelt-technology/pi-dashboard-shared/file-kind.js";
 import { mdiCheck, mdiChevronDown, mdiChevronRight, mdiContentCopy, mdiFolderOutline } from "@mdi/js";
 import { Icon } from "@mdi/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePopoverFlip } from "../../hooks/usePopoverFlip.js";
 import { fetchWithoutGrantPrompt } from "../../lib/access-grants/grant-channel.js";
 import { getApiBase } from "../../lib/api/api-context.js";
@@ -35,16 +35,18 @@ interface EditorFileTreeProps {
   activePath: string | null;
   /** Opens the file's `diff:` tab (hover chip on a changed row). Optional. */
   onOpenDiff?: (relPath: string) => void;
-  /** When true, hides the other-working-tree-changes bottom group. */
+  /** Show only session-attributed files and their ancestors, including deleted files. */
   sessionOnly?: boolean;
 }
 
 /** Session-owned changed files, indexed for O(1) row lookup (D1). */
 interface DiffIndex {
-  /** rel path → its FileDiffEntry (session-owned, on-disk). */
+  /** rel path → its FileDiffEntry (session-owned, possibly absent on disk). */
   files: Map<string, FileDiffEntry>;
   /** dir rel paths that contain a changed descendant (folder dots). */
   dirs: Set<string>;
+  /** Virtual directory entries, independent of the filesystem. */
+  children: Map<string, DirEntry[]>;
 }
 
 function buildDiffIndex(files: FileDiffEntry[]): DiffIndex {
@@ -52,10 +54,27 @@ function buildDiffIndex(files: FileDiffEntry[]): DiffIndex {
   const dirs = new Set<string>();
   for (const f of files) {
     map.set(f.path, f);
+    // Out-of-cwd absolute paths are root leaves, not cwd-relative ancestors.
+    // Splitting their leading slash would create an empty, self-recursing dir.
+    if (f.path.startsWith("/")) continue;
     const parts = f.path.split("/");
     for (let i = 1; i < parts.length; i++) dirs.add(parts.slice(0, i).join("/"));
   }
-  return { files: map, dirs };
+  const children = new Map<string, DirEntry[]>();
+  const addEntry = (path: string, isDir: boolean) => {
+    const absolute = path.startsWith("/");
+    const slash = path.lastIndexOf("/");
+    const parent = absolute ? "" : path.slice(0, slash < 0 ? 0 : slash);
+    const entries = children.get(parent) ?? [];
+    entries.push({ name: absolute ? path : baseName(path), isDir });
+    children.set(parent, entries);
+  };
+  for (const dir of dirs) addEntry(dir, true);
+  for (const path of map.keys()) addEntry(path, false);
+  for (const entries of children.values()) {
+    entries.sort((a, b) => Number(b.isDir) - Number(a.isDir) || a.name.localeCompare(b.name));
+  }
+  return { files: map, dirs, children };
 }
 
 /** Modified (edit / tool-detected) → `●`; pure add (write) → `+`. */
@@ -87,7 +106,7 @@ interface DirEntry {
 }
 
 const joinRel = (dir: string, name: string): string => (dir ? `${dir}/${name}` : name);
-const absOf = (cwd: string, rel: string): string => (rel ? `${cwd}/${rel}` : cwd);
+const absOf = (cwd: string, rel: string): string => (rel.startsWith("/") ? rel : rel ? `${cwd}/${rel}` : cwd);
 const baseName = (rel: string): string => rel.slice(rel.lastIndexOf("/") + 1);
 
 /** Gap between glyph and portaled popup (replaces the inline `mt-1`/`mb-1`). */
@@ -265,19 +284,22 @@ function TreeNode({
   onOpenDiff,
   activePath,
   diffIndex,
+  sessionOnly,
 }: {
   cwd: string;
   relDir: string;
   depth: number;
   diffIndex: DiffIndex;
-} & Omit<EditorFileTreeProps, "cwd" | "sessionOnly">) {
+} & Omit<EditorFileTreeProps, "cwd">) {
   const { t } = useI18n();
-  const [entries, setEntries] = useState<DirEntry[] | null>(null);
+  const [diskEntries, setEntries] = useState<DirEntry[] | null>(null);
+  const entries = sessionOnly ? (diffIndex.children.get(relDir) ?? []) : diskEntries;
   // Ref on the active row so it can be scrolled into view when it (re)mounts
   // or when the active tab changes (#5).
   const activeRowRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
+    if (sessionOnly) return;
     let active = true;
     void listDir(cwd, relDir)
       .then((e) => active && setEntries(e))
@@ -285,7 +307,7 @@ function TreeNode({
     return () => {
       active = false;
     };
-  }, [cwd, relDir]);
+  }, [cwd, relDir, sessionOnly]);
 
   // Reveal the active row once entries render (or activePath changes).
   useEffect(() => {
@@ -339,12 +361,14 @@ function TreeNode({
                   onOpenDiff={onOpenDiff}
                   activePath={activePath}
                   diffIndex={diffIndex}
+                  sessionOnly={sessionOnly}
                 />
               )}
             </div>
           );
         }
         const viewer = fileKind(absOf(cwd, rel)).viewer;
+        const file = diffIndex.files.get(rel);
         const isActive = rel === activePath;
         return (
           <FileRow
@@ -355,8 +379,11 @@ function TreeNode({
             depth={depth}
             isActive={isActive}
             activeRef={isActive ? activeRowRef : undefined}
-            file={diffIndex.files.get(rel)}
-            onOpenFile={() => onOpenFile(rel, viewer)}
+            file={file}
+            onOpenFile={() => {
+              if (file?.previewable === false || rel.startsWith("/")) onOpenDiff?.(rel);
+              else onOpenFile(rel, viewer);
+            }}
             onOpenDiff={onOpenDiff}
           />
         );
@@ -515,25 +542,49 @@ function OtherChangesGroup({
 }
 
 export function EditorFileTree(props: EditorFileTreeProps) {
+  const { t } = useI18n();
   const diff = useOptionalSessionDiff();
-  const diffIndex = buildDiffIndex(diff?.data?.files ?? []);
+  const files = diff?.data?.files;
+  const diffIndex = useMemo(() => buildDiffIndex(files ?? []), [files]);
   const otherChanges = diff?.data?.otherChanges ?? [];
+  // Session-only expansion must never overwrite the persisted full-tree roots.
+  const [collapsedSessionDirs, setCollapsedSessionDirs] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    setCollapsedSessionDirs(new Set());
+  }, [props.sessionOnly, props.cwd, diff?.sessionId]);
+  const toggleSessionDir = (rel: string) => {
+    setCollapsedSessionDirs((prev) => {
+      const next = new Set(prev);
+      if (next.has(rel)) next.delete(rel);
+      else next.add(rel);
+      return next;
+    });
+  };
   return (
     <div
       data-file-rail=""
       className="h-full overflow-auto border-r border-[var(--border-primary)] bg-[var(--bg-secondary)]"
     >
-      <TreeNode
-        cwd={props.cwd}
-        relDir=""
-        depth={0}
-        treeOpenRoots={props.treeOpenRoots}
-        onToggleRoot={props.onToggleRoot}
-        onOpenFile={props.onOpenFile}
-        onOpenDiff={props.onOpenDiff}
-        activePath={props.activePath}
-        diffIndex={diffIndex}
-      />
+      {props.sessionOnly && diffIndex.files.size === 0 ? (
+        <div className="px-2 py-1 text-xs text-[var(--text-tertiary)]">
+          {t("diff.noSessionChanges", undefined, "No changes in this session")}
+        </div>
+      ) : (
+        <TreeNode
+          cwd={props.cwd}
+          relDir=""
+          depth={0}
+          treeOpenRoots={props.sessionOnly
+            ? [...diffIndex.dirs].filter((dir) => !collapsedSessionDirs.has(dir))
+            : props.treeOpenRoots}
+          onToggleRoot={props.sessionOnly ? toggleSessionDir : props.onToggleRoot}
+          onOpenFile={props.onOpenFile}
+          onOpenDiff={props.onOpenDiff}
+          activePath={props.activePath}
+          diffIndex={diffIndex}
+          sessionOnly={props.sessionOnly}
+        />
+      )}
       {!props.sessionOnly && (
         <OtherChangesGroup otherChanges={otherChanges} onOpenDiff={props.onOpenDiff} />
       )}

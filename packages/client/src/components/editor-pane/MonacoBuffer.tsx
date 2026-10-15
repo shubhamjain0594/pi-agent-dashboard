@@ -144,9 +144,15 @@ export default function MonacoBuffer({ cwd, path, line }: ViewerProps) {
       options={{
         readOnly: true,
         domReadOnly: true,
-        minimap: { enabled: true },
+        minimap: { enabled: false },
         scrollBeyondLastLine: false,
         fontSize: 13,
+        fontFamily: '"JetBrains Mono Variable", "SFMono-Regular", Consolas, monospace',
+        lineHeight: 20,
+        wordWrap: "off",
+        padding: { top: 12, bottom: 12 },
+        lineNumbersMinChars: 3,
+        folding: false,
         automaticLayout: true,
         renderWhitespace: "selection",
       }}

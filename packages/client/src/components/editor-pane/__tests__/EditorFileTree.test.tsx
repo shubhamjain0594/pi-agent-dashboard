@@ -428,6 +428,108 @@ describe("EditorFileTree — changed-file markers (collapse-diff-file-tree)", ()
   });
 });
 
+describe("EditorFileTree — session-only tree", () => {
+  const changed = (path: string): FileDiffEntry => ({
+    path, changes: [{ type: "tool", timestamp: 1 }], additions: 0, deletions: 2,
+  });
+  function setup(files: FileDiffEntry[]) {
+    diffHolder.diff = {
+      isGitRepo: true, files, otherChanges: [changed("vendor/other.ts")],
+    };
+    const props = {
+      cwd: "/proj", treeOpenRoots: [".git"], onToggleRoot: vi.fn(),
+      onOpenFile: vi.fn(), onOpenDiff: vi.fn(), activePath: null,
+    };
+    const tree = (sessionOnly: boolean) => (
+      <SessionDiffProvider sessionId="s1">
+        <EditorFileTree {...props} sessionOnly={sessionOnly} />
+      </SessionDiffProvider>
+    );
+    return { props, tree };
+  }
+
+  it("shows only attributed files and ancestors, including nested deleted paths without disk reads", async () => {
+    dirs["."].push({ name: "vendor", isDir: true }, { name: "src", isDir: true });
+    dirs.src = [{ name: "unrelated.ts", isDir: false }];
+    const { props, tree } = setup([changed("src/deep/deleted.ts"), changed("root.ts")]);
+    const { container } = render(tree(true));
+    await screen.findByText("deleted.ts");
+    expect(Array.from(container.querySelectorAll("[data-row]"), (row) => row.getAttribute("data-row")).sort())
+      .toEqual(["root.ts", "src", "src/deep", "src/deep/deleted.ts"]);
+    expect(screen.queryByTestId("other-changes-group")).toBeNull();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("deleted.ts"));
+    expect(props.onOpenFile).toHaveBeenCalledWith("src/deep/deleted.ts", "monaco");
+    const row = screen.getByText("deleted.ts").closest("[data-row]") as HTMLElement;
+    fireEvent.click(within(row).getByTestId("open-diff-chip"));
+    expect(props.onOpenDiff).toHaveBeenCalledWith("src/deep/deleted.ts");
+    expect(props.onOpenFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders deleted absolute out-of-cwd paths as diff-only rows without recursive ancestors", () => {
+    const path = "/tmp/deleted/outside.ts";
+    const { props, tree } = setup([
+      { ...changed(path), previewable: false },
+      changed("tmp/deleted/inside.ts"),
+    ]);
+    const { container } = render(tree(true));
+    const row = container.querySelector(`[data-row="${path}"]`) as HTMLElement;
+    expect(row).toBeTruthy();
+    expect(container.querySelector('[data-row=""]')).toBeNull();
+    expect(container.querySelectorAll("[data-row]")).toHaveLength(4);
+    expect(screen.getByText("inside.ts")).toBeTruthy();
+    fireEvent.click(within(row).getByText(path));
+    expect(props.onOpenDiff).toHaveBeenCalledWith(path);
+    fireEvent.click(within(row).getByTestId("open-diff-chip"));
+    expect(props.onOpenDiff).toHaveBeenCalledTimes(2);
+    expect(props.onOpenDiff).toHaveBeenLastCalledWith(path);
+    expect(props.onOpenFile).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("does not open a non-previewable file even without a diff callback", () => {
+    const { props } = setup([{ ...changed("deleted.ts"), previewable: false }]);
+    render(
+      <SessionDiffProvider sessionId="s1">
+        <EditorFileTree {...props} onOpenDiff={undefined} sessionOnly />
+      </SessionDiffProvider>,
+    );
+    fireEvent.click(screen.getByText("deleted.ts"));
+    expect(props.onOpenFile).not.toHaveBeenCalled();
+  });
+
+  it("restores the full tree and its expansion state after toggling off", async () => {
+    dirs["."].push({ name: "src", isDir: true });
+    dirs.src = [{ name: "changed.ts", isDir: false }];
+    const { props, tree } = setup([changed("src/changed.ts")]);
+    const { rerender } = render(tree(false));
+    await screen.findByText("HEAD");
+    expect(screen.queryByText("changed.ts")).toBeNull();
+    rerender(tree(true));
+    await screen.findByText("changed.ts");
+    expect(screen.queryByText(".git")).toBeNull();
+    fireEvent.click(screen.getByText("src"));
+    expect(screen.queryByText("changed.ts")).toBeNull();
+    expect(props.onToggleRoot).not.toHaveBeenCalled();
+    rerender(tree(false));
+    await screen.findByText("HEAD");
+    expect(screen.getByText("README.md")).toBeTruthy();
+    expect(screen.queryByText("changed.ts")).toBeNull();
+    expect(screen.getByTestId("other-changes-group")).toBeTruthy();
+    rerender(tree(true));
+    await screen.findByText("changed.ts");
+  });
+
+  it("shows a clear empty state when no session-owned files exist", () => {
+    const { tree } = setup([]);
+    const { container } = render(tree(true));
+    expect(screen.getByText("No changes in this session")).toBeTruthy();
+    expect(container.querySelectorAll("[data-row]")).toHaveLength(0);
+    expect(screen.queryByTestId("other-changes-group")).toBeNull();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+});
+
 describe("EditorFileTree — hidden dir correctness (#1)", () => {
   it("renders .git as an expandable folder that reveals its files", async () => {
     const openRoots: string[] = [];

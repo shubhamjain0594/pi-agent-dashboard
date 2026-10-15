@@ -23,6 +23,8 @@ vi.mock("@git-diff-view/react", () => ({
       data-testid="diff-view"
       data-diff-mode={String(props.diffViewMode)}
       data-diff-theme={String(props.diffViewTheme)}
+      data-wrap={String(props.diffViewWrap)}
+      data-font-size={String(props.diffViewFontSize)}
     />
   ),
   DiffModeEnum: { Split: "split", Unified: "unified" },
@@ -70,6 +72,15 @@ import { RichDiff } from "../diff/RichDiff.js";
 afterEach(() => cleanup());
 
 describe("RichDiff", () => {
+  it("supports unwrapped editor diffs at a consistent 13px while keeping chat wrapping", () => {
+    const { getByTestId, rerender } = render(
+      <RichDiff oldText="a" newText="b" filePath="foo.ts" wrap={false} />,
+    );
+    expect(getByTestId("diff-view").getAttribute("data-wrap")).toBe("false");
+    expect(getByTestId("diff-view").getAttribute("data-font-size")).toBe("13");
+    rerender(<RichDiff oldText="a" newText="b" filePath="foo.ts" />);
+    expect(getByTestId("diff-view").getAttribute("data-wrap")).toBe("true");
+  });
   it("2.2 renders unified mode by default (no mode prop)", () => {
     const { getAllByTestId } = render(
       <RichDiff oldText="a" newText="b" filePath="foo.ts" />,

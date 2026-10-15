@@ -37,13 +37,15 @@ export interface RichDiffProps {
   filePath: string;
   mode?: "unified" | "split";
   maxHeight?: string;
+  /** Chat wraps by default; editor panes preserve source lines and scroll. */
+  wrap?: boolean;
 }
 
 /**
  * Pure rendering primitive: no toolbar, no mode toggle, no header.
  * Callers own all chrome (split/unified buttons, file path headers, etc.).
  */
-export function RichDiff({ oldText, newText, filePath, mode = "unified", maxHeight }: RichDiffProps) {
+export function RichDiff({ oldText, newText, filePath, mode = "unified", maxHeight, wrap = true }: RichDiffProps) {
   const { resolved } = useThemeContext();
 
   const diffFile = useMemo(() => {
@@ -72,7 +74,8 @@ export function RichDiff({ oldText, newText, filePath, mode = "unified", maxHeig
         diffViewMode={diffViewMode}
         diffViewTheme={resolved === "light" ? "light" : "dark"}
         diffViewHighlight
-        diffViewWrap
+        diffViewWrap={wrap}
+        diffViewFontSize={13}
         registerHighlighter={highlighter}
       />
     </div>

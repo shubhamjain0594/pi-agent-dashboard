@@ -93,7 +93,7 @@ function buildPreviewLines(gitDiff: string | undefined): PreviewLine[] {
 export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
   const { resolved: theme, themeName } = useThemeContext();
   const syntaxStyle = useMemo(() => getSyntaxTheme(theme, themeName), [theme, themeName]);
-  const [diffMode, setDiffMode] = useState<DiffModeEnum>(DiffModeEnum.Split);
+  const [diffMode, setDiffMode] = useState<DiffModeEnum>(DiffModeEnum.Unified);
   const [viewMode, setViewMode] = useState<ViewMode>("diff");
   const [fileContent, setFileContent] = useState<string | null>(null);
   const [fileLoading, setFileLoading] = useState(false);
@@ -270,10 +270,10 @@ export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
   }, [file, change, viewMode, fileContent, fullPayload]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="code-diff-panel flex min-h-0 min-w-0 flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border-primary)] text-xs shrink-0">
-        <span className="font-mono text-[var(--text-secondary)] truncate flex-1">{file.path}</span>
+      <div className="code-diff-toolbar flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border-primary)] text-xs shrink-0">
+        <span title={file.path} className="code-diff-path font-mono text-[var(--text-secondary)] truncate flex-1">{file.path}</span>
 
         {/* View mode toggle */}
         <div className="flex border border-[var(--border-primary)] rounded overflow-hidden">
@@ -335,7 +335,7 @@ export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="code-diff-content min-h-0 min-w-0 flex-1 overflow-auto">
         {truncationNote && (
           <div
             data-testid="diff-truncation-banner"
@@ -371,6 +371,7 @@ export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
             newText={diffData.richDiff.newText}
             filePath={diffData.richDiff.filePath}
             mode={diffMode === DiffModeEnum.Split ? "split" : "unified"}
+            wrap={false}
           />
         )}
         {viewMode === "diff" && diffData && diffData.data && (
@@ -379,7 +380,8 @@ export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
             diffViewMode={diffMode}
             diffViewTheme={theme === "light" ? "light" : "dark"}
             diffViewHighlight
-            diffViewWrap
+            diffViewWrap={false}
+            diffViewFontSize={13}
             registerHighlighter={highlighter}
           />
         )}

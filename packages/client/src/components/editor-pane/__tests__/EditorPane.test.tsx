@@ -156,8 +156,8 @@ describe("EditorPane — unread affordance (non-disruptive-file-open F16/F17)", 
     // Re-signal re-triggers the pulse (transient, keyed on the tab's identity).
     expect(dot.getAttribute("data-pulse")).toBe("true");
     // b.ts stays inactive (a.ts still active) → its dot is still shown.
-    expect(screen.getByTitle("a.ts").getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByTitle("b.ts").getAttribute("aria-selected")).toBe("false");
+    expect(screen.getByRole("tab", { name: "a.ts" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tab", { name: "b.ts" }).getAttribute("aria-selected")).toBe("false");
   });
 });
 

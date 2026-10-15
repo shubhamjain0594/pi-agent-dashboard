@@ -241,9 +241,9 @@ export function EditorPane() {
       </nav>
       {workPanel === "changes" && <div className="session-work-scroll"><SessionChangesPanel onOpenDiff={openDiffTab} /></div>}
       {workPanel === "tasks" && <div className="session-work-scroll"><SessionTodosPanel key={sessionId} snapshot={todoSnapshot} /></div>}
-      <div className="min-h-0 flex-1 flex-col" style={{ display: workPanel === "editor" ? "flex" : "none" }}>
+      <div className="editor-workspace min-h-0 min-w-0 flex-1 flex-col" style={{ display: workPanel === "editor" ? "flex" : "none" }}>
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-[var(--border-primary)] px-3 py-2">
+      <div className="editor-workspace-header flex shrink-0 items-center gap-2 border-b border-[var(--border-primary)] px-3 py-2">
         <button
           type="button"
           onClick={() => setTreeVisible(!treeVisible)}
@@ -261,7 +261,7 @@ export function EditorPane() {
           <Icon path={mdiFileTreeOutline} size={0.7} />
           <span>{t("common.files", undefined, "Files")}</span>
         </button>
-        <span className="truncate text-sm font-medium">{activePath ?? t("editor.editorTitle", undefined, "Editor")}</span>
+        <span title={activePath?.replace(/^diff:/, "")} className="editor-workspace-path truncate text-sm font-medium">{activePath?.replace(/^diff:/, "") ?? t("editor.editorTitle", undefined, "Editor")}</span>
         <span className="flex-1" />
         <button
           type="button"

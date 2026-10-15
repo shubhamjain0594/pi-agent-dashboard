@@ -43,9 +43,9 @@ vi.mock("react-syntax-highlighter", () => ({
 // hunks payload shape without the real reconstruction.
 const capturedDiffData: Array<{ hunks?: unknown }> = [];
 vi.mock("@git-diff-view/react", () => ({
-  DiffView: (props: { data?: { hunks?: unknown } }) => {
+  DiffView: (props: { data?: { hunks?: unknown }; diffViewWrap?: boolean; diffViewFontSize?: number; diffViewMode?: string }) => {
     capturedDiffData.push(props.data ?? {});
-    return <div data-testid="diff-view" />;
+    return <div data-testid="diff-view" data-wrap={String(props.diffViewWrap)} data-font-size={props.diffViewFontSize} data-mode={props.diffViewMode} />;
   },
   DiffModeEnum: { Split: "split", Unified: "unified" },
 }));
@@ -95,6 +95,9 @@ describe("DiffPanel Path B — header-preserving git-aggregate hunks", () => {
     };
     render1(fileWithDiff);
     expect(screen.getByTestId("diff-view")).toBeTruthy();
+    expect(screen.getByTestId("diff-view").getAttribute("data-wrap")).toBe("false");
+    expect(screen.getByTestId("diff-view").getAttribute("data-font-size")).toBe("13");
+    expect(screen.getByTestId("diff-view").getAttribute("data-mode")).toBe("unified");
     // The last captured data payload is the git-aggregate one.
     const data = capturedDiffData.at(-1);
     expect(data).toBeTruthy();

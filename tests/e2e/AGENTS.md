@@ -4,6 +4,7 @@ One row per file.
 
 | File | Purpose |
 |------|---------|
+| `editor-session-filter.spec.ts` | Editor filter regression with deterministic filesystem/diff responses: unrelated folders hidden, changed ancestors auto-expanded, full tree restored, 13px unwrapped diff and Split toggle. |
 | `acp-automation.spec.ts` | ACP L3. → see `acp-automation.spec.ts.AGENTS.md` |
 | `acp-permission.spec.ts` | ACP L3. → see `acp-permission.spec.ts.AGENTS.md` |
 | `acp-restart-midturn.spec.ts` | ACP L3. → see `acp-restart-midturn.spec.ts.AGENTS.md` |
