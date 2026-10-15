@@ -43,7 +43,7 @@ interface EditorFileTreeProps {
 interface DiffIndex {
   /** rel path → its FileDiffEntry (session-owned, possibly absent on disk). */
   files: Map<string, FileDiffEntry>;
-  /** dir rel paths that contain a changed descendant (folder dots). */
+  /** Ancestors of changed files, used for session-only expansion. */
   dirs: Set<string>;
   /** Virtual directory entries, independent of the filesystem. */
   children: Map<string, DirEntry[]>;
@@ -77,16 +77,23 @@ function buildDiffIndex(files: FileDiffEntry[]): DiffIndex {
   return { files: map, dirs, children };
 }
 
-/** Modified (edit / tool-detected) → `●`; pure add (write) → `+`. */
+/** Compact, non-color-only change markers; kept at the trailing edge of files. */
 function statusIndicator(file: FileDiffEntry): React.ReactNode {
   const modified =
     file.changes.some((c) => c.type === "edit" || c.type === "tool") ||
     file.origin === "tool" ||
     file.origin === "mixed";
-  return modified ? (
-    <span data-testid="status-modified" className="text-yellow-400 text-xs font-bold" title={i18nT("common.modified", undefined, "Modified")}>●</span>
-  ) : (
-    <span data-testid="status-added" className="text-green-400 text-xs font-bold" title={i18nT("common.added", undefined, "Added")}>+</span>
+  const label = modified ? i18nT("common.modified", undefined, "Modified") : i18nT("common.added", undefined, "Added");
+  return (
+    <span
+      data-testid={modified ? "status-modified" : "status-added"}
+      role="img"
+      aria-label={label}
+      title={label}
+      className={`ml-2 shrink-0 font-mono text-[10px] font-medium ${modified ? "text-[var(--text-tertiary)]" : "text-[var(--accent-green-text)]"}`}
+    >
+      {modified ? "M" : "A"}
+    </span>
   );
 }
 
@@ -338,15 +345,8 @@ function TreeNode({
                   style={{ paddingLeft: pad }}
                 >
                   <Icon path={open ? mdiChevronDown : mdiChevronRight} size={0.5} />
-                  <Icon path={mdiFolderOutline} size={0.55} />
+                  <Icon path={mdiFolderOutline} size={0.55} className="shrink-0" />
                   <span className="truncate">{entry.name}</span>
-                  {diffIndex.dirs.has(rel) && (
-                    <span
-                      data-testid="folder-dot"
-                      className="ml-1 h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-400"
-                      title={i18nT("diff.dirHasChanges", undefined, "Contains changed files")}
-                    />
-                  )}
                 </button>
                 <RowCopyAffordance cwd={cwd} rel={rel} />
               </div>
@@ -455,14 +455,14 @@ function FileRow({
           ].join(" ")}
           style={{ paddingLeft: hasHistory ? 4 : pad + 10 }}
         >
-          <Icon path={icon.iconPath} size={0.55} className={icon.colorClass} />
-          {file && statusIndicator(file)}
-          <span className="truncate">{name}</span>
+          <Icon path={icon.iconPath} size={0.55} className={`${icon.colorClass} shrink-0`} />
+          <span className="min-w-0 flex-1 truncate">{name}</span>
           {file && (file.additions !== undefined || file.deletions !== undefined) && (
             <span className="ml-1 text-[10px] shrink-0">
               <CountBadges additions={file.additions ?? 0} deletions={file.deletions ?? 0} />
             </span>
           )}
+          {file && statusIndicator(file)}
         </button>
         {file && onOpenDiff && (
           <button

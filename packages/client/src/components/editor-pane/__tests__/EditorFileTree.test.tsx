@@ -292,7 +292,7 @@ describe("EditorFileTree — changed-file markers (collapse-diff-file-tree)", ()
     );
   }
 
-  it("(E3) status indicator: write→+, edit→●, tool→●", async () => {
+  it("uses compact trailing A/M markers rather than dots beside filenames", async () => {
     dirs["."] = [
       { name: "w.ts", isDir: false },
       { name: "e.ts", isDir: false },
@@ -308,12 +308,16 @@ describe("EditorFileTree — changed-file markers (collapse-diff-file-tree)", ()
     });
     const rowOf = async (name: string) =>
       (await screen.findByText(name)).closest("[data-row]") as HTMLElement;
-    expect(within(await rowOf("w.ts")).getByTestId("status-added")).toBeTruthy();
-    expect(within(await rowOf("e.ts")).getByTestId("status-modified")).toBeTruthy();
-    expect(within(await rowOf("t.ts")).getByTestId("status-modified")).toBeTruthy();
+    const added = within(await rowOf("w.ts")).getByTestId("status-added");
+    const modified = within(await rowOf("e.ts")).getByTestId("status-modified");
+    expect(added.textContent).toBe("A");
+    expect(modified.textContent).toBe("M");
+    expect(within(await rowOf("t.ts")).getByTestId("status-modified").textContent).toBe("M");
+    expect(modified.getAttribute("aria-label")).toBe("Modified");
+    expect(modified.parentElement?.lastElementChild).toBe(modified);
   });
 
-  it("(E4) folder dot marks an ancestor of a changed file, not an unrelated dir", async () => {
+  it("keeps folders undecorated even when they contain changed files", async () => {
     dirs["."] = [
       { name: "packages", isDir: true },
       { name: "qa", isDir: true },
@@ -324,7 +328,7 @@ describe("EditorFileTree — changed-file markers (collapse-diff-file-tree)", ()
     });
     const pkg = (await screen.findByText("packages")).closest("[data-row]") as HTMLElement;
     const qa = (await screen.findByText("qa")).closest("[data-row]") as HTMLElement;
-    expect(within(pkg).getByTestId("folder-dot")).toBeTruthy();
+    expect(within(pkg).queryByTestId("folder-dot")).toBeNull();
     expect(within(qa).queryByTestId("folder-dot")).toBeNull();
   });
 
@@ -390,7 +394,7 @@ describe("EditorFileTree — changed-file markers (collapse-diff-file-tree)", ()
     expect(screen.queryByTestId("other-changes-group")).toBeNull();
   });
 
-  it("(F7) no auto-expand: a changed file in a collapsed dir shows no row, only a folder dot", async () => {
+  it("preserves full-tree collapsed folders without adding dot decorations", async () => {
     dirs["."] = [{ name: "src", isDir: true }];
     dirs["src"] = [{ name: "a.ts", isDir: false }];
     renderWithDiff({
@@ -398,7 +402,7 @@ describe("EditorFileTree — changed-file markers (collapse-diff-file-tree)", ()
       files: [{ path: "src/a.ts", changes: [{ type: "edit", timestamp: 1 }] }],
     });
     const src = (await screen.findByText("src")).closest("[data-row]") as HTMLElement;
-    expect(within(src).getByTestId("folder-dot")).toBeTruthy();
+    expect(within(src).queryByTestId("folder-dot")).toBeNull();
     expect(screen.queryByText("a.ts")).toBeNull();
   });
 
