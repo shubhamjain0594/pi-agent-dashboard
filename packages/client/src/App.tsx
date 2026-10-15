@@ -2335,7 +2335,7 @@ export default function App() {
     const selectedHistory =
       sessionIdArg === liveSelectedId ? liveSelectedHistory : extractUserPromptHistory(selectedState.messages);
     return (
-    <div className="flex-1 flex flex-col min-w-0 h-full">
+    <div className="conversation-session flex-1 flex flex-col min-w-0 h-full">
       {connectionBanner}
       <SessionHeader
         session={sessions.get(selectedId)}
@@ -2417,6 +2417,8 @@ export default function App() {
         const showContextBar = ctxOverride ?? displayPrefs?.contextUsageBar ?? true;
         if (!showStats && !showContextBar) return null;
         return (
+          <details className="conversation-usage" key={selectedId}>
+          <summary>{t("session.usageDetails", undefined, "Session usage")}<span>{selectedState.cost > 0 ? `$${selectedState.cost.toFixed(2)}` : ""}</span></summary>
           <TokenStatsBar
             turnStats={selectedState.turnStats}
             contextUsage={selectedContextUsage}
@@ -2429,6 +2431,7 @@ export default function App() {
             showStats={showStats}
             showContextBar={showContextBar}
           />
+          </details>
         );
       })()}
       {/* This chain reads LIVE route matches and is still load-bearing: on
@@ -2571,13 +2574,15 @@ export default function App() {
             />
           )}
           {selectedSession && !readOnly && (
-            <div
+            <details open={isMobile}
               /* `shrink-0`: thin furniture row — cannot compress below its content,
                  so absorbing a pane height deficit here would clip it rather than
                  shrink it. See change: fix-quota-widget-clipping. */
-              className="flex items-center gap-2 flex-wrap px-3 pt-2 text-xs shrink-0"
+              className="conversation-context-details text-xs shrink-0"
               data-testid="composer-context-strip"
             >
+              <summary>{t("session.toolsAndSettings", undefined, "Session tools & display")}</summary>
+              <div className="conversation-context-controls flex items-center gap-2 flex-wrap px-3 py-2">
               {selectedCwd && (
                 <>
                   <StatusBarRefreshButton cwd={selectedCwd} onRefresh={handleOpenSpecRefresh} />
@@ -2611,7 +2616,8 @@ export default function App() {
                 assignments={selectedCwd ? openspecGroupsMap.get(selectedCwd)?.assignments : undefined}
                 working={isComposerWorking(composerStatus, retrySessionIds.has(selectedSession.id))}
               />
-            </div>
+              </div>
+            </details>
           )}
           {!readOnly && (
             <>

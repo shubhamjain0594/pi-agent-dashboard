@@ -342,13 +342,13 @@ function MessageBubble({ content, className, timestamp, entryId, onFork, context
   }, [content]);
 
   return (
-    <div className={className}>
-      <div ref={contentRef}>
+    <div className={`conversation-message ${className}`}>
+      <div ref={contentRef} className="conversation-message-content">
         <MarkdownContent content={content} context={context} />
       </div>
-      <div className="border-t border-[var(--border-secondary)] mt-2 pt-1.5 flex justify-end items-center gap-0.5 opacity-50 hover:opacity-100 transition-opacity">
+      <div className="conversation-message-actions border-t border-[var(--border-secondary)] mt-2 pt-1.5 flex justify-end items-center gap-0.5 opacity-50 hover:opacity-100 transition-opacity">
         {timestamp != null && (
-          <span className="text-[10px] text-[var(--text-tertiary)] mr-auto">{formatMessageTime(timestamp)}</span>
+          <span className="conversation-message-time text-[10px] text-[var(--text-tertiary)] mr-auto">{formatMessageTime(timestamp)}</span>
         )}
         <CopyButton getText={() => content} icon={<Icon path={mdiContentCopy} size={0.6} />} title={i18nT("common.copyAsMarkdown", undefined, "Copy as Markdown")} />
         <CopyButton getText={getPlainText} icon={<Icon path={mdiTextBox} size={0.6} />} title={i18nT("common.copyAsPlainText", undefined, "Copy as plain text")} />
@@ -1818,7 +1818,7 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
         `scroll-behavior: smooth` here or on an ancestor — smooth would animate
         each synchronous measurement correction and race the next, reintroducing
         the scroll-to-top drift. See change: fix-chat-scroll-to-top-estimate-drift. */}
-    <div ref={scrollRef} onScroll={handleScroll} onCopy={handleCopy} onWheel={cancelDescent} onTouchMove={cancelDescent} style={{ overflowAnchor: "none" }} data-testid="chat-scroll-container" className={`chat-cv h-full overflow-y-auto ${isMobile ? "p-2" : "p-4"}`}>
+    <div ref={scrollRef} onScroll={handleScroll} onCopy={handleCopy} onWheel={cancelDescent} onTouchMove={cancelDescent} style={{ overflowAnchor: "none" }} data-testid="chat-scroll-container" className={`conversation-transcript chat-cv h-full overflow-y-auto ${isMobile ? "p-2" : "p-4"}`}>
       {/* Windowed historical rows (TanStack Virtual): only viewport + overscan
           are mounted. The spacer reserves getTotalSize(); each row is absolutely
           positioned + re-measured on mount. chat-cv-skip keeps Step A's
@@ -1848,7 +1848,7 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
         // head churn cannot bleed one burst's state into another (finding 3).
         if ((item as ToolBurstGroupData).type === "burst") {
           const burst = item as ToolBurstGroupData;
-          return <ToolBurstGroup key={burst.id} burst={burst} toolContext={toolContext} onAbort={onAbort} onForceKill={onForceKill} />;
+          return <ToolBurstGroup key={burst.id} burst={burst} toolContext={toolContext} onAbort={onAbort} onForceKill={onForceKill} compact={!isMobile} />;
         }
         // Bare semantic ×N group (sub-threshold burst that still folded a poll).
         if ((item as ToolCallGroup).type === "group") {
@@ -1917,7 +1917,7 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
             {changeBlock}
             <div className="mt-4 mb-4 flex flex-col items-end" {...(msg.turnIndex != null ? { "data-turn": msg.turnIndex } : {})}>
               {msg.streamingBehavior && <StreamingBehaviorBadge behavior={msg.streamingBehavior} />}
-              <div className={`bg-blue-500/10 border border-blue-500/20 border-l-2 border-l-blue-400 rounded-xl shadow-md px-4 py-2 ${bubbleMax}`}>
+              <div className={`conversation-user-message bg-blue-500/10 border border-blue-500/20 border-l-2 border-l-blue-400 rounded-xl shadow-md px-4 py-2 ${bubbleMax}`}>
                 {msg.images && msg.images.length > 0 && (
                   <ImageAttachments images={msg.images} sessionId={sessionId} onImageLoad={(e) => requestRowMeasure(e.currentTarget)} />
                 )}
@@ -2131,10 +2131,10 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
         // assistant
         const bMax = hasMermaid(msg.content) ? bubbleWide : bubbleMax;
         return (
-          <div key={msg.id} className="mt-4 mb-4 flex justify-start">
+          <div key={msg.id} className="conversation-assistant-turn mt-4 mb-4 flex justify-start">
             <MessageBubble
               content={msg.content}
-              className={`bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl shadow-md px-4 py-2 ${bMax}`}
+              className={`conversation-assistant-message bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl shadow-md px-4 py-2 ${bMax}`}
               timestamp={msg.timestamp}
               entryId={msg.entryId}
               onFork={onForkFromMessage}
@@ -2172,7 +2172,7 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
           live streamingText. See change: preserve-streaming-tail-selection. */}
       {streamingTailText && (
         <div ref={tailContainerRef} className="flex justify-start chat-cv-skip">
-          <div ref={streamFxRef} className={`chat-stream-live bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl shadow-md px-4 py-2 ${hasMermaid(streamingTailText) ? bubbleWide : bubbleMax}`}>
+          <div ref={streamFxRef} className={`conversation-assistant-message conversation-streaming chat-stream-live bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl shadow-md px-4 py-2 ${hasMermaid(streamingTailText) ? bubbleWide : bubbleMax}`}>
             <MarkdownContent content={streamingTailText} context={toolContext} />
             {state.streamingText && (
               <span className="inline-block w-1.5 h-4 bg-[var(--bg-surface)] animate-pulse ml-0.5" />
@@ -2205,7 +2205,7 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
           honest-mid-turn-queue-surface. */}
       {pendingSteering && pendingSteering.length > 0 && pendingSteering.map((steerText, idx) => (
         <div key={`pending-steer-${idx}-${steerText.slice(0, 16)}`} data-testid="pending-steer-card" className="mt-4 mb-4 flex justify-end chat-cv-skip">
-          <div className={`relative bg-blue-500/10 border border-blue-500/20 border-l-2 border-l-blue-400 rounded-xl shadow-md px-4 py-2 ${bubbleMax}`}>
+          <div className={`conversation-user-message relative bg-blue-500/10 border border-blue-500/20 border-l-2 border-l-blue-400 rounded-xl shadow-md px-4 py-2 ${bubbleMax}`}>
             <div className="flex items-center gap-1.5 mb-1 text-[10px] uppercase tracking-wider text-blue-400/80 font-medium">
               <Icon path={mdiLoading} size={0.45} className="animate-spin" />
               {i18nT("session.steering", undefined, "Steering")}
@@ -2231,7 +2231,7 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
           See change: optimistic-prompt-progress. */}
       {state.pendingPrompt && (
         <div data-testid="pending-prompt-card" data-status={state.pendingPrompt.status} className="mt-4 mb-4 flex justify-end">
-          <div className={`bg-blue-500/10 border border-blue-500/20 border-l-2 border-l-blue-400 rounded-xl shadow-md px-4 py-2 ${bubbleMax} ${state.pendingPrompt.status === "sending" ? "opacity-60 prompt-sending-fx prompt-edge-pulse" : ""}`}>
+          <div className={`conversation-user-message bg-blue-500/10 border border-blue-500/20 border-l-2 border-l-blue-400 rounded-xl shadow-md px-4 py-2 ${bubbleMax} ${state.pendingPrompt.status === "sending" ? "opacity-60 prompt-sending-fx prompt-edge-pulse" : ""}`}>
             {state.pendingPrompt.images && state.pendingPrompt.images.length > 0 && (
               <ImageAttachments images={state.pendingPrompt.images} sessionId={sessionId} />
             )}

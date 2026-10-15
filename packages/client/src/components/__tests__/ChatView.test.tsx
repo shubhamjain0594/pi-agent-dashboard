@@ -49,6 +49,27 @@ function stateWithToolMessage(overrides: Partial<ChatMessage> = {}) {
 }
 
 describe("ChatView", () => {
+  it("gives user and assistant turns distinct conversation surfaces without losing actions", () => {
+    const state = stateWithMessages([{ id: "user", role: "user", content: "Review this change" }, { id: "assistant", role: "assistant", content: "Here is the review." }]);
+    const { container } = render(<ThemeProvider><ChatView state={state} toolContext={defaultToolContext} /></ThemeProvider>);
+    expect(container.querySelector(".conversation-transcript")).not.toBeNull();
+    expect(container.querySelector(".conversation-user-message")?.textContent).toContain("Review this change");
+    expect(container.querySelector(".conversation-assistant-message")?.textContent).toContain("Here is the review.");
+    expect(container.querySelectorAll(".conversation-message-actions")).toHaveLength(2);
+    expect(container.querySelectorAll('button[title="Copy as Markdown"]')).toHaveLength(2);
+  });
+
+  it("keeps desktop live-tool details collapsed but allows explicitly opening them", () => {
+    const state = stateWithToolMessage({ toolStatus: "running" });
+    const { container } = render(<ThemeProvider><ChatView state={state} toolContext={defaultToolContext} /></ThemeProvider>);
+    const header = container.querySelector('[data-testid="tool-burst-header"]')!;
+    expect(header.getAttribute("aria-expanded")).toBe("false");
+    expect(container.querySelector('[data-testid="tool-burst-body"]')).toBeNull();
+    fireEvent.click(header);
+    expect(header.getAttribute("aria-expanded")).toBe("true");
+    expect(container.querySelector('[data-testid="tool-burst-body"]')).not.toBeNull();
+  });
+
   it("does not render the display-prefs View menu (relocated to the StatusBar)", () => {
     // The ⚙ View trigger moved out of ChatView into the composer StatusBar.
     // Guards against a duplicate ChatViewMenu re-appearing here. See change:

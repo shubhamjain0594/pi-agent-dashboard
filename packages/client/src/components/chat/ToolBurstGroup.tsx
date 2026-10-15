@@ -49,6 +49,8 @@ import { ToolCallStep } from "./ToolCallStep.js";
 import { type StopController, ToolStopControl, useToolStopState } from "./ToolStopControl.js";
 
 interface Props {
+  /** Conversation-first layout: keep live tool details behind their summary. */
+  compact?: boolean;
   burst: ToolBurstGroupData;
   toolContext: ToolContext;
   /** Session-scoped abort; enables the shared burst stop control. See change: fix-chat-burst-tool-stop. */
@@ -138,6 +140,7 @@ function GroupFrame({
       <button
         type="button"
         onClick={onToggle}
+        aria-expanded={expanded}
         className={`flex-1 min-w-0 flex items-center gap-1.5 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] text-left rounded ${motionClass} ${isMobile ? "min-h-[44px] py-2" : ""}`}
         data-testid="tool-burst-header"
       >
@@ -159,7 +162,7 @@ function GroupFrame({
   );
 }
 
-export function ToolBurstGroup({ burst, toolContext, onAbort, onForceKill }: Props) {
+export function ToolBurstGroup({ burst, toolContext, onAbort, onForceKill, compact = false }: Props) {
   const prefs = useDisplayPrefs();
   const isMobile = useMobile();
 
@@ -176,7 +179,7 @@ export function ToolBurstGroup({ burst, toolContext, onAbort, onForceKill }: Pro
   // Pref only changes the body's default open state; the live header keys off
   // isRunning, not expanded. Manual override always wins. Mobile never
   // auto-expands a running group.
-  const autoOpen = prefs.toolGroupDefaultCollapsed || isMobile ? false : isRunning;
+  const autoOpen = prefs.toolGroupDefaultCollapsed || isMobile || compact ? false : isRunning;
   const expanded = override ?? autoOpen;
   // One stop state per burst, shared by header + running rows. Called before
   // the vanish early-return (rules of hooks). See change: fix-chat-burst-tool-stop.

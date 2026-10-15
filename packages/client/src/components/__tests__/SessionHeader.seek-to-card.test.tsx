@@ -35,6 +35,18 @@ async function loadHeader(mobile: boolean) {
 }
 
 describe("SessionHeader Seek-to-card button", () => {
+  it("keeps secondary actions in an accessible disclosure", async () => {
+    const SessionHeader = await loadHeader(false);
+    render(<SessionHeader session={makeSession()} state={createInitialState()} onSeekToCard={() => {}} />);
+    const seek = screen.getByTestId("session-header-seek-card");
+    const details = seek.closest("details")!;
+    expect(details.open).toBe(false);
+    const summary = details.querySelector("summary")!;
+    expect(summary.getAttribute("aria-label")).toBe("More session actions");
+    // Native details owns keyboard activation; content remains mounted for its callbacks.
+    details.open = true;
+    expect(details.contains(seek)).toBe(true);
+  });
   it("renders the seek button on desktop when onSeekToCard is provided", async () => {
     const SessionHeader = await loadHeader(false);
     render(

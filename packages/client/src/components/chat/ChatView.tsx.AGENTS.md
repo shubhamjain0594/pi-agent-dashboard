@@ -1,5 +1,7 @@
 # ChatView.tsx — index
 
+Desktop conversation classes distinguish user/assistant/live-tail surfaces and message action rows. Desktop passes `compact` to ToolBurstGroup; summaries remain visible while detail bodies default closed. Native row measurement, scroll anchoring and copy handlers are unchanged. Appearance lives in `styles/conversation.css`, scoped under DesktopWorkbench.
+
 `msg.view` rows render as `<PreviewCard target={msg.view}>` (right-aligned, `bubbleMax` width) BEFORE role-based branching — default user/agent bubble suppressed. See change: render-file-previews.
 
 Mounts `<ChatViewMenu sessionId={...}>` in toolbar.

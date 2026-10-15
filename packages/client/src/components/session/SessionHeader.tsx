@@ -424,7 +424,7 @@ export function SessionHeader({ session, state, onRename, showBack, onBack, mobi
 
   // Desktop: full header
   return (
-    <div className="px-4 py-2 border-b border-[var(--border-primary)] flex items-center gap-4 text-sm">
+    <div className="conversation-session-header px-4 py-2 border-b border-[var(--border-primary)] flex items-center gap-4 text-sm">
       {showBack && onBack && (
         <button
           onClick={onBack}
@@ -443,7 +443,7 @@ export function SessionHeader({ session, state, onRename, showBack, onBack, mobi
           className="font-medium"
         />
       ) : (
-        <span className="font-medium flex items-center gap-1">
+        <span className="conversation-session-name font-medium flex items-center gap-1">
           <span
             onDoubleClick={() => canRename && setIsRenaming(true)}
             className={canRename ? "cursor-pointer" : ""}
@@ -466,6 +466,12 @@ export function SessionHeader({ session, state, onRename, showBack, onBack, mobi
           dropped from the header (both already render on the session card); the
           pi version segment below is kept as the only per-session pi surface. */}
       <LayoutModeSwitch />
+      {session.piBelowFloor ? <PiBelowFloorWarning session={session} /> : null}
+      <YoloSessionIndicator cwd={session.cwd} />
+      <VaultBindingsChip sessionId={session.id} />
+      <details className="conversation-header-more">
+      <summary aria-label={i18nT("session.moreActions", undefined, "More session actions")} title={i18nT("session.moreActions", undefined, "More session actions")}>···</summary>
+      <div className="conversation-header-more-content">
       {onSeekToCard && (
         <button
           type="button"
@@ -484,14 +490,11 @@ export function SessionHeader({ session, state, onRename, showBack, onBack, mobi
         <span className="text-[var(--text-tertiary)]" title="pi version">pi {session.piVersion}</span>
       )}
       {/* See change: update-pi-core-1-0-adopt-apis. */}
-      {session.piBelowFloor ? <PiBelowFloorWarning session={session} /> : null}
       {/* Extension UI System (Phase 2): footer-segment decorator slot. */}
       {/* See change: add-extension-ui-decorations. */}
       <FooterSegmentSlot session={session} />
       {/* Active-YOLO indicator when this session's cwd is in scope. See change: add-access-grant-dialog (8b.7). */}
-      <YoloSessionIndicator cwd={session.cwd} />
       {/* Vault key state for this session (hidden without bindings). See change: add-credential-vault. */}
-      <VaultBindingsChip sessionId={session.id} />
       {/* Editable user-tag strip + read-only phase chip (D5: detail-header
           primary). See change: add-session-tags. */}
       {onSetTags && (
@@ -559,6 +562,8 @@ export function SessionHeader({ session, state, onRename, showBack, onBack, mobi
           <Icon path={mdiViewGridOutline} size={0.4} className="inline mr-0.5" />{i18nT("packages.modules", undefined, "Modules")}
         </button>
       )}
+      </div>
+      </details>
       <ChangedFilesChip hasFileChanges={hasFileChanges} onOpenDiffView={onOpenDiffView} />
       {isEnded ? (
         <>

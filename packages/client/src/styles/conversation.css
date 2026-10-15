@@ -1,0 +1,129 @@
+/* Conversation-first desktop layout, using Cursor's restrained reading hierarchy.
+   Keep the real transcript scrollport and virtual row measurements intact. */
+.desktop-workbench {
+  --conversation-width: 800px;
+  --conversation-gutter: clamp(20px, 2.5vw, 32px);
+}
+.desktop-workbench summary:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
+.desktop-workbench .conversation-session { min-height: 0; background: var(--bg-secondary); container-type: inline-size; container-name: conversation; }
+.desktop-workbench .conversation-transcript {
+  padding: 20px max(var(--conversation-gutter), calc((100% - var(--conversation-width)) / 2)) 32px;
+  background: var(--bg-secondary);
+  scrollbar-gutter: stable;
+}
+.desktop-workbench .conversation-user-message {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  box-shadow: none;
+  padding: 12px 16px;
+  color: var(--text-primary);
+}
+.desktop-workbench .conversation-user-message .conversation-message-actions { position: absolute; bottom: -28px; left: 8px; right: 8px; margin: 0; }
+.desktop-workbench .conversation-assistant-message {
+  width: 100%;
+  max-width: 100%;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0 12px;
+  margin: 0;
+}
+.desktop-workbench .conversation-assistant-turn { margin: 12px 0 24px; }
+.desktop-workbench .conversation-transcript .markdown-content {
+  font-family: var(--workbench-font-sans);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.desktop-workbench .conversation-transcript .markdown-content p { margin: 0 0 14px; line-height: inherit; }
+.desktop-workbench .conversation-transcript .markdown-content p:last-child { margin-bottom: 0; }
+.desktop-workbench .conversation-transcript .markdown-content h1,
+.desktop-workbench .conversation-transcript .markdown-content h2,
+.desktop-workbench .conversation-transcript .markdown-content h3 { font-size: 16px; font-weight: 600; line-height: 1.5; margin: 20px 0 8px; letter-spacing: -0.015em; }
+.desktop-workbench .conversation-transcript .markdown-content ul,
+.desktop-workbench .conversation-transcript .markdown-content ol { margin: 8px 0 16px; padding-left: 24px; }
+.desktop-workbench .conversation-transcript .markdown-content li { margin: 4px 0; line-height: 1.7; }
+.desktop-workbench .conversation-transcript .markdown-content strong { font-weight: 600; }
+.desktop-workbench .conversation-transcript .markdown-content pre { max-width: 100%; font-size: 12px; line-height: 1.6; border-radius: 6px; }
+.desktop-workbench .conversation-transcript .markdown-content :not(pre) > code { font-size: 0.86em; padding: 2px 4px; border-radius: 4px; background: var(--bg-surface); }
+.desktop-workbench .conversation-message-actions {
+  min-height: 26px;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  justify-content: flex-start;
+  gap: 8px;
+  opacity: 0;
+}
+.desktop-workbench .conversation-message:hover > .conversation-message-actions,
+.desktop-workbench .conversation-message:focus-within > .conversation-message-actions { opacity: 1; }
+.desktop-workbench .conversation-message-time { order: 1; margin: 0 0 0 auto; font-size: 11px; }
+.desktop-workbench .conversation-message-actions button { min-width: 28px; min-height: 26px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; }
+.desktop-workbench .conversation-message-actions button:hover { background: var(--bg-hover); }
+.desktop-workbench .conversation-streaming::before,
+.desktop-workbench .conversation-streaming::after { display: none; }
+.desktop-workbench .conversation-transcript [data-testid="tool-burst-group"] { margin: 8px 12px 16px; border: 0; padding: 0; }
+.desktop-workbench .conversation-transcript [data-testid="tool-burst-header"] { min-height: 32px; padding: 4px 0; font-size: 12px; gap: 8px; color: var(--text-secondary); background: transparent; }
+.desktop-workbench .conversation-transcript [data-testid="tool-burst-body"] { margin-top: 8px; border-left: 1px solid var(--border-primary); padding-left: 12px; }
+.desktop-workbench .conversation-transcript [data-testid="reasoning-block"] { margin: 8px 12px 12px; padding: 0; border: 0; }
+.desktop-workbench .conversation-transcript [data-testid="reasoning-block"] > button { min-height: 32px; font-size: 12px; color: var(--text-secondary); }
+.desktop-workbench .conversation-transcript [data-testid="reasoning-block"] > button > span:first-child { color: var(--text-tertiary); }
+.desktop-workbench .conversation-transcript [data-testid="reasoning-body"] { background: transparent; box-shadow: none; border: 0; border-left: 1px solid var(--border-secondary); border-radius: 0; padding: 8px 16px; }
+.desktop-workbench .conversation-transcript [data-testid="reasoning-body"] .markdown-content { font-size: 13px; color: var(--text-secondary); }
+
+/* Keep the chart available without reserving a whole strip of the viewport. */
+.desktop-workbench .conversation-usage { flex-shrink: 0; border-bottom: 1px solid var(--border-primary); background: var(--bg-secondary); }
+.desktop-workbench .conversation-usage > summary { display: flex; align-items: center; gap: 8px; padding: 6px 20px; cursor: pointer; font-size: 11px; color: var(--text-tertiary); list-style: none; }
+.desktop-workbench .conversation-usage > summary::before { content: "›"; font-size: 14px; }
+.desktop-workbench .conversation-usage[open] > summary::before { transform: rotate(90deg); }
+.desktop-workbench .conversation-usage > summary > span { margin-left: auto; font-variant-numeric: tabular-nums; }
+.conversation-context-details > summary { display: none; }
+.desktop-workbench .conversation-context-details { margin: 0; padding: 0 max(var(--conversation-gutter), calc((100% - var(--conversation-width)) / 2)); background: var(--bg-secondary); }
+.desktop-workbench .conversation-context-details > summary { display: flex; padding: 6px 0; cursor: pointer; font-size: 11px; color: var(--text-tertiary); list-style: none; gap: 8px; }
+.desktop-workbench .conversation-context-details > summary::before { content: "+"; }
+.desktop-workbench .conversation-context-details[open] > summary::before { content: "−"; }
+.desktop-workbench .conversation-context-controls { padding: 8px 0; gap: 8px 12px; }
+
+.desktop-workbench .conversation-session-header { min-height: 48px; padding: 8px 20px; gap: 12px; flex-shrink: 0; flex-wrap: wrap; background: var(--bg-secondary); }
+.desktop-workbench .conversation-session-name { min-width: 0; flex: 1; font-size: 13px; }
+.desktop-workbench .conversation-session-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desktop-workbench .conversation-session-header button { box-shadow: none; font-size: 11px; }
+.desktop-workbench .conversation-session-header > span:last-of-type { flex-shrink: 0; font-size: 11px; color: var(--text-tertiary); }
+.desktop-workbench [data-testid="layout-mode-switch"] { flex-shrink: 0; border: 0; padding: 2px; background: var(--bg-tertiary); border-radius: 6px; }
+.desktop-workbench [data-testid="layout-mode-switch"] button { padding: 5px 8px; color: var(--text-tertiary); background: transparent; }
+.desktop-workbench [data-testid="layout-mode-switch"] button[aria-checked="true"] { color: var(--text-primary); background: var(--bg-surface); border-radius: 4px; }
+.conversation-header-more { position: relative; }
+.conversation-header-more > summary { list-style: none; cursor: pointer; min-width: 28px; min-height: 28px; display: grid; place-items: center; font-size: 20px; color: var(--text-secondary); }
+.conversation-header-more > summary::-webkit-details-marker,
+.conversation-usage > summary::-webkit-details-marker,
+.conversation-context-details > summary::-webkit-details-marker { display: none; }
+.conversation-header-more-content { position: absolute; top: calc(100% + 8px); right: 0; z-index: var(--z-popover); width: 300px; max-height: 60vh; overflow-y: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border-secondary); border-radius: 8px; box-shadow: 0 8px 24px var(--bg-overlay); }
+.desktop-workbench .conversation-header-more { order: 1; }
+@container conversation (max-width: 380px) {
+  .desktop-workbench .conversation-session-header { padding: 8px 12px; gap: 8px; }
+  .desktop-workbench .conversation-session-name { flex-basis: calc(100% - 40px); }
+  .desktop-workbench .conversation-header-more[open] { flex: 1 1 100%; order: 2; }
+  .desktop-workbench .conversation-header-more[open] > summary { width: 28px; margin-left: auto; }
+  .desktop-workbench .conversation-header-more-content { position: static; width: 100%; max-height: 35vh; box-shadow: none; }
+}
+
+/* Match the transcript column instead of stretching an input edge-to-edge. */
+.desktop-workbench .conversation-session [data-testid="composer-root"] { border-top: 0; background: var(--bg-secondary); padding: 8px max(var(--conversation-gutter), calc((100% - var(--conversation-width)) / 2)) 16px; }
+.desktop-workbench .conversation-session [data-testid="composer-card"] { border-color: var(--border-secondary); border-radius: 12px; background: var(--bg-tertiary); padding: 10px 12px 8px; box-shadow: none; }
+.desktop-workbench .conversation-session [data-testid="composer-card"]:focus-within { border-color: var(--text-tertiary); }
+.desktop-workbench .conversation-session [data-testid="composer-card"] textarea { font-size: 14px; line-height: 1.6; }
+.desktop-workbench .conversation-session [data-testid="composer-card"] textarea::placeholder { color: var(--text-tertiary); }
+.desktop-workbench .conversation-session [data-testid="composer-settings-row"] { gap: 8px; }
+.desktop-workbench .conversation-session [data-testid="send-button"] { background: var(--text-primary); color: var(--bg-primary); border-radius: 8px; }
+.desktop-workbench .conversation-session [data-testid="composer-footer"] { font-size: 11px; color: var(--text-tertiary); }
+.desktop-workbench .conversation-session [data-testid="scroll-to-top"],
+.desktop-workbench .conversation-session [data-testid="scroll-to-bottom"] { padding: 6px; opacity: .85; box-shadow: none; }
+@media (hover: none) {
+  .desktop-workbench .conversation-message-actions { opacity: 1; }
+}
