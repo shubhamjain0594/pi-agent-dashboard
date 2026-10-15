@@ -11,6 +11,7 @@ import {
 import Icon from "@mdi/react";
 import { type ReactNode, useState } from "react";
 import { useI18n } from "../../lib/i18n/i18n.js";
+import { selectBadgeTimestamp } from "../../lib/session/session-card-time.js";
 import { getSessionDisplayName } from "../../lib/session/session-display-name.js";
 import {
   folderName,
@@ -54,7 +55,10 @@ export function WorkspaceExplorer({
   };
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const visibleSessions = sessions.filter((session) => !session.hidden);
+  const [allEnded, setAllEnded] = useState<Set<string>>(new Set());
+  const visibleSessions = sessions
+    .filter((session) => !session.hidden)
+    .sort((a, b) => selectBadgeTimestamp(b) - selectBadgeTimestamp(a));
   const projects = [
     ...new Set([...folders, ...visibleSessions.map((session) => session.cwd)]),
   ];
@@ -144,6 +148,9 @@ export function WorkspaceExplorer({
                 const ended = rows.filter(
                   (session) => session.status === "ended",
                 );
+                const showAllEnded =
+                  Boolean(needle) || allEnded.has(cwd) ||
+                  ended.slice(10).some((session) => session.id === selectedId);
                 const expanded = Boolean(needle) || !collapsed.has(cwd);
                 const renderRow = (session: DashboardSession) => (
                   <ExplorerSessionRow
@@ -219,6 +226,16 @@ export function WorkspaceExplorer({
                         {ended.length > 0 && (
                           <details
                             className="workspace-explorer-ended"
+                            onToggle={(event) => {
+                              if (!event.currentTarget.open) {
+                                setAllEnded((previous) => {
+                                  if (!previous.has(cwd)) return previous;
+                                  const next = new Set(previous);
+                                  next.delete(cwd);
+                                  return next;
+                                });
+                              }
+                            }}
                             open={
                               needle ||
                               ended.some((session) => session.id === selectedId)
@@ -230,7 +247,20 @@ export function WorkspaceExplorer({
                               {t("common.ended", undefined, "Ended")} ·{" "}
                               {ended.length}
                             </summary>
-                            {ended.map(renderRow)}
+                            {(showAllEnded ? ended : ended.slice(0, 10)).map(
+                              renderRow,
+                            )}
+                            {!showAllEnded && ended.length > 10 && (
+                              <button
+                                type="button"
+                                className="workspace-explorer-start"
+                                onClick={() =>
+                                  setAllEnded((previous) => new Set([...previous, cwd]))
+                                }
+                              >
+                                {t("workbench.showAllEnded", undefined, "Show all")} · {ended.length}
+                              </button>
+                            )}
                           </details>
                         )}
                       </>

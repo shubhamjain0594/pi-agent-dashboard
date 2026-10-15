@@ -33,7 +33,109 @@ function setup() {
   return { onSelect, onSpawnSession, onOpenFolder };
 }
 
+function renderSessions(sessions: DashboardSession[], selectedId?: string) {
+  return render(
+    <WorkspaceExplorer
+      sessions={sessions}
+      folders={["/work/app"]}
+      selectedId={selectedId}
+      onSelect={vi.fn()}
+      onOpenFolder={vi.fn()}
+      onSpawnSession={vi.fn()}
+      onAddFolder={vi.fn()}
+    >
+      <div>Full session controls</div>
+    </WorkspaceExplorer>,
+  );
+}
+
+function endedSessions() {
+  return Array.from(
+    { length: 15 },
+    (_, index) =>
+      ({
+        id: `ended-${index}`,
+        name: `Past session ${index}`,
+        cwd: "/work/app",
+        status: "ended",
+        source: "dashboard",
+        startedAt: index,
+        endedAt: index + 100,
+      }) as DashboardSession,
+  );
+}
+
 describe("WorkspaceExplorer", () => {
+  it("sorts sessions by latest activity without mutating the supplied list", () => {
+    const sessions = [
+      { id: "old", name: "Old", startedAt: 1 },
+      { id: "new", name: "New", startedAt: 10 },
+      { id: "active", name: "Active", startedAt: 2, lastActivityAt: 20 },
+    ].map(
+      (session) =>
+        ({
+          cwd: "/work/app",
+          status: "idle",
+          source: "dashboard",
+          ...session,
+        }) as DashboardSession,
+    );
+    const { container } = renderSessions(sessions);
+    expect(
+      Array.from(container.querySelectorAll(".workspace-explorer-session")).map(
+        (row) => row.getAttribute("title")?.split(" — ")[0],
+      ),
+    ).toEqual(["Active", "New", "Old"]);
+    expect(sessions.map((session) => session.id)).toEqual([
+      "old",
+      "new",
+      "active",
+    ]);
+  });
+
+  it("previews the latest ten ended sessions and reveals all on demand", () => {
+    const { container } = renderSessions(endedSessions());
+    const details = container.querySelector("details")!;
+    details.open = true;
+    fireEvent(details, new Event("toggle"));
+    expect(
+      details.querySelectorAll(".workspace-explorer-session"),
+    ).toHaveLength(10);
+    expect(
+      details
+        .querySelector(".workspace-explorer-session")
+        ?.getAttribute("title"),
+    ).toContain("Past session 14");
+    fireEvent.click(screen.getByRole("button", { name: /Show all/ }));
+    expect(
+      details.querySelectorAll(".workspace-explorer-session"),
+    ).toHaveLength(15);
+    details.open = false;
+    fireEvent(details, new Event("toggle"));
+    expect(
+      details.querySelectorAll(".workspace-explorer-session"),
+    ).toHaveLength(10);
+  });
+
+  it("finds older ended sessions through search and keeps a selected older session visible", () => {
+    const { container } = renderSessions(endedSessions(), "ended-0");
+    expect(
+      container.querySelector('[aria-current="page"]')?.textContent,
+    ).toContain("Past session 0");
+    fireEvent.change(screen.getByRole("searchbox"), {
+      target: { value: "Past session" },
+    });
+    expect(
+      container.querySelectorAll(".workspace-explorer-session"),
+    ).toHaveLength(15);
+    fireEvent.change(screen.getByRole("searchbox"), {
+      target: { value: "Past session 0" },
+    });
+    expect(
+      container.querySelectorAll(".workspace-explorer-session"),
+    ).toHaveLength(1);
+  });
+
   it("offers compact navigation, project opening and session creation", () => {
     const { onSelect, onSpawnSession, onOpenFolder } = setup();
     fireEvent.click(screen.getByRole("button", { name: "Build navigation" }));
