@@ -3,7 +3,7 @@
  */
 
 import type { SessionDiffResponse } from "@blackbelt-technology/pi-dashboard-shared/diff-types.js";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getApiBase } from "../lib/api/api-context.js";
 import { t } from "../lib/i18n/i18n.js";
 import { logRejection } from "../lib/report-error.js";
@@ -16,26 +16,33 @@ export interface UseSessionDiffResult {
 }
 
 export function useSessionDiff(sessionId: string | undefined): UseSessionDiffResult {
-  const [data, setData] = useState<SessionDiffResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<{ sessionId: string | undefined; data: SessionDiffResponse | null; isLoading: boolean; error: string | null }>({ sessionId, data: null, isLoading: false, error: null });
+  const request = useRef(0);
+  const controller = useRef<AbortController | null>(null);
+  const currentSession = useRef(sessionId);
+  currentSession.current = sessionId;
 
   const fetchDiff = useCallback(async () => {
     if (!sessionId) return;
-    setIsLoading(true);
-    setError(null);
+    controller.current?.abort();
+    const abort = new AbortController();
+    controller.current = abort;
+    const revision = ++request.current;
+    const isCurrent = () => !abort.signal.aborted && request.current === revision && currentSession.current === sessionId;
+    setState(previous => ({ sessionId, data: previous.sessionId === sessionId ? previous.data : null, isLoading: true, error: null }));
     try {
-      const res = await fetch(`${getApiBase()}/api/session-diff?sessionId=${encodeURIComponent(sessionId)}`);
+      const res = await fetch(`${getApiBase()}/api/session-diff?sessionId=${encodeURIComponent(sessionId)}`, { signal: abort.signal });
+      if (res.ok === false) throw new Error(t("diff.httpFailed", { status: res.status }, `Could not load changes (HTTP ${res.status}).`));
       const body = await res.json();
-      if (body.success) {
-        setData(body.data as SessionDiffResponse);
+      if (!isCurrent()) return;
+      if (body.success && Array.isArray(body.data?.files)) {
+        setState({ sessionId, data: body.data as SessionDiffResponse, isLoading: false, error: null });
       } else {
-        setError(body.error ?? t("common.unknownError", undefined, "Unknown error"));
+        throw new Error(typeof body.error === "string" ? body.error : t("diff.fetchFailed", undefined, "Failed to fetch diff data"));
       }
-    } catch (err: any) {
-      setError(err.message ?? t("diff.fetchFailed", undefined, "Failed to fetch diff data"));
-    } finally {
-      setIsLoading(false);
+    } catch (err: unknown) {
+      if (!isCurrent()) return;
+      setState(previous => ({ sessionId, data: previous.sessionId === sessionId ? previous.data : null, isLoading: false, error: err instanceof Error ? err.message : t("diff.fetchFailed", undefined, "Failed to fetch diff data") }));
     }
   }, [sessionId]);
 
@@ -44,7 +51,10 @@ export function useSessionDiff(sessionId: string | undefined): UseSessionDiffRes
     // Effect callbacks must return void/cleanup, so the promise is discarded
     // with a stated handler. See change: cleanup-client-plugin-promises.
     void fetchDiff().catch(logRejection("useSessionDiff.fetch"));
+    return () => { request.current++; controller.current?.abort(); };
   }, [fetchDiff]);
 
-  return { data, isLoading, error, refresh: fetchDiff };
+  return state.sessionId === sessionId
+    ? { data: state.data, isLoading: state.isLoading, error: state.error, refresh: fetchDiff }
+    : { data: null, isLoading: Boolean(sessionId), error: null, refresh: fetchDiff };
 }

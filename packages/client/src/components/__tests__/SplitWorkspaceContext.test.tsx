@@ -19,6 +19,29 @@ function wrapper(sessionId = "s1", cwd = "/proj") {
 describe("SplitWorkspaceProvider / openInSplit", () => {
   beforeEach(() => localStorage.clear());
 
+  it("reveals tasks and changes without losing open file tabs", () => {
+    const { result } = renderHook(() => useSplitWorkspace(), { wrapper: wrapper("review") });
+    act(() => result.current.openInSplit("src/file.ts"));
+    act(() => result.current.openTasks?.());
+    expect(result.current.workPanel).toBe("tasks");
+    expect(result.current.split.mode).toBe("split");
+    expect(result.current.paneState.openFiles[0].path).toBe("src/file.ts");
+    act(() => result.current.openChanges());
+    expect(result.current.workPanel).toBe("changes");
+    act(() => result.current.openDiffTab("src/file.ts"));
+    expect(result.current.workPanel).toBe("editor");
+    expect(result.current.paneState.openFiles.map(file => file.path)).toEqual(["src/file.ts", "diff:src/file.ts"]);
+  });
+
+  it("does not replace an open task view with a background agent file-open", () => {
+    const { result } = renderHook(() => useSplitWorkspace(), { wrapper: wrapper("task-reading") });
+    act(() => result.current.openTasks?.());
+    act(() => result.current.openInSplit("background.ts", undefined, undefined, { background: true }));
+    expect(result.current.workPanel).toBe("tasks");
+    act(() => result.current.openInSplit("clicked.ts"));
+    expect(result.current.workPanel).toBe("editor");
+  });
+
   it("openInSplit opens the split when closed and opens the file as active tab", () => {
     const { result } = renderHook(() => useSplitWorkspace(), { wrapper: wrapper() });
     expect(result.current.split.mode).toBe("closed");

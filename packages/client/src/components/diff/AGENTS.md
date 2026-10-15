@@ -4,6 +4,7 @@ Files in this directory. One row per source file. See change: fold-oversized-age
 
 | File | Purpose |
 |------|---------|
+| `SessionChangesPanel.tsx` | Review-first list of session-attributed files with counts and existing diff-tab opening. Other working-tree changes stay separate; Git-baseline/shared-file limits explicit. Read-only; refresh uses SessionDiffContext. |
 | `ChangeSummaryBlock.tsx` | Per-turn change-summary block in chat stream. Collapses to `N files · +X −Y`. Gated on `displayPrefs.changeSummaryTable`. Deltas via `buildTurnSummaries`. See change: add-change-summary-table. |
 | `DiffFilePreview.tsx` | Inline file-preview panel for a diff row (rendered by `DiffPanel`): fetches + renders the file via `CappedViewer`. See change: open-view-command-in-editor-pane, fold-oversized-agents-directories. Discharges `fileKind().viewer` to `OpenPathViewer` via `isPseudoTabViewer` (guard, not a cast) before `CappedViewer`. See change: cleanup-import-cycles. |
 | `DiffFileTree.tsx` | Two-level file tree of changed files. Exports `DiffFileTree`, `FileSelection`. → see `DiffFileTree.tsx.AGENTS.md` |

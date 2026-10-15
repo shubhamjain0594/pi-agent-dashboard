@@ -30,6 +30,7 @@ import {
 import { type SplitMode, type SplitOrientation, type SplitState, useSplitState } from "../../lib/layout/split-state.js";
 import { type TerminalPaneTabs, useTerminalPaneTabs } from "../../lib/layout/use-terminal-pane-tabs.js";
 import { saveTreeVisible } from "../../lib/util/tree-visible.js";
+import type { SessionTodoSnapshot } from "../../lib/session/session-todos.js";
 import { isPseudoTabViewer } from "../editor-pane/viewer-kinds.js";
 
 export interface PendingScroll {
@@ -38,6 +39,10 @@ export interface PendingScroll {
 }
 
 export interface SplitWorkspaceContextValue {
+  workPanel?: "editor" | "changes" | "tasks";
+  setWorkPanel?: (panel: "editor" | "changes" | "tasks") => void;
+  todoSnapshot?: SessionTodoSnapshot | null;
+  openTasks?: () => void;
   sessionId: string;
   cwd: string;
   split: SplitState;
@@ -119,6 +124,7 @@ const absOf = (cwd: string, rel: string): string => (rel ? `${cwd}/${rel}` : cwd
 const EMPTY_TERMINALS: TerminalSession[] = [];
 
 interface ProviderProps {
+  todoSnapshot?: SessionTodoSnapshot | null;
   sessionId: string;
   cwd: string;
   /** Responsive orientation (`h` desktop / `v` stacked); mirrored into persisted state. */
@@ -158,6 +164,7 @@ interface ProviderProps {
 export function SplitWorkspaceProvider({
   sessionId,
   cwd,
+  todoSnapshot = null,
   orientation,
   fileResults = null,
   onFilenameSearch,
@@ -178,7 +185,10 @@ export function SplitWorkspaceProvider({
 }: ProviderProps) {
   const [split, updateSplit] = useSplitState(sessionId, defaultMode);
   const [paneState, dispatch] = useEditorPaneState(sessionId);
-  const ensurePaneOpen = useCallback(() => updateSplit({ mode: "split" }), [updateSplit]);
+  const [panelState, setPanelState] = useState<{ sessionId: string; panel: "editor" | "changes" | "tasks" }>({ sessionId, panel: "editor" });
+  const workPanel = panelState.sessionId === sessionId ? panelState.panel : "editor";
+  const setWorkPanel = useCallback((panel: "editor" | "changes" | "tasks") => setPanelState({ sessionId, panel }), [sessionId]);
+  const ensurePaneOpen = useCallback(() => { setWorkPanel("editor"); updateSplit({ mode: "split" }); }, [updateSplit, setWorkPanel]);
   const terminal = useTerminalPaneTabs({
     cwd,
     terminals: cwdTerminals ?? EMPTY_TERMINALS,
@@ -227,6 +237,7 @@ export function SplitWorkspaceProvider({
       // Background only applies when the editor is already shown; from `closed`
       // there is no reading context to protect → reveal + activate.
       const background = opts?.background === true && split.mode !== "closed";
+      if (!background) setWorkPanel("editor");
       dispatch({
         type: "openFile",
         path: relPath,
@@ -240,7 +251,7 @@ export function SplitWorkspaceProvider({
       // user later opens it — so only foreground opens set pendingScroll.
       if (!background && line && line > 0) setPendingScroll({ path: relPath, line });
     },
-    [cwd, dispatch, ensureRevealed, split.mode],
+    [cwd, dispatch, ensureRevealed, split.mode, setWorkPanel],
   );
 
   const openLiveTarget = useCallback(
@@ -249,10 +260,11 @@ export function SplitWorkspaceProvider({
       // never yield `live-server`. The `openFile` reducer is idempotent by
       // path, so the same URL reuses its tab.
       const background = opts?.background === true && split.mode !== "closed";
+      if (!background) setWorkPanel("editor");
       dispatch({ type: "openFile", path: `live:${url}`, viewer: "live-server", activate: !background });
       ensureRevealed();
     },
-    [dispatch, ensureRevealed, split.mode],
+    [dispatch, ensureRevealed, split.mode, setWorkPanel],
   );
 
   const openUrlTarget = useCallback(
@@ -262,10 +274,11 @@ export function SplitWorkspaceProvider({
       // it. Idempotent by path. See change: auto-canvas (S35).
       if (!url) return;
       const background = opts?.background === true && split.mode !== "closed";
+      if (!background) setWorkPanel("editor");
       dispatch({ type: "openFile", path: `url:${url}`, viewer: "url", activate: !background });
       ensureRevealed();
     },
-    [dispatch, ensureRevealed, split.mode],
+    [dispatch, ensureRevealed, split.mode, setWorkPanel],
   );
 
   // Plugin tabs: claimed-prefix check, then the idempotent-by-path `openFile`
@@ -276,11 +289,12 @@ export function SplitWorkspaceProvider({
   const openPluginTab = useCallback(
     (path: string) => {
       if (!findEditorPaneTabClaim(slotRegistry, path)) return false;
+      setWorkPanel("editor");
       dispatch({ type: "openFile", path, viewer: "plugin" });
       ensureRevealed();
       return true;
     },
-    [slotRegistry, dispatch, ensureRevealed],
+    [slotRegistry, dispatch, ensureRevealed, setWorkPanel],
   );
 
   // Diff tabs open under a virtual `diff:<relPath>` path (mirrors `live:<url>`)
@@ -289,14 +303,16 @@ export function SplitWorkspaceProvider({
   const openDiffTab = useCallback(
     (relPath: string) => {
       if (!relPath) return;
+      setWorkPanel("editor");
       dispatch({ type: "openFile", path: `diff:${relPath}`, viewer: "diff" });
       ensureRevealed();
     },
-    [dispatch, ensureRevealed],
+    [dispatch, ensureRevealed, setWorkPanel],
   );
 
   const [changesRevealSignal, setChangesRevealSignal] = useState(0);
   const openChanges = useCallback(() => {
+    setWorkPanel("changes");
     // Persist tree visibility BEFORE the split opens so a freshly-mounted
     // EditorPane reads it visible (the rail defaults collapsed — change:
     // collapse-files-panel-by-default — and the pane mounts AFTER this bump, so
@@ -306,7 +322,9 @@ export function SplitWorkspaceProvider({
     saveTreeVisible(sessionId, true);
     ensureRevealed();
     setChangesRevealSignal((n) => n + 1);
-  }, [sessionId, ensureRevealed]);
+  }, [sessionId, ensureRevealed, setWorkPanel]);
+
+  const openTasks = useCallback(() => { setWorkPanel("tasks"); ensureRevealed(); }, [setWorkPanel, ensureRevealed]);
 
   const setMode = useCallback((mode: SplitMode) => updateSplit({ mode }), [updateSplit]);
   const consumePendingScroll = useCallback(() => setPendingScroll(null), []);
@@ -344,6 +362,10 @@ export function SplitWorkspaceProvider({
 
   const value = useMemo<SplitWorkspaceContextValue>(
     () => ({
+      workPanel,
+      setWorkPanel,
+      todoSnapshot,
+      openTasks,
       sessionId,
       cwd,
       split,
@@ -368,7 +390,7 @@ export function SplitWorkspaceProvider({
       terminal,
       terminalActivated,
     }),
-    [sessionId, cwd, split, updateSplit, setMode, paneState, dispatch, ensureRevealed, openInSplit, openLiveTarget, openUrlTarget, openPluginTab, openDiffTab, openChanges, changesRevealSignal, pendingScroll, consumePendingScroll, fileResults, filenameSearch, changedFiles, clearChanged, terminal, terminalActivated],
+    [sessionId, cwd, split, updateSplit, setMode, paneState, dispatch, ensureRevealed, openInSplit, openLiveTarget, openUrlTarget, openPluginTab, openDiffTab, openChanges, changesRevealSignal, pendingScroll, consumePendingScroll, fileResults, filenameSearch, changedFiles, clearChanged, terminal, terminalActivated, workPanel, setWorkPanel, todoSnapshot, openTasks],
   );
 
   return <SplitWorkspaceContext.Provider value={value}>{children}</SplitWorkspaceContext.Provider>;

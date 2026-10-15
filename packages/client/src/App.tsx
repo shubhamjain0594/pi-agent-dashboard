@@ -51,6 +51,7 @@ import { LandingPage } from "./components/shell/LandingPage.js";
 import { DesktopWorkbench } from "./components/shell/DesktopWorkbench.js";
 import { WorkspaceOverview } from "./components/shell/WorkspaceOverview.js";
 import { WorkspaceExplorer } from "./components/shell/WorkspaceExplorer.js";
+import { selectSessionTodos } from "./lib/session/session-todos.js";
 import { HamburgerButton, MobileOverlay } from "./components/shell/MobileOverlay.js";
 import { MobileShell } from "./components/shell/MobileShell.js";
 import { ResizableSidebar } from "./components/shell/ResizableSidebar.js";
@@ -1586,7 +1587,8 @@ export default function App() {
     () => extractUserPromptHistory(selectedState.messages),
     [selectedState.messages],
   );
-  // Monotonic edit/write/bash count for the selected session — drives the
+  const sessionTodos = useMemo(() => selectSessionTodos(selectedState.messages), [selectedState.messages]);
+  // Terminal edit/write/bash count for the selected session — drives the
   // shared session-diff refetch (change: add-change-summary-table). Bash is
   // included so tool-created files (converter/image/script output detected via
   // git-status) surface after the command completes, not just Write/Edit.
@@ -1596,7 +1598,7 @@ export default function App() {
       selectedState.messages.reduce(
         (n, m) =>
           n +
-          (m.role === "toolResult" && /^(edit|write|bash)$/i.test(m.toolName ?? "") ? 1 : 0),
+          (m.role === "toolResult" && (m.toolStatus === "complete" || m.toolStatus === "error") && /^(edit|write|bash)$/i.test(m.toolName ?? "") ? 1 : 0),
         0,
       ),
     [selectedState.messages],
@@ -3087,6 +3089,7 @@ export default function App() {
         }>
           <SplitWorkspaceProvider
             sessionId={selectedId ?? ""}
+            todoSnapshot={sessionTodos}
             cwd={selectedSession?.cwd ?? ""}
             orientation={isMobile ? "v" : "h"}
             fileResults={fileResults}

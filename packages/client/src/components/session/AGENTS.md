@@ -4,6 +4,7 @@ Files in this directory. One row per source file. See change: fold-oversized-age
 
 | File | Purpose |
 |------|---------|
+| `SessionTodosPanel.tsx` | Read-only current-session rpiv-todo snapshot display: pending/in-progress/completed groups, unresolved blockers, owner and active form. Missing vs empty snapshots distinct; bounded dependency labels; inspector owns scrolling. |
 | `FileAccessToastHost.tsx` | Own toast tray + `useFileAccessToasts` for the whole app (both layouts); App-level `useToast` tray renders only in the mobile branch. See change: ask-agent-file-access-in-chat. |
 | `VaultBindingsChip.tsx` | Header chip + dialog: this session's vault binding NAMES with a state pill and one-line explanation each (≥ 12 px), project line (or why the vault does not deliver), checkout-confirm callout (`vault-confirm`, trust copy, "Confirm and deliver N keys"), `vault-ungranted` section with `vault-grant-from-session` (repo grant when a repoKey exists, else folder grant), last hub contact, manage link via wouter `navigate`. Shown when bindings or ungranted names exist (`data-pending` when a confirm is due); polls 2.5 s. Tests: `__tests__/VaultBindingsChip.test.tsx`, e2e `vault-session-bindings.spec.ts` (F2, F4). See change: add-credential-vault, retro-ux-credential-vault. |
 | `agent-card-utils.ts` | Re-export shim. Forwards to `@blackbelt-technology/pi-dashboard-client-utils/agent-card-utils`. Symbol moved in change `complete-flows-plugin-migration` (Layer 0). |

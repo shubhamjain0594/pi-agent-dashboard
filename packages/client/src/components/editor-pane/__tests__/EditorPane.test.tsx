@@ -82,6 +82,15 @@ function RevealProbe() {
 }
 
 describe("EditorPane — openChanges reveals the rail (collapse-diff-file-tree F6)", () => {
+  it("switches foreground search shortcuts from Tasks back to the visible editor", () => {
+    renderPane("task-search");
+    fireEvent.click(screen.getByTestId("inspector-tasks"));
+    expect(screen.getByTestId("inspector-tasks").getAttribute("aria-pressed")).toBe("true");
+    fireEvent.keyDown(window, { key: "p", ctrlKey: true });
+    expect(screen.getByTestId("inspector-editor").getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByTestId("editor-search-toggle").getAttribute("aria-pressed")).toBe("true");
+  });
+
   it("reveals the rail on openChanges() without opening a diff tab", () => {
     render(
       <SplitWorkspaceProvider sessionId="s6" cwd="/proj" orientation="h">

@@ -565,6 +565,7 @@ export function SessionHeader({ session, state, onRename, showBack, onBack, mobi
       </div>
       </details>
       <ChangedFilesChip hasFileChanges={hasFileChanges} onOpenDiffView={onOpenDiffView} />
+      <SessionTasksChip />
       {isEnded ? (
         <>
           <button
@@ -640,7 +641,7 @@ function ChangedFilesChip({
   const totalAdditions = diff?.data?.totalAdditions;
   const totalDeletions = diff?.data?.totalDeletions;
 
-  const visible = nFiles > 0 || hasFileChanges;
+  const visible = nFiles > 0 || hasFileChanges || Boolean(ws?.openChanges);
   const activate = ws?.openChanges ?? onOpenDiffView;
   if (!visible || !activate) return null;
 
@@ -659,4 +660,13 @@ function ChangedFilesChip({
       {nFiles > 0 && <span className="text-[var(--text-tertiary)]">· {nFiles}</span>}
     </button>
   );
+}
+
+function SessionTasksChip() {
+  const workspace = useOptionalSplitWorkspace();
+  if (!workspace?.openTasks) return null;
+  const count = workspace.todoSnapshot?.tasks.filter(task => task.status !== "deleted").length;
+  return <button type="button" className="session-tasks-chip" data-testid="session-tasks-chip" onClick={workspace.openTasks} title={i18nT("review.todoSource", undefined, "Tasks from Pi’s todo extension")}>
+    {i18nT("review.tasks", undefined, "Tasks")}{count != null && <span>{count}</span>}
+  </button>;
 }

@@ -2,6 +2,8 @@
 
 Files in this directory. One row per source file.
 
+EditorPane also hosts Changes/Tasks/Editor inspector views via SplitWorkspaceContext. Its hidden editor subtree stays mounted to preserve terminals and tabs; foreground search shortcuts return to Editor first.
+
 | File | Purpose |
 |------|---------|
 | `BinaryWarn.tsx` | Binary-file tab. Shows a "binary file" notice (path only). No content fetched. Native-editor buttons / `fetchEditors` removed. See change: add-internal-monaco-editor-pane, remove-external-editor-integration. |

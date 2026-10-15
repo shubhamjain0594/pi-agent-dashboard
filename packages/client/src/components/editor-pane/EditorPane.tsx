@@ -45,6 +45,9 @@ import { PluginTabHost, pluginTabPrefix } from "./PluginTabHost.js";
 import { pseudoTabRegistry } from "./pseudo-tab-registry.js";
 import { isPseudoTabViewer, type OpenPathViewer } from "./viewer-kinds.js";
 import { TabActions, type TabActionTarget } from "./TabActions.js";
+import { SessionTodosPanel } from "../session/SessionTodosPanel.js";
+import { SessionChangesPanel } from "../diff/SessionChangesPanel.js";
+import { useOptionalSessionDiff } from "../diff/SessionDiffContext.js";
 
 const absOf = (cwd: string, rel: string): string => (rel ? `${cwd}/${rel}` : cwd);
 
@@ -52,6 +55,11 @@ export function EditorPane() {
   const { t } = useI18n();
   const {
     sessionId,
+    workPanel = "editor",
+    setWorkPanel,
+    openChanges,
+    openTasks,
+    todoSnapshot = null,
     cwd,
     paneState: state,
     dispatch,
@@ -68,6 +76,8 @@ export function EditorPane() {
     terminal,
     terminalActivated,
   } = useSplitWorkspace();
+  const sessionDiff = useOptionalSessionDiff();
+  const taskCount = todoSnapshot?.tasks.filter(task => task.status !== "deleted").length;
   const terminalTitle = useCallback(
     (id: string) => {
       const s = terminal.terminals.find((t) => t.id === id);
@@ -112,15 +122,16 @@ export function EditorPane() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
-      if (!mod) return;
+      if (!mod || e.defaultPrevented) return;
       if (e.key === "p" || e.key === "P" || (e.shiftKey && (e.key === "f" || e.key === "F"))) {
         e.preventDefault();
-        setSearchOpen((v) => !v);
+        setWorkPanel?.("editor");
+        setSearchOpen((v) => workPanel === "editor" ? !v : true);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [setWorkPanel, workPanel]);
 
   const onContentSearch = useCallback(
     (q: string, regex: boolean) => grepContents(cwd, q, regex),
@@ -221,7 +232,16 @@ export function EditorPane() {
   const language = activeTab ? activeTab.path.slice(activeTab.path.lastIndexOf(".") + 1) : "";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col" data-testid="session-inspector">
+      <nav className="session-work-tabs" aria-label={t("review.inspectorViews", undefined, "Session inspector views")}>
+        <button type="button" aria-pressed={workPanel === "changes"} onClick={() => openChanges?.()} data-testid="inspector-changes">{t("common.changes", undefined, "Changes")}{sessionDiff?.data && <span>{sessionDiff.data.files.length}</span>}</button>
+        <button type="button" aria-pressed={workPanel === "tasks"} onClick={() => openTasks?.()} data-testid="inspector-tasks">{t("review.tasks", undefined, "Tasks")}{taskCount != null && <span>{taskCount}</span>}</button>
+        <button type="button" aria-pressed={workPanel === "editor"} onClick={() => setWorkPanel?.("editor")} data-testid="inspector-editor">{t("editor.editorTitle", undefined, "Editor")}</button>
+        <button type="button" className="session-work-close" onClick={() => updateSplit({ mode: "closed" })} aria-label={t("review.closeInspector", undefined, "Close session inspector")}><Icon path={mdiClose} size={0.65} /></button>
+      </nav>
+      {workPanel === "changes" && <div className="session-work-scroll"><SessionChangesPanel onOpenDiff={openDiffTab} /></div>}
+      {workPanel === "tasks" && <div className="session-work-scroll"><SessionTodosPanel key={sessionId} snapshot={todoSnapshot} /></div>}
+      <div className="min-h-0 flex-1 flex-col" style={{ display: workPanel === "editor" ? "flex" : "none" }}>
       {/* Header */}
       <div className="flex shrink-0 items-center gap-2 border-b border-[var(--border-primary)] px-3 py-2">
         <button
@@ -404,6 +424,7 @@ export function EditorPane() {
           <span className="truncate">{activePath}</span>
         </div>
       )}
+      </div>
     </div>
   );
 }

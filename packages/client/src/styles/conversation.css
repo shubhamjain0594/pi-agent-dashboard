@@ -159,3 +159,34 @@
   .desktop-workbench .conversation-session [data-testid="force-stop-button"],
   .desktop-workbench .conversation-session [data-testid="killing-button"] { width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
 }
+
+/* Live session inspector: shared diff data + extension-owned todo snapshots. */
+.session-work-tabs { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 8px; border-bottom: 1px solid var(--border-primary); background: var(--bg-secondary); flex-shrink: 0; }
+.session-work-tabs button, .session-tasks-chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 5px 8px; min-height: 28px; border-radius: 5px; font-size: 12px; color: var(--text-secondary); }
+.session-work-tabs button:hover, .session-tasks-chip:hover { background: var(--bg-hover); color: var(--text-primary); }
+.session-work-tabs button[aria-pressed="true"] { background: var(--bg-surface); color: var(--text-primary); }
+.session-work-tabs button span, .session-tasks-chip span { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-tertiary); }
+.session-work-tabs .session-work-close { margin-left: auto; }
+.session-work-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.session-work-panel { padding: 16px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+.session-work-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.session-work-heading h2 { font-size: 14px; color: var(--text-primary); font-weight: 600; margin: 0 0 4px; }
+.session-work-heading p, .session-work-note, .session-work-other p { font-size: 12px; color: var(--text-tertiary); line-height: 1.6; }
+.session-work-heading > button { padding: 6px; flex-shrink: 0; border-radius: 4px; }
+.session-work-heading > button:hover { background: var(--bg-hover); }
+.session-work-heading > button:disabled { opacity: .5; cursor: default; }
+.session-work-error { padding: 12px; border-radius: 6px; color: var(--severity-error-fg); background: var(--severity-error-bg); border: 1px solid var(--severity-error-border); }
+.session-work-empty { padding: 24px 0; }
+.session-work-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-primary); }
+.session-work-files { list-style: none; padding: 0; margin: 0; }
+.session-work-files li > button { display: flex; align-items: center; width: 100%; min-height: 64px; gap: 8px; padding: 12px 4px; text-align: left; border-bottom: 1px solid var(--border-primary); }
+.session-work-files li > button:hover { background: var(--bg-hover); }
+.session-work-files li > button:disabled { cursor: default; opacity: .7; }
+.session-work-file-copy { flex: 1; min-width: 0; }
+.session-work-file-copy strong { display: block; font-size: 13px; color: var(--text-primary); font-weight: 500; }
+.session-work-file-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--text-tertiary); }
+.session-work-file-copy small:first-of-type { font-family: var(--workbench-font-mono, monospace); }
+.session-work-other { margin-top: 16px; font-size: 12px; }
+.session-work-other summary { cursor: pointer; padding: 8px 0; }
+.session-work-other li { overflow-wrap: anywhere; padding: 4px 0; }
+.session-work-note { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--border-primary); }

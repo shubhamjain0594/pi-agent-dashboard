@@ -58,7 +58,7 @@ Files in this directory. One row per source file.
 | `useRecommendedExtensions.ts` | Fetches `GET /api/packages/recommended`, returns `EnrichedRecommendedExtension[]` +… → see `useRecommendedExtensions.ts.AGENTS.md` |
 | `useRuntimeStatus.ts` | NEW. GET `/api/runtime/status` + `runtime-update-event` refresh/progress. Sequenced loads (stale response dropped), unmount-safe, fetch errors → `error`. Exports `useRuntimeStatus`, types `RuntimeStatus`/`RuntimeInfo`. See change: electron-runtime-overlay-updates. |
 | `useSessionActions.ts` | Session action callbacks extracted from App.tsx. Sends… → see `useSessionActions.ts.AGENTS.md` Swaps hide/unhide for `handleArchiveSession` and `handleUnarchiveSession`. See change: archive-sessions-lazy-load. |
-| `useSessionDiff.ts` | Fetches `GET /api/session-diff?sessionId=`, returns `SessionDiffResponse` + `isLoading`/`error`/`refresh`. Refetches on `sessionId` change. Exports `useSessionDiff`, `UseSessionDiffResult`. |
+| `useSessionDiff.ts` | Fetches `GET /api/session-diff?sessionId=`, returns `SessionDiffResponse` + `isLoading`/`error`/`refresh`. Session-keyed result state, AbortController + revision guards reject stale session/refresh responses; HTTP failures stay errors. Exports `useSessionDiff`, `UseSessionDiffResult`. |
 | `useSessionState.ts` | Embed-side session-state accumulator. Exports `useSessionState(sessionId?)` (`{state, apply, reset}`) and the… → see `useSessionState.ts.AGENTS.md` |
 | `useSidebarState.ts` | Persists sidebar `width` + `collapsed` to `localStorage` (`dashboard:sidebar-width`,… → see `useSidebarState.ts.AGENTS.md` |
 | `useStaleToolReconcile.ts` | Session-scoped stale running-tool heal (survives transcript virtualization). → see `useStaleToolReconcile.ts.AGENTS.md` |
