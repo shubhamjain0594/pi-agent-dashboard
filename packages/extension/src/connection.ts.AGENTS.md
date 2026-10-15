@@ -5,3 +5,5 @@ WebSocket connection manager with exponential backoff reconnect, message bufferi
 `DialPlan`/`planDial` per attempt; `ws.on('upgrade')` verifies the server counter-proof BEFORE `open` (fails closed without an emitter); identity failure → quarantine 5 s/30 s doubling to 300 s, single `pendingIdentityReports` slot (≤20) flushed only on a verified open of the same endpoint. See change: loopback-credential-proof (D6, D8).
 
 - Option `outboundFilter(message) → frames[]` applied before serialize/buffer in `send`/`sendIfOpen`; throw fails closed for `event_forward`. See change: add-credential-vault.
+
+Outbound ring overflow keeps drop-oldest behavior and `getDroppedBufferedCount()` heartbeat diagnostics; no console warning in Pi's TUI. Inbound queue-overflow warnings and reports remain unchanged. Regression: `__tests__/connection-dropped-frames.test.ts`.

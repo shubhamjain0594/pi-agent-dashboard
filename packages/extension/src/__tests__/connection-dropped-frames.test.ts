@@ -3,8 +3,8 @@
  *
  * The bridge buffers outgoing messages while the WS is not OPEN in a bounded
  * ring; on overflow `buffer.shift()` evicts the oldest. This suite proves the
- * eviction is now COUNTED (`getDroppedBufferedCount`) and rate-limited-LOGGED
- * with `hop:"bridge→server"` + the dropped message type.
+ * eviction is COUNTED (`getDroppedBufferedCount`) for heartbeat diagnostics,
+ * without writing background transport warnings into Pi's terminal UI.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ConnectionManager } from "../connection.js";
@@ -17,11 +17,12 @@ class MockWebSocket {
   onclose: (() => void) | null = null;
   onmessage: ((ev: { data: string }) => void) | null = null;
   onerror: ((ev: unknown) => void) | null = null;
+  sentMessages: string[] = [];
   constructor(url: string) {
     this.url = url;
     MockWebSocket.instances.push(this);
   }
-  send() {}
+  send(data: string) { this.sentMessages.push(data); }
   close() {
     this.readyState = 3;
     this.onclose?.();
@@ -60,21 +61,34 @@ describe("ConnectionManager dropped-frame instrumentation", () => {
     expect(cm.getDroppedBufferedCount()).toBe(0);
   });
 
-  it("logs a rate-limited warning with hop + dropped message type", () => {
+  it("keeps repeated overflows out of the terminal while retaining diagnostic counts", () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     const cm = new ConnectionManager({
       url: "ws://localhost:9999",
       WebSocketImpl: MockWebSocket as any,
       maxBufferSize: 2,
     });
-    // Fill then overflow. The oldest evicted message is an `event_forward`.
+    const clock = vi.spyOn(Date, "now").mockReturnValue(10_000);
     for (let i = 0; i < 6; i++) {
       cm.send({ type: "event_forward", sessionId: "s1", event: { i } });
     }
-    const warns = warnSpy.mock.calls.map((c) => String(c[0])).filter((m) => m.includes("dropped buffered message"));
-    // Rate-limited: at most one warning inside the window despite 4 evictions.
-    expect(warns.length).toBe(1);
-    expect(warns[0]).toContain("hop=bridge→server");
-    expect(warns[0]).toContain("droppedType=event_forward");
+    clock.mockReturnValue(20_000);
+    for (let i = 6; i < 10; i++) {
+      cm.send({ type: "event_forward", sessionId: "s1", event: { i } });
+    }
+    expect(warnSpy).not.toHaveBeenCalled();
+    expect(cm.getDroppedBufferedCount()).toBe(8);
+  });
+
+  it("still replays the newest retained frames when the connection returns", () => {
+    const cm = new ConnectionManager({ url: "ws://localhost:9999", WebSocketImpl: MockWebSocket, maxBufferSize: 2, watchdogTimeout: 0 });
+    for (let i = 0; i < 6; i++) cm.send({ type: "event_forward", sessionId: "s1", event: { i } });
+    cm.connect();
+    const ws = MockWebSocket.instances[0];
+    ws.readyState = 1;
+    ws.onopen?.();
+    expect(ws.sentMessages.map((frame) => JSON.parse(frame).event.i)).toEqual([4, 5]);
+    expect(cm.getDroppedBufferedCount()).toBe(4);
+    cm.disconnect();
   });
 });
