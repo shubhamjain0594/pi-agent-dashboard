@@ -4,6 +4,9 @@ Files in this directory. One row per source file. See change: fold-oversized-age
 
 | File | Purpose |
 |------|---------|
+| `DesktopWorkbench.tsx` | Desktop activity rail, title/search bar, live connection footer, and keyboard-accessible quick-open dialog. Keeps App's tracked navigation and existing content providers. |
+| `WorkspaceExplorer.tsx` | Compact desktop project/session tree with filter, project collapse, session creation and selection. Detailed-view toggle retains the original SessionList controls. |
+| `WorkspaceOverview.tsx` | Live workspace home: attention-first session list, activity counts and project shortcuts. Preserves first-run onboarding and mobile landing. |
 | `LandingPage.tsx` | Onboarding landing: vertical stepper (connect provider → create first project → start session), inline project-name form in Step ②, peer-install status on Step ① done row… → see `LandingPage.tsx.AGENTS.md` |
 | `MobileActionMenu.tsx` | Kebab session-action menu for mobile. Rows: rename, archive, resume/fork, OpenSpec… Native-editor rows removed (change: remove-external-editor-integration). Swaps hide/unhide for archive. See change: archive-sessions-lazy-load. → see `MobileActionMenu.tsx.AGENTS.md` |
 | `MobileOverlay.tsx` | Mobile sidebar overlay (`md:hidden`): fixed backdrop + left 72-width panel. Exports `HamburgerButton` (menu trigger) and `MobileOverlay`. |

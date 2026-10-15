@@ -50,7 +50,7 @@ export function ResizableSidebar({ sidebar, children }: Props) {
     const handleMouseMove = (e: MouseEvent) => {
       if (!dragging.current) return;
       if (sidebarRef.current) {
-        sidebarRef.current.style.width = `${clampWidth(e.clientX)}px`;
+        sidebarRef.current.style.width = `${clampWidth(e.clientX - sidebarRef.current.getBoundingClientRect().left)}px`;
       }
     };
 
@@ -58,7 +58,7 @@ export function ResizableSidebar({ sidebar, children }: Props) {
       if (!dragging.current) return;
       dragging.current = false;
       endBodyDrag();
-      setWidth(clampWidth(e.clientX));
+      setWidth(clampWidth(e.clientX - (sidebarRef.current?.getBoundingClientRect().left ?? 0)));
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -85,13 +85,13 @@ export function ResizableSidebar({ sidebar, children }: Props) {
 
   // Expanded sidebar with an always-visible dotted-grip resize seam.
   return (
-    <div ref={sidebarRef} className="flex flex-shrink-0 relative" style={{ width }}>
+    <div ref={sidebarRef} className="workbench-sidebar flex flex-shrink-0 relative" style={{ width }}>
       <div className="flex-1 overflow-hidden flex flex-col">{children}</div>
       {/* Resize seam — visible dotted grip + centered collapse knob. */}
       <div
         onMouseDown={handleMouseDown}
         data-testid="drag-handle"
-        className="relative flex w-2.5 shrink-0 cursor-col-resize items-center justify-center bg-[var(--border-primary)] transition-colors hover:bg-blue-500/30 active:bg-blue-500/50"
+        className="workbench-sidebar-seam relative flex w-2.5 shrink-0 cursor-col-resize items-center justify-center bg-[var(--border-primary)] transition-colors hover:bg-blue-500/30 active:bg-blue-500/50"
       >
         <SeamGrip dots={3} data-testid="rail-seam-grip" />
         <button

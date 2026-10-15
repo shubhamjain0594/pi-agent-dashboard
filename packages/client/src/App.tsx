@@ -48,6 +48,9 @@ import { TokenStatsBar } from "./components/session/TokenStatsBar.js";
 // See change: shrink-client-entry-lazy-islands.
 import { LazySettingsPanel as SettingsPanel } from "./components/settings/LazySettingsPanel.js";
 import { LandingPage } from "./components/shell/LandingPage.js";
+import { DesktopWorkbench } from "./components/shell/DesktopWorkbench.js";
+import { WorkspaceOverview } from "./components/shell/WorkspaceOverview.js";
+import { WorkspaceExplorer } from "./components/shell/WorkspaceExplorer.js";
 import { HamburgerButton, MobileOverlay } from "./components/shell/MobileOverlay.js";
 import { MobileShell } from "./components/shell/MobileShell.js";
 import { ResizableSidebar } from "./components/shell/ResizableSidebar.js";
@@ -2941,7 +2944,15 @@ export default function App() {
       />
     ),
     renderFolderHome: (cwd) => renderDirectoryHome(cwd),
-    renderLanding: () => (
+    renderLanding: () => !isMobile && sessions.size > 0 ? (
+      <WorkspaceOverview
+        sessions={Array.from(sessions.values())}
+        folders={pinnedDirectories}
+        onSelect={handleSelect}
+        onOpenFolder={(cwd) => navigate(`/folder/${encodeFolderPath(cwd)}`)}
+        onAddFolder={() => setPinDialogOpen(true)}
+      />
+    ) : (
       <LandingPage
         providersReady={providersReady.ready}
         anthropicAuthenticated={providersReady.anthropicAuthenticated}
@@ -3218,7 +3229,18 @@ export default function App() {
 
   // Desktop: side-by-side layout
   return apiProvider(
-    <div className="flex h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+    <DesktopWorkbench
+      sessions={Array.from(sessions.values())}
+      folders={pinnedDirectories}
+      selectedSession={selectedSession}
+      status={status}
+      sidebarCollapsed={sidebar.collapsed}
+      onToggleSidebar={sidebar.toggleCollapse}
+      onSelect={handleSelect}
+      onAddFolder={() => setPinDialogOpen(true)}
+      navigate={navigate}
+    >
+    <div className="workbench-existing-shell bg-[var(--bg-primary)] text-[var(--text-primary)]">
       {firstLaunchModal}
       {grantPromptHost}
       {pairingApprovalHost}
@@ -3228,7 +3250,18 @@ export default function App() {
       <WorktreeInitStack />
       <div className="hidden md:flex">
         <ResizableSidebar sidebar={sidebar}>
+          <WorkspaceExplorer
+            sessions={Array.from(sessions.values())}
+            folders={pinnedDirectories}
+            selectedId={selectedId}
+            revealRequest={revealRequest}
+            onSelect={handleSelect}
+            onOpenFolder={(cwd) => navigate(`/folder/${encodeFolderPath(cwd)}`)}
+            onAddFolder={() => setPinDialogOpen(true)}
+            onSpawnSession={handleSpawnSession}
+          >
           {sessionList}
+          </WorkspaceExplorer>
         </ResizableSidebar>
       </div>
 
@@ -3531,6 +3564,7 @@ export default function App() {
       )}
       {addFoldersDialog}
     </div>
+    </DesktopWorkbench>
   );
 }
 

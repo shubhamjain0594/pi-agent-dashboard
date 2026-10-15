@@ -99,6 +99,18 @@ describe("ResizableSidebar", () => {
     expect(sidebar.setWidth).toHaveBeenCalledWith(400);
   });
 
+  it("subtracts the activity rail offset while resizing", () => {
+    const sidebar = makeSidebar();
+    const { container } = render(<ResizableSidebar sidebar={sidebar}><div>Content</div></ResizableSidebar>);
+    const wrapper = container.firstElementChild as HTMLElement;
+    vi.spyOn(wrapper, "getBoundingClientRect").mockReturnValue({ left: 52 } as DOMRect);
+    fireEvent.mouseDown(screen.getByTestId("drag-handle"));
+    fireEvent.mouseMove(document, { clientX: 412 });
+    expect(wrapper.style.width).toBe("360px");
+    fireEvent.mouseUp(document, { clientX: 412 });
+    expect(sidebar.setWidth).toHaveBeenCalledWith(360);
+  });
+
   it("E3: drag past the min clamps the persisted width to 180", () => {
     const sidebar = makeSidebar();
     render(
