@@ -17,3 +17,9 @@ export function attachmentOriginalUrl(
   if (!ATTACHMENT_ID_RE.test(attachmentId)) return null;
   return `/api/sessions/${encodeURIComponent(sessionId)}/attachments/${attachmentId}`;
 }
+
+/** Bounded display derivative for a settled attachment stored by reference. */
+export function attachmentDisplayUrl(sessionId: string | undefined, attachmentId: string | undefined): string | null {
+  const original = attachmentOriginalUrl(sessionId, attachmentId);
+  return original ? `${original}?display=1` : null;
+}

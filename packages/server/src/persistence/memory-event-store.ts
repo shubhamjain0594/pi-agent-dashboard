@@ -8,6 +8,7 @@ import {
   isInlineImageBlock,
 } from "@blackbelt-technology/pi-dashboard-shared/image-block.js";
 import type { DashboardEvent } from "@blackbelt-technology/pi-dashboard-shared/types.js";
+import { attachmentResolutions, pendingAttachmentIds, resolveAttachmentSnapshot } from "../attachments/attachment-snapshot.js";
 
 export interface StoredEvent {
   seq: number;
@@ -386,6 +387,10 @@ export function globalTrimSlack(maxTotal: number): number {
 const ESSENTIAL_CHAT_EVENT_TYPES: ReadonlySet<string> = new Set([
   "message_start",
   "message_end",
+  // This is conversation state, not disposable telemetry. Keep the live patch
+  // for delta subscribers; message snapshots below also make windowed and
+  // backfilled rows independently renderable when the patch is outside a cut.
+  "attachment_fitted",
   // Inline terminal lifecycle: the reducer's card position depends on the
   // paired open/close surviving trim together. Trimming one of a structurally
   // paired set relocates the card to the stream tail on replay.
@@ -1708,6 +1713,36 @@ export function createMemoryEventStore(
       buf.events.push(stored);
       buf.bytes += stored.bytes;
       globalBytes += stored.bytes;
+      // Materialize image completion into its retained message BEFORE shedding
+      // events. Replay windows and retention may discard the sidecar, but a
+      // surviving transcript row must remain independently renderable.
+      const exceedsAttachmentLimit = (data: unknown) => maxEventDataSize > 0 && exceedsSerializedSize(data, maxEventDataSize);
+      const updateSnapshot = (index: number, resolution: ReturnType<typeof attachmentResolutions>[number]) => {
+        const entry = buf.events[index];
+        const next = resolveAttachmentSnapshot(entry.event, resolution, exceedsAttachmentLimit);
+        if (next === entry.event) return;
+        const bytes = measureBytes(next.data, measurementCap);
+        const delta = bytes - entry.bytes;
+        buf.events[index] = { ...entry, event: next, bytes };
+        buf.bytes += delta;
+        globalBytes += delta;
+      };
+      if (stored.event.eventType === "attachment_fitted") {
+        for (const resolution of attachmentResolutions(stored.event)) {
+          for (let i = 0; i < buf.events.length; i++) updateSnapshot(i, resolution);
+        }
+      } else {
+        // A late duplicate message_end/reconnect must not reintroduce pending
+        // blocks after their completion. No unbounded attachment cache: settled
+        // resident messages are the source, even if the sidecar was trimmed.
+        const pending = pendingAttachmentIds(stored.event);
+        for (let i = buf.events.length - 2; pending.size > 0 && i >= 0; i--) {
+          for (const resolution of attachmentResolutions(buf.events[i].event)) {
+            if (!pending.delete(resolution.attachmentId)) continue;
+            updateSnapshot(buf.events.length - 1, resolution);
+          }
+        }
+      }
       // Collapse superseded updates AFTER truncation (so the `{__truncated}`
       // placeholder is already resolved) and BEFORE trim/evict, so the shed
       // policies see the already-collapsed buffer.

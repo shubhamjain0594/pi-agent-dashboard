@@ -2385,7 +2385,7 @@ export async function createServer(config: ServerConfig): Promise<DashboardServe
   // Full-resolution attachment originals for click-to-zoom. Not load-bearing:
   // the fitted derivative is already inline, so a failure here degrades only
   // the zoom view. See change: fit-attachments-for-display (task 5.7).
-  registerAttachmentRoutes(fastify, { sessionManager, networkGuard });
+  registerAttachmentRoutes(fastify, { sessionManager, networkGuard, eventStore, fitWorkerPool });
   registerOpenSpecRoutes(fastify, {
     sessionManager,
     preferencesStore,

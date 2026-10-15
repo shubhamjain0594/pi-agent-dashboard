@@ -41,7 +41,9 @@ export interface ChatImage {
   attachmentId?: string;
   /**
    * `pending` until its fitted derivative arrives, then `ready`, or `failed`
-   * when fitting could not produce one. Absent for legacy inline blocks that
+   * when fitting could not produce one. A ready image with empty data and an
+   * attachmentId is a settled reference to the bounded display endpoint.
+   * Absent for legacy inline blocks that
    * already carry their bytes.
    */
   attachmentState?: "pending" | "ready" | "failed";

@@ -15,7 +15,7 @@ import { isDebugTool } from "../../hooks/useDebugToolsVisible.js";
 import { useDisplayPrefs } from "../../hooks/useDisplayPrefs.js";
 import { useFxVisibility } from "../../hooks/useFxVisibility.js";
 import { useMobile } from "../../hooks/useMobile.js";
-import { attachmentOriginalUrl } from "../../lib/chat/attachment-original-url.js";
+import { attachmentDisplayUrl, attachmentOriginalUrl } from "../../lib/chat/attachment-original-url.js";
 import { buildSelectionClipboardText } from "../../lib/chat/chat-selection-copy.js";
 import { buildTurnToFirstRowIndex, computeRowTextChars, estimateVirtualRowSize, extendRangeWithSelection, isBurst, isGroup, rangeToRowIndexSpan, type SelectionRowSpan, virtualRowKey } from "../../lib/chat/chat-virtual-rows.js";
 import { collapseRepeatedNotifies } from "../../lib/chat/collapse-repeated-notifies.js";
@@ -229,16 +229,19 @@ export function ImageAttachments({
           // image exists, so a block may be pending (no bytes yet) or failed.
           // Rendering a data URL for those would show a broken-image glyph.
           // See change: fit-attachments-for-display (D3/D12, test-plan #F1 #F3).
-          if (img.attachmentState === "pending" || img.attachmentState === "failed") {
+          const displaySource = img.attachmentState === "ready" && !img.data
+            ? attachmentDisplayUrl(sessionId, img.attachmentId) : null;
+          if (img.attachmentState === "pending" || img.attachmentState === "failed" || (img.attachmentState === "ready" && !img.data)) {
             return (
               <AttachmentRecovery
                 key={i}
                 sessionId={sessionId}
                 attachmentId={img.attachmentId}
-                failed={img.attachmentState === "failed"}
+                failed={img.attachmentState !== "pending"}
+                displaySource={displaySource ?? undefined}
                 index={i}
                 onImageLoad={onImageLoad}
-                onZoom={(src) => setLightboxSrc({ src, alt: `Attachment ${i + 1}` })}
+                onZoom={(src) => setLightboxSrc({ src: attachmentOriginalUrl(sessionId, img.attachmentId) ?? src, fallbackSrc: src, alt: `Attachment ${i + 1}` })}
               />
             );
           }

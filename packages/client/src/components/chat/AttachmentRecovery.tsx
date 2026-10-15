@@ -6,6 +6,8 @@ interface Props {
   sessionId?: string;
   attachmentId?: string;
   failed: boolean;
+  /** Normal fitted-image URL for a settled, reference-backed attachment. */
+  displaySource?: string;
   index: number;
   onImageLoad?: (event: React.SyntheticEvent<HTMLImageElement>) => void;
   onZoom: (src: string) => void;
@@ -13,12 +15,12 @@ interface Props {
 
 // Identity changes remount the attempt, invalidating its timers and callbacks.
 export function AttachmentRecovery(props: Props) {
-  return <RecoveryAttempt key={JSON.stringify([props.sessionId, props.attachmentId])} {...props} />;
+  return <RecoveryAttempt key={JSON.stringify([props.sessionId, props.attachmentId, props.displaySource])} {...props} />;
 }
 
-function RecoveryAttempt({ sessionId, attachmentId, failed, index, onImageLoad, onZoom }: Props) {
-  const original = attachmentOriginalUrl(sessionId, attachmentId);
-  const [phase, setPhase] = useState<"waiting" | "loading" | "loaded" | "unavailable">(failed ? (original ? "loading" : "unavailable") : "waiting");
+function RecoveryAttempt({ sessionId, attachmentId, failed, displaySource, index, onImageLoad, onZoom }: Props) {
+  const original = displaySource ?? attachmentOriginalUrl(sessionId, attachmentId);
+  const [phase, setPhase] = useState<"waiting" | "loading" | "loaded" | "unavailable">(displaySource ? "loading" : failed ? (original ? "loading" : "unavailable") : "waiting");
   const [attempt, setAttempt] = useState(0);
   const activeAttempt = useRef<number | null>(null);
 

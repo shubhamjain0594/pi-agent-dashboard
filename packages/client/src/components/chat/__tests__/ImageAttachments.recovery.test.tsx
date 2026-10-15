@@ -31,6 +31,91 @@ describe("transcript attachment recovery", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it("loads a ready reference immediately from the display derivative without original fallback", () => {
+    render(<ImageAttachments images={[{ ...pending, attachmentState: "ready" }]} sessionId="session" />);
+    const image = screen.getByTestId("attachment-image");
+    expect(image.getAttribute("src")).toBe(`${original}?display=1`);
+    expect(screen.queryByTestId("attachment-pending")).toBeNull();
+    expect(screen.queryByTestId("lightbox-image")).toBeNull();
+    advance(3000);
+    expect(screen.getByTestId("attachment-image")).toBe(image);
+    expect(image.getAttribute("src")).toBe(`${original}?display=1`);
+    advance(7000);
+    expect(screen.queryByTestId("attachment-image")).toBeNull();
+    expect(screen.getByTestId("attachment-failed")).toBeTruthy();
+    advance(60000);
+    expect(screen.queryByTestId("attachment-image")).toBeNull();
+  });
+
+  it("measures a ready reference and zooms its original with the fitted URL as lightbox fallback", () => {
+    const onImageLoad = vi.fn();
+    let measuredImage: HTMLImageElement | undefined;
+    onImageLoad.mockImplementation((event) => { measuredImage = event.currentTarget; });
+    render(<ImageAttachments images={[{ ...pending, attachmentState: "ready" }]} sessionId="session" onImageLoad={onImageLoad} />);
+    const image = screen.getByTestId("attachment-image");
+    fireEvent.load(image);
+    expect(onImageLoad).toHaveBeenCalledTimes(1);
+    expect(measuredImage).toBe(image);
+    advance(20000);
+    expect(screen.queryByTestId("attachment-failed")).toBeNull();
+    const zoom = screen.getByRole("button", { name: "Zoom attachment 1" });
+    expect(zoom.tagName).toBe("BUTTON");
+    expect(zoom.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(zoom);
+    expect(screen.getByTestId("lightbox-image").getAttribute("src")).toBe(original);
+    fireEvent.error(screen.getByTestId("lightbox-image"));
+    expect(screen.getByTestId("lightbox-image").getAttribute("src")).toBe(`${original}?display=1`);
+    expect(image.getAttribute("src")).toBe(`${original}?display=1`);
+    expect(onImageLoad).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows explicit Retry after a ready reference HTTP error and retries only the derivative", () => {
+    render(<ImageAttachments images={[{ ...pending, attachmentState: "ready" }]} sessionId="session" />);
+    const firstImage = screen.getByTestId("attachment-image");
+    expect(firstImage.getAttribute("src")).toBe(`${original}?display=1`);
+    fireEvent.error(firstImage);
+    expect(screen.getByTestId("attachment-failed").textContent).toContain("image unavailable");
+    advance(60000);
+    expect(screen.queryByTestId("attachment-image")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Retry attachment 1" }));
+    const retryImage = screen.getByTestId("attachment-image");
+    expect(retryImage).not.toBe(firstImage);
+    expect(retryImage.getAttribute("src")).toBe(`${original}?display=1`);
+    fireEvent.error(retryImage);
+    advance(60000);
+    expect(screen.queryByTestId("attachment-image")).toBeNull();
+    expect(screen.getByRole("button", { name: "Retry attachment 1" })).toBeTruthy();
+  });
+
+  it("resets a ready reference immediately on session change and cancels the previous deadline", () => {
+    const onImageLoad = vi.fn();
+    const ready: ChatImage = { ...pending, attachmentState: "ready" };
+    const { rerender, unmount } = render(<ImageAttachments images={[ready]} sessionId="session" onImageLoad={onImageLoad} />);
+    const oldImage = screen.getByTestId("attachment-image");
+    const propsKey = Object.keys(oldImage).find((key) => key.startsWith("__reactProps$"))!;
+    const oldHandlers = (oldImage as unknown as Record<string, {
+      onLoad: (event: unknown) => void;
+      onError: () => void;
+    }>)[propsKey];
+    advance(7000);
+    rerender(<ImageAttachments images={[ready]} sessionId="other/session" onImageLoad={onImageLoad} />);
+    const nextImage = screen.getByTestId("attachment-image");
+    expect(nextImage).not.toBe(oldImage);
+    expect(nextImage.getAttribute("src")).toBe(`/api/sessions/other%2Fsession/attachments/${id}?display=1`);
+    expect(screen.queryByTestId("attachment-pending")).toBeNull();
+    act(() => {
+      oldHandlers.onLoad({ currentTarget: oldImage, target: oldImage });
+      oldHandlers.onError();
+    });
+    expect(onImageLoad).not.toHaveBeenCalled();
+    advance(3000);
+    expect(screen.getByTestId("attachment-image")).toBe(nextImage);
+    expect(screen.queryByTestId("attachment-failed")).toBeNull();
+    expect(vi.getTimerCount()).toBe(1);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("tries a failed derivative immediately, then only retries on explicit activation", () => {
     render(<ImageAttachments images={[{ ...pending, attachmentState: "failed" }]} sessionId="session" />);
     fireEvent.error(screen.getByTestId("attachment-image"));
