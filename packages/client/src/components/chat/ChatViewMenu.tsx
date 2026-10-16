@@ -12,6 +12,7 @@ import type {
   PartialDisplayPrefs,
 } from "@blackbelt-technology/pi-dashboard-shared/display-prefs.js";
 import {
+  DISPLAY_PRESETS,
   NOTIFY_MIN_LEVELS,
   normalizeNotifyMinLevel,
 } from "@blackbelt-technology/pi-dashboard-shared/display-prefs.js";
@@ -63,9 +64,14 @@ export function ChatViewMenu({ sessionId, send, currentOverride }: Props): React
   const boundaryRef = usePopoverBoundary();
   const { flipUp, maxHeight, minHeight, anchorRight, maxWidth } = usePopoverFlip(triggerRef, {
     open,
-    estimatedWidth: 256, // w-64 natural width
+    estimatedWidth: 288, // w-72 natural width (fits the notify select's longest label)
+    // The menu (~20 rows) never fits a 200px strip: always open toward the
+    // side with more room (the trigger sits above the composer → up).
+    threshold: Number.POSITIVE_INFINITY,
     boundaryRef,
   });
+  const [setGlobalError, setSetGlobalError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -103,30 +109,47 @@ export function ChatViewMenu({ sessionId, send, currentOverride }: Props): React
     setOpen(false);
   }, [send, sessionId]);
 
+  /** Promote this session's effective view to the global default, then drop the override. */
+  const setAsGlobal = useCallback(async () => {
+    if (saving) return;
+    setSetGlobalError(null);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/preferences/display", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(prefs),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error(String(res.status));
+    } catch {
+      setSetGlobalError(i18nT("session.setAsGlobalFailed", undefined, "Could not save as global."));
+      return;
+    } finally {
+      setSaving(false);
+    }
+    clearOverride();
+  }, [saving, prefs, clearOverride]);
+
+  // ONE sameness rule (`differs`) drives the row dots, the footer count, the
+  // trigger dot, and whether Reset / Set as global are enabled.
+  // Same baseline `useDisplayPrefs` merges onto: unseeded global → standard preset.
+  const baseline = global ?? DISPLAY_PRESETS.standard;
   const isOverridden = useCallback(
-    (key: keyof Omit<DisplayPrefs, "toolCalls">) =>
-      currentOverride?.[key] !== undefined && global !== undefined && currentOverride![key] !== global[key],
-    [currentOverride, global],
+    (key: keyof Omit<DisplayPrefs, "toolCalls">) => differs(currentOverride?.[key], baseline[key]),
+    [currentOverride, baseline],
   );
   const isToolCallOverridden = useCallback(
-    (key: keyof DisplayPrefs["toolCalls"]) =>
-      currentOverride?.toolCalls?.[key] !== undefined &&
-      global !== undefined &&
-      currentOverride!.toolCalls![key] !== global.toolCalls[key],
-    [currentOverride, global],
+    (key: keyof DisplayPrefs["toolCalls"]) => differs(currentOverride?.toolCalls?.[key], baseline.toolCalls[key]),
+    [currentOverride, baseline],
   );
   const isCustomGroupOverridden = useCallback(
-    (gid: string) =>
-      currentOverride?.customEventGroups?.[gid] !== undefined &&
-      global !== undefined &&
-      currentOverride!.customEventGroups![gid] !== global.customEventGroups[gid],
-    [currentOverride, global],
+    (gid: string) => differs(currentOverride?.customEventGroups?.[gid], baseline.customEventGroups[gid]),
+    [currentOverride, baseline],
   );
 
-  const hasAnyOverride = useMemo(
-    () => !!currentOverride && Object.keys(currentOverride).length > 0,
-    [currentOverride],
-  );
+  const changedCount = useMemo(() => countChanged(currentOverride, baseline), [currentOverride, baseline]);
+  const hasChanges = changedCount > 0;
 
   return (
     <div ref={ref} className="relative inline-block">
@@ -139,24 +162,37 @@ export function ChatViewMenu({ sessionId, send, currentOverride }: Props): React
       >
         <Icon path={mdiCog} size={0.6} />
         <span>{i18nT("common.view", undefined, "View")}</span>
-        {hasAnyOverride && (
+        {hasChanges && (
           <span
             data-testid="chat-view-modified-pill"
-            className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-medium"
+            role="img"
+            aria-label={i18nT("session.thisSessionHasItsOwnView", undefined, "This session has its own view preferences")}
+            className="ml-0.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400"
             title={i18nT("session.thisSessionHasItsOwnView", undefined, "This session has its own view preferences")}
-          >
-            modified
-          </span>
+          />
         )}
       </button>
       {open && (
+        <>
+        {/* Phone: scrim behind the bottom sheet. */}
+        <div
+          data-testid="chat-view-scrim"
+          aria-hidden
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-40 bg-[var(--bg-overlay)] sm:hidden"
+        />
         <div
           data-testid="chat-view-popover"
+          role="dialog"
+          aria-label={i18nT("common.viewOptions", undefined, "View options")}
           style={{ maxHeight, minHeight, maxWidth }}
-          className={`absolute z-30 w-64 overflow-y-auto bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg shadow-lg p-2 text-xs ${
+          className={`absolute z-30 flex w-72 flex-col overflow-hidden bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded-lg shadow-lg text-xs ${
             anchorRight ? "right-0" : "left-0"
-          } ${flipUp ? "bottom-full mb-1" : "top-full mt-1"}`}
+          } ${flipUp ? "bottom-full mb-1" : "top-full mt-1"} max-sm:fixed max-sm:inset-x-0 max-sm:top-auto max-sm:bottom-0 max-sm:z-50 max-sm:m-0 max-sm:w-auto max-sm:rounded-b-none max-sm:max-h-[75vh]! max-sm:min-h-0! max-sm:max-w-none!`}
         >
+          <div data-testid="chat-view-list" className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-2">
+          {/* Locked while Set as global is pending: an edit made mid-save would be wiped by the override clear. */}
+          <fieldset data-testid="chat-view-rows" disabled={saving} className="m-0 min-w-0 border-0 p-0">
           <Row label={i18nT("common.tokenStatsBar", undefined, "Token stats bar")} value={prefs.tokenStatsBar} marked={isOverridden("tokenStatsBar")} onChange={(v) => patch({ tokenStatsBar: v })} />
           <Row label={i18nT("common.contextUsageBar", undefined, "Context usage bar")} value={prefs.contextUsageBar} marked={isOverridden("contextUsageBar")} onChange={(v) => patch({ contextUsageBar: v })} />
           <Row label={i18nT("session.reasoningBlocks", undefined, "Reasoning blocks")} value={prefs.reasoning} marked={isOverridden("reasoning")} onChange={(v) => patch({ reasoning: v })} />
@@ -197,19 +233,64 @@ export function ChatViewMenu({ sessionId, send, currentOverride }: Props): React
           <Row label={i18nT("common.editWrite", undefined, "Edit / Write")} value={prefs.toolCalls.edit} marked={isToolCallOverridden("edit")} onChange={(v) => patch({ toolCalls: { edit: v } })} />
           <Row label={i18nT("common.agent", undefined, "Agent")} value={prefs.toolCalls.agent} marked={isToolCallOverridden("agent")} onChange={(v) => patch({ toolCalls: { agent: v } })} />
           <Row label={i18nT("common.other", undefined, "Other")} value={prefs.toolCalls.generic} marked={isToolCallOverridden("generic")} onChange={(v) => patch({ toolCalls: { generic: v } })} />
-          <div className="my-2 border-t border-[var(--border-subtle)]" />
-          <button
-            type="button"
-            disabled={!hasAnyOverride}
-            onClick={clearOverride}
-            className="w-full text-left px-2 py-1 rounded text-blue-400 hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
+          </fieldset>
+          </div>
+          <div
+            data-testid="chat-view-footer"
+            className="flex shrink-0 items-center gap-2 border-t border-[var(--border-primary)] px-3 py-2 max-sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
           >
-            {i18nT("settings.useGlobalSettings", undefined, "Use global settings")}
-          </button>
+            <span className="flex-1 text-[11px] text-[var(--text-tertiary)]">
+              {setGlobalError ? (
+                <span data-testid="chat-view-set-global-error" className="text-[var(--severity-error-fg)]">{setGlobalError}</span>
+              ) : hasChanges ? (
+                i18nT("session.viewChangedCount", { n: changedCount }, `${changedCount} changed`)
+              ) : null}
+            </span>
+            <button
+              type="button"
+              data-testid="chat-view-reset"
+              disabled={!hasChanges || saving}
+              onClick={clearOverride}
+              title={i18nT("settings.useGlobalSettings", undefined, "Use global settings")}
+              className="rounded px-1 py-1 text-[var(--accent-text)] hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline max-sm:min-h-[44px]"
+            >
+              {i18nT("common.reset", undefined, "Reset")}
+            </button>
+            <button
+              type="button"
+              data-testid="chat-view-set-global"
+              disabled={!hasChanges || saving}
+              onClick={() => void setAsGlobal()}
+              className="rounded bg-[var(--accent-solid)] px-2.5 py-1 font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed max-sm:min-h-[44px]"
+            >
+              {i18nT("session.setAsGlobal", undefined, "Set as global")}
+            </button>
+          </div>
         </div>
+        </>
       )}
     </div>
   );
+}
+
+/** The sameness rule: a stored override value is "changed" only when it differs from global. */
+function differs(value: unknown, globalValue: unknown): boolean {
+  return value !== undefined && value !== globalValue;
+}
+
+/** Entries of `override` that `differs` from `base`, one level of nested arms per key. */
+function countDiffering(override: object, base: Record<string, unknown>): number {
+  return Object.entries(override).filter(([k, v]) => differs(v, base[k])).length;
+}
+
+/** Override leaves that `differs` from the baseline (nested arms per key). */
+function countChanged(override: PartialDisplayPrefs | undefined, global: DisplayPrefs): number {
+  if (!override) return 0;
+  const g = global as unknown as Record<string, unknown>;
+  return Object.entries(override).reduce((n, [k, v]) => {
+    if (v && typeof v === "object") return n + countDiffering(v, (g[k] ?? {}) as Record<string, unknown>);
+    return n + (differs(v, g[k]) ? 1 : 0);
+  }, 0);
 }
 
 /** i18n label for one `notifyMinLevel` stop. */
@@ -264,7 +345,7 @@ function SelectRow({
         data-testid="notify-min-level"
         value={value}
         onChange={(e) => onChange(e.target.value as NotifyMinLevel)}
-        className="bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded px-1.5 py-1 text-xs text-[var(--text-primary)]"
+        className="min-w-0 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded px-1.5 py-1 text-xs text-[var(--text-primary)]"
       >
         {NOTIFY_MIN_LEVELS.map((stop) => (
           <option key={stop} value={stop}>
@@ -288,7 +369,7 @@ function Row({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex items-center justify-between gap-2 px-2 py-1 rounded hover:bg-[var(--bg-hover)] cursor-pointer">
+    <label className="flex items-center justify-between gap-2 px-2 py-1 rounded hover:bg-[var(--bg-hover)] cursor-pointer max-sm:min-h-[44px]">
       <span className="flex items-center gap-1 text-[var(--text-secondary)]">
         {marked && (
           <span title={i18nT("common.overridesGlobal", undefined, "Overrides global")} className="text-amber-400 inline-flex">
