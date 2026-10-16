@@ -11,7 +11,9 @@
  * See change: test-trust-audit (design D7).
  */
 import { spawnSync } from "node:child_process";
-import { resolve } from "node:path";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..");
@@ -20,6 +22,15 @@ const CI_SCENARIOS = process.env.RUN_CI_SCENARIOS === "1";
 // parity shard fans out 8 CLI spawns), so wall-clock per file is contention-dominated there:
 // measured 12.7-13.4 s per parity shard against 20.4 s for the unsplit file. The ceiling doubles.
 const MAX_FILE_MS = process.env.CI ? 20_000 : 10_000;
+
+function readJsonReport(reportPath, res) {
+  try {
+    return JSON.parse(readFileSync(reportPath, "utf8"));
+  } catch (err) {
+    const tail = (res.stderr || "").slice(-2000);
+    throw new Error(`vitest json report missing (exit ${res.status}): ${tail}`, { cause: err });
+  }
+}
 
 /** group name -> [file path substring, total assertions across the group's files]. */
 const GROUPS = {
@@ -32,13 +43,15 @@ const GROUPS = {
 describe.skipIf(!CI_SCENARIOS)("heavy shared test groups (E14)", () => {
   it("each file is under 10 s and each group keeps all its assertions", () => {
     const filters = Object.values(GROUPS).map(([f]) => f);
-    const res = spawnSync("npx", ["vitest", "run", "--project", "@blackbelt-technology/pi-dashboard-shared", "--reporter=json", ...filters], {
+    // Vitest 5's json reporter writes a file. It no longer prints the report on stdout.
+    const reportPath = join(mkdtempSync(join(tmpdir(), "heavy-shared-")), "report.json");
+    const res = spawnSync("npx", ["vitest", "run", "--project", "@blackbelt-technology/pi-dashboard-shared", "--reporter=json", `--outputFile.json=${reportPath}`, ...filters], {
       cwd: REPO_ROOT,
       encoding: "utf8",
       maxBuffer: 64 * 1024 * 1024,
       env: { ...process.env, CI: "" },
     });
-    const report = JSON.parse(res.stdout.slice(res.stdout.indexOf("{")));
+    const report = readJsonReport(reportPath, res);
     expect(report.numFailedTests).toBe(0);
     // Collect every violation first: one CI round-trip should show them all, not the first.
     const problems = [];

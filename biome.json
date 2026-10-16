@@ -133,6 +133,7 @@
     {
       "includes": [
         "examples/**",
+        "mockups/**",
         "openspec/changes/**/spike/**",
         "openspec/changes/**/mockup/**",
         "openspec/changes/**/mockups/**",

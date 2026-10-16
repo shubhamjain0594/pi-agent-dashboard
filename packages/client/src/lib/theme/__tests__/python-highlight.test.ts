@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { refinePythonLanguage, type PythonLanguage } from "../python-highlight.js";
+import { type PythonLanguage, refinePythonLanguage } from "../python-highlight.js";
 
 function sample(): PythonLanguage {
   return {
@@ -29,7 +29,8 @@ describe("refinePythonLanguage", () => {
     expect(root).toContainEqual([/\bdef\b/, "keyword", "@afterDef"]);
     expect(root).toContainEqual([/\bclass\b/, "keyword", "@afterClass"]);
     const words = root.find((rule) => Array.isArray(rule) && rule[0].source === "[a-zA-Z_]\\w*");
-    expect(words?.[1]).toMatchObject({
+    if (!Array.isArray(words)) throw new Error("missing identifier rule");
+    expect(words[1]).toMatchObject({
       cases: {
         "@keywords": "keyword",
         "@builtins": "type.identifier",

@@ -5,10 +5,12 @@
  * workspace is trusted (the server enforces this too). The hook exposes the
  * status and a `trust()` action so the viewer can show a trust banner.
  */
-import { useCallback, useEffect, useState } from "react";
+
 import type * as monacoNs from "monaco-editor";
+import { useCallback, useEffect, useState } from "react";
 import { fetchLspStatus, type LspStatus, setLspTrust } from "../api/lsp-api.js";
-import { LspConnection, lspLanguageForPath } from "./lsp-connection.js";
+import { logRejection } from "../report-error.js";
+import { LspConnection, type LspDiagnostic, lspLanguageForPath } from "./lsp-connection.js";
 import { attachLspToModel, diagnosticsToMarkers } from "./lsp-monaco.js";
 
 type Monaco = typeof monacoNs;
@@ -60,7 +62,7 @@ export function definitionOpenTarget(
   cwd: string,
   currentPath: string,
   uri: string,
-  selection?: { lineNumber?: number; startLineNumber?: number } | null,
+  selection?: { lineNumber?: number; startLineNumber?: number; startColumn?: number } | null,
 ): { path: string; line?: number } | null {
   const rel = relPathFromFileUri(cwd, uri);
   if (!rel || rel === currentPath) return null;
@@ -76,9 +78,9 @@ export function useLspIntelligence({ cwd, path, text, monaco, model, onOpenFile 
     setStatus(null);
     if (!language) return;
     let active = true;
-    fetchLspStatus(cwd, language).then((s) => {
-      if (active) setStatus(s);
-    });
+    void fetchLspStatus(cwd, language)
+      .then((s) => { if (active) setStatus(s); })
+      .catch(logRejection("useLspIntelligence.status"));
     return () => {
       active = false;
     };
@@ -108,13 +110,10 @@ export function useLspIntelligence({ cwd, path, text, monaco, model, onOpenFile 
     let connection: LspConnection | null = null;
     const fileUri = fileUriFor(cwd, path);
 
-    LspConnection.open({
-      cwd,
-      language,
-      onDiagnostics: (uri, diagnostics) => {
-        if (active && uri === fileUri) monaco.editor.setModelMarkers(model, "lsp", diagnosticsToMarkers(monaco, diagnostics));
-      },
-    }).then((conn) => {
+    const onDiagnostics = (uri: string, diagnostics: LspDiagnostic[]) => {
+      if (active && uri === fileUri) monaco.editor.setModelMarkers(model, "lsp", diagnosticsToMarkers(monaco, diagnostics));
+    };
+    const onConn = (conn: LspConnection | null) => {
       if (!conn) return;
       if (!active) {
         conn.close();
@@ -122,7 +121,8 @@ export function useLspIntelligence({ cwd, path, text, monaco, model, onOpenFile 
       }
       connection = conn;
       disposeProviders = attachLspToModel(monaco, conn, { language, model, fileUri, text });
-    });
+    };
+    void LspConnection.open({ cwd, language, onDiagnostics }).then(onConn).catch(logRejection("useLspIntelligence.connect"));
 
     return () => {
       active = false;

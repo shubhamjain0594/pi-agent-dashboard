@@ -1,7 +1,7 @@
 /**
  * P2 (task 10.49) — render: build budget (size).
  *
- * The fixture deck's `deck.html` must stay ≤ 2,621,440 bytes (2.5 MiB). Rendering
+ * The fixture deck's `deck.html` must stay ≤ 3,670,016 bytes (3.5 MiB). Rendering
  * the committed `fixtures/strategy-lab.json` is byte-equivalent to building
  * `fixtures/strategy-lab.md`, and needs no browser.
  */
@@ -11,19 +11,17 @@ import type { DeckIR } from "../../ir/types.js";
 import { ensureRuntime, loadLocalEffects, renderDeck } from "../index.js";
 
 /**
- * Deck size guard. Raised 2.5 MiB -> 2.75 MiB with the Section 25-28 work:
- * the matte/reflectivity reflector shader, the per-effect `lift`, the
- * `sortAboveVeil` pass and the slot-based effects panel added ~10.4 KB to
- * `dist/runtime.js` (2,567,910 -> 2,578,363), putting `deck.html` 1,085 bytes
- * over the old ceiling. Headroom at 2.75 MiB is ~260 KB — the guard still
- * catches runaway growth, which is its job.
+ * Deck size guard. 2.75 MiB fit three 0.160. The pi/openspec floor raise
+ * moved the inlined runtime to three 0.186.1; the strategy-lab deck measured
+ * 3,270,482 bytes on CI. 3.5 MiB leaves ~390 KB of headroom and still fails
+ * a runaway bundle.
  */
-const MAX_DECK_BYTES = 2_883_584;
+const MAX_DECK_BYTES = 3_670_016;
 
 const IR = JSON.parse(readFileSync(new URL("../../../fixtures/strategy-lab.json", import.meta.url), "utf8")) as DeckIR;
 
 describe("P2 fixture deck size budget", () => {
-  it("deck.html stays within 2,621,440 bytes", async () => {
+  it("deck.html stays within 3,670,016 bytes", async () => {
     const html = renderDeck(IR, { runtime: await ensureRuntime() });
     expect(Buffer.byteLength(html)).toBeLessThanOrEqual(MAX_DECK_BYTES);
   }, 60_000);

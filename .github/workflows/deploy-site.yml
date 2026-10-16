@@ -80,7 +80,10 @@ jobs:
           mkdir -p site/dist/app
           cp -r packages/shell/dist/* site/dist/app/
 
+      # Pages exists on github.com. On the GHE mirror, configure-pages gets
+      # "Resource not accessible by integration" and fails the build job.
       - name: Configure Pages
+        if: github.server_url == 'https://github.com'
         uses: actions/configure-pages@v5
         with:
           # Auto-enable Pages on first run if not already configured in
@@ -88,12 +91,14 @@ jobs:
           enablement: true
 
       - name: Upload artifact
+        if: github.server_url == 'https://github.com'
         uses: actions/upload-pages-artifact@v3
         with:
           path: site/dist
 
   deploy:
     needs: build
+    if: github.server_url == 'https://github.com'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

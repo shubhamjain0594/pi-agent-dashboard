@@ -45,3 +45,6 @@ jobs:
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{ matrix.language }}"
+          # Upload needs Code Security. The GHE mirror does not have it, and
+          # analyze then fails after a successful init. github.com still uploads.
+          upload: ${{ github.server_url == 'https://github.com' }}

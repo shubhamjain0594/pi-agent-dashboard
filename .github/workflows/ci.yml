@@ -416,7 +416,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # setup-uv resolves releases via api.github.com. A GHE GITHUB_TOKEN is
+      # not valid there, so the call is anonymous and the runner IP gets
+      # rate-limited. The astral installer downloads the binary directly.
       - uses: astral-sh/setup-uv@v6
+        id: setup-uv
+        continue-on-error: true
+
+      - name: Install uv from astral.sh when GitHub releases are rate-limited
+        if: steps.setup-uv.outcome == 'failure'
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
