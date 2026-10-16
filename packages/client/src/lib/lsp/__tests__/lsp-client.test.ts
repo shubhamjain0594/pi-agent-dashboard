@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fileUriFor } from "../use-lsp-intelligence.js";
+import { definitionOpenTarget, fileUriFor, relPathFromFileUri } from "../use-lsp-intelligence.js";
 import { lspLanguageForPath } from "../lsp-connection.js";
 import { attachLspToModel, diagnosticsToMarkers } from "../lsp-monaco.js";
 
@@ -30,6 +30,23 @@ describe("fileUriFor", () => {
   });
 });
 
+describe("definitionOpenTarget", () => {
+  it("turns a workspace file URI into a tab path and line", () => {
+    const uri = fileUriFor("/home/u/proj", "pkg/other.py");
+    expect(relPathFromFileUri("/home/u/proj", uri)).toBe("pkg/other.py");
+    expect(definitionOpenTarget("/home/u/proj", "pkg/here.py", uri, { startLineNumber: 12, startColumn: 1 })).toEqual({
+      path: "pkg/other.py",
+      line: 12,
+    });
+  });
+
+  it("ignores the current file and paths outside the workspace", () => {
+    expect(definitionOpenTarget("/home/u/proj", "pkg/here.py", fileUriFor("/home/u/proj", "pkg/here.py"), { lineNumber: 4 })).toBeNull();
+    expect(definitionOpenTarget("/home/u/proj", "pkg/here.py", "file:///tmp/other.py", { lineNumber: 4 })).toBeNull();
+    expect(definitionOpenTarget("/home/u/proj", "pkg/here.py", "inmemory://model/1")).toBeNull();
+  });
+});
+
 /** Minimal Monaco double: records registrations so the test can invoke providers. */
 function fakeMonaco() {
   const providers: Record<string, Record<string, (...args: any[]) => any>> = {};
@@ -57,6 +74,7 @@ function fakeMonaco() {
       registerDefinitionProvider: register("definition"),
       registerCompletionItemProvider: register("completion"),
     },
+    Uri: { parse: (value: string) => ({ toString: () => value, path: value }) },
     editor: { setModelMarkers: vi.fn() },
   };
   return { monaco: monaco as any, providers };
@@ -95,17 +113,21 @@ describe("attachLspToModel", () => {
     expect(result.contents[0].value).toContain("const a: 1");
   });
 
-  it("keeps only same-file definition targets", async () => {
+  it("keeps same-file definitions on this model and other files as file URIs", async () => {
     const { monaco, providers } = fakeMonaco();
     const request = vi.fn().mockResolvedValue([
       { uri: "file:///ws/a.ts", range: { start: { line: 0, character: 0 }, end: { line: 0, character: 5 } } },
-      { uri: "file:///ws/other.ts", range: { start: { line: 0, character: 0 }, end: { line: 0, character: 5 } } },
+      { uri: "file:///ws/other.ts", range: { start: { line: 3, character: 1 }, end: { line: 3, character: 4 } } },
     ]);
     const conn = { notify: vi.fn(), request, close: vi.fn() } as any;
-    attachLspToModel(monaco, conn, { language: "typescript", model: fakeModel("inmemory://m/1"), fileUri: "file:///ws/a.ts", text: "" });
-    const defs = await providers["definition:typescript"].provideDefinition(fakeModel("inmemory://m/1"), { lineNumber: 1, column: 1 });
-    expect(defs).toHaveLength(1);
+    const model = fakeModel("inmemory://m/1");
+    attachLspToModel(monaco, conn, { language: "typescript", model, fileUri: "file:///ws/a.ts", text: "" });
+    const defs = await providers["definition:typescript"].provideDefinition(model, { lineNumber: 1, column: 1 });
+    expect(defs).toHaveLength(2);
+    expect(defs[0].uri).toBe(model.uri);
     expect(defs[0].range.startLineNumber).toBe(1);
+    expect(defs[1].uri.toString()).toBe("file:///ws/other.ts");
+    expect(defs[1].range.startLineNumber).toBe(4);
   });
 
   it("disposes registrations and clears markers", () => {
