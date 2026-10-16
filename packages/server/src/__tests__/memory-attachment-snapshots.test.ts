@@ -33,10 +33,12 @@ const fitted = (
   timestamp: 2,
   data: { attachmentId: id, data, state, mimeType: "image/png" },
 });
-const images = (event: DashboardEvent | undefined) =>
-  (
-    event?.data.message as { content: Array<Record<string, unknown>> }
+const images = (event: DashboardEvent | undefined) => {
+  if (!event) throw new Error("missing event");
+  return (
+    event.data.message as { content: Array<Record<string, unknown>> }
   ).content.filter((b) => b.type === "image");
+};
 
 describe("retained attachment snapshots", () => {
   it("resolves all retained occurrences without mutating source or earlier snapshots", () => {

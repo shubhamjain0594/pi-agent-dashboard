@@ -2,7 +2,7 @@ import { LayerPortal } from "@blackbelt-technology/pi-dashboard-client-utils/Lay
 import type { CommandInfo, DashboardSession, ImageContent, OpenSpecChange } from "@blackbelt-technology/pi-dashboard-shared/types.js";
 import { mdiArrowLeft, mdiClose, mdiCrosshairsGps, mdiFileCompare, mdiLinkOff, mdiLoading, mdiPaperclip, mdiPencilOutline, mdiPlay, mdiPlayCircleOutline, mdiRefresh, mdiSourceFork, mdiViewGridOutline } from "@mdi/js";
 import { Icon } from "@mdi/react";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useMobile } from "../../hooks/useMobile.js";
 import { usePopoverFlip } from "../../hooks/usePopoverFlip.js";
 import type { SessionState } from "../../lib/chat/event-reducer.js";
@@ -31,7 +31,7 @@ import { PiBelowFloorWarning } from "./PiBelowFloorWarning.js";
 
 interface Props {
   /** Desktop usage disclosure shares the header row instead of a separate strip. */
-  usage?: React.ReactNode;
+  usage?: ReactNode;
   session?: DashboardSession;
   state: SessionState;
   onRename?: (sessionId: string, name: string) => void;
