@@ -97,11 +97,15 @@ export function attachLspToModel(
           const r = await conn.request("textDocument/definition", { textDocument: { uri: fileUri }, position: at(position) }).catch(() => null);
           if (!r) return null;
           const locations = (Array.isArray(r) ? r : [r]) as { uri?: string; range?: LspRange; targetUri?: string; targetRange?: LspRange }[];
-          // Only same-file targets: the viewer holds one model and cannot open others.
+          // Same-file targets use this model. Other workspace files are real
+          // file URIs; the editor opener turns those into a new tab.
           return locations
             .map((l) => ({ uri: l.uri ?? l.targetUri, range: l.range ?? l.targetRange }))
-            .filter((l) => l.uri === fileUri && l.range)
-            .map((l) => ({ uri: m.uri, range: toMonacoRange(monaco, l.range as LspRange) }));
+            .filter((l): l is { uri: string; range: LspRange } => Boolean(l.uri && l.range))
+            .map((l) => ({
+              uri: l.uri === fileUri ? m.uri : monaco.Uri.parse(l.uri),
+              range: toMonacoRange(monaco, l.range),
+            }));
         },
       }),
       monaco.languages.registerCompletionItemProvider(id, {

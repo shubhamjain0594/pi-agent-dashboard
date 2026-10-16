@@ -20,6 +20,8 @@ export interface LspIntelligenceArgs {
   text: string | null;
   monaco: Monaco | null;
   model: monacoNs.editor.ITextModel | null;
+  /** Open a definition that lives in another workspace file as an editor tab. */
+  onOpenFile?: (path: string, line?: number) => void;
 }
 
 /** `file://` URI for a workspace file. Matches what the server's path guard expects. */
@@ -28,7 +30,45 @@ export function fileUriFor(cwd: string, relPath: string): string {
   return `file://${encodeURI(absolute).replace(/#/g, "%23").replace(/\?/g, "%3F")}`;
 }
 
-export function useLspIntelligence({ cwd, path, text, monaco, model }: LspIntelligenceArgs) {
+/**
+ * Workspace-relative path for a `file://` URI, or null when it is not inside
+ * `cwd`. Used to turn a cross-file definition into an editor tab.
+ */
+export function relPathFromFileUri(cwd: string, uri: string): string | null {
+  let pathname: string;
+  try {
+    const parsed = new URL(uri);
+    if (parsed.protocol !== "file:") return null;
+    pathname = parsed.pathname;
+  } catch {
+    return null;
+  }
+  try {
+    pathname = decodeURIComponent(pathname);
+  } catch {
+    /* pathname was already decoded */
+  }
+  const root = cwd.replace(/\/+$/, "");
+  if (pathname !== root && !pathname.startsWith(`${root}/`)) return null;
+  const rel = pathname.slice(root.length).replace(/^\/+/, "");
+  if (!rel || rel.split("/").includes("..")) return null;
+  return rel;
+}
+
+/** Where a definition click should open, when it is a different workspace file. */
+export function definitionOpenTarget(
+  cwd: string,
+  currentPath: string,
+  uri: string,
+  selection?: { lineNumber?: number; startLineNumber?: number } | null,
+): { path: string; line?: number } | null {
+  const rel = relPathFromFileUri(cwd, uri);
+  if (!rel || rel === currentPath) return null;
+  const line = selection?.lineNumber ?? selection?.startLineNumber;
+  return { path: rel, line: line && line > 0 ? line : undefined };
+}
+
+export function useLspIntelligence({ cwd, path, text, monaco, model, onOpenFile }: LspIntelligenceArgs) {
   const language = lspLanguageForPath(path);
   const [status, setStatus] = useState<LspStatus | null>(null);
 
@@ -45,6 +85,21 @@ export function useLspIntelligence({ cwd, path, text, monaco, model }: LspIntell
   }, [cwd, language]);
 
   const trusted = status?.trusted === true;
+
+  // Cross-file "go to definition" has no model in this editor. Open that
+  // path as a tab; same-file jumps stay on the current model.
+  useEffect(() => {
+    if (!monaco || !onOpenFile || !monaco.editor.registerEditorOpener) return;
+    const disposable = monaco.editor.registerEditorOpener({
+      openCodeEditor(_source, resource, selection) {
+        const target = definitionOpenTarget(cwd, path, resource.toString(), selection);
+        if (!target) return false;
+        onOpenFile(target.path, target.line);
+        return true;
+      },
+    });
+    return () => disposable.dispose();
+  }, [monaco, cwd, path, onOpenFile]);
 
   useEffect(() => {
     if (!language || !trusted || !monaco || !model || text === null) return;

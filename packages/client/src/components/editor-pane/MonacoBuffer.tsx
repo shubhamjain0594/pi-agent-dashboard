@@ -11,7 +11,7 @@
  */
 
 import Editor, { type Monaco, type OnMount } from "@monaco-editor/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getApiBase } from "../../lib/api/api-context.js";
 import { buildMonacoTheme } from "../../lib/theme/monaco-theme.js";
 import { installPythonHighlight } from "../../lib/theme/python-highlight.js";
@@ -20,6 +20,7 @@ import { ensureMonacoLoader } from "./monaco-setup.js";
 import type { ViewerProps } from "./types.js";
 import { usePreviewFetch } from "../../lib/access-grants/preview-provenance.js";
 import { useLspIntelligence } from "../../lib/lsp/use-lsp-intelligence.js";
+import { useOptionalSplitWorkspace } from "../split/SplitWorkspaceContext.js";
 import type * as monacoNs from "monaco-editor";
 
 /** Map a file extension to a Monaco language id (curated allowlist). */
@@ -56,12 +57,17 @@ export default function MonacoBuffer({ cwd, path, line }: ViewerProps) {
   const monacoRef = useRef<Monaco | null>(null);
   // Monaco instance + this buffer's model, set once on mount for the LSP hook.
   const [handles, setHandles] = useState<{ monaco: Monaco; model: monacoNs.editor.ITextModel } | null>(null);
+  const split = useOptionalSplitWorkspace();
+  const openDefinition = useCallback((nextPath: string, line?: number) => {
+    split?.openInSplit(nextPath, line);
+  }, [split]);
   const lsp = useLspIntelligence({
     cwd,
     path,
     text: content,
     monaco: handles?.monaco ?? null,
     model: handles?.model ?? null,
+    onOpenFile: split ? openDefinition : undefined,
   });
 
   // Fetch file content.
