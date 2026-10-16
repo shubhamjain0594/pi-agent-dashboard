@@ -1,5 +1,7 @@
 # PI Dashboard
 
+> **Mirror.** This repository is a copy of [BlackBeltTechnology/pi-agent-dashboard](https://github.com/BlackBeltTechnology/pi-agent-dashboard) (`develop`, all branches and tags). It was copied with `git clone --mirror` and pushed to `sensestreet-datascience`. It is not a GitHub fork link, because GHE forks must share a host with their parent. Upstream remains the source of truth.
+
 <p align="center">
   <a href="https://github.com/BlackBeltTechnology/pi-agent-dashboard">
     <img src="docs/cover.png" alt="PI Dashboard — command an army of pi agents from one tab" />
