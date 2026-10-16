@@ -52,11 +52,16 @@ describe("sendPiVersionIfChanged", () => {
 
   it("read failure: no crash, no push, warns", () => {
     const { bc, send } = makeBc();
+    process.env.PI_DASHBOARD_DEBUG = "1";
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    expect(() => sendPiVersionIfChanged(bc, () => { throw new Error("boom"); })).not.toThrow();
-    expect(send).not.toHaveBeenCalled();
-    expect(warn).toHaveBeenCalled();
-    warn.mockRestore();
+    try {
+      expect(() => sendPiVersionIfChanged(bc, () => { throw new Error("boom"); })).not.toThrow();
+      expect(send).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+      delete process.env.PI_DASHBOARD_DEBUG;
+    }
   });
 
   it("undefined version: no push", () => {

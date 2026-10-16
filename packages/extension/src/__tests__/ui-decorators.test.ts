@@ -138,6 +138,7 @@ describe("refreshUiModules — Phase-2 partitioning", () => {
 
   it("rejects decorators with malformed namespace and warns", () => {
     const ctx = createTestCtx();
+    process.env.PI_DASHBOARD_DEBUG = "1";
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       ctx._listeners.set("ui:list-modules", [
@@ -159,11 +160,13 @@ describe("refreshUiModules — Phase-2 partitioning", () => {
       expect(allWarnText).toMatch(/namespace/i);
     } finally {
       warn.mockRestore();
+      delete process.env.PI_DASHBOARD_DEBUG;
     }
   });
 
   it("collisions on (kind, namespace, id) within one probe warn once and last-write-wins", () => {
     const ctx = createTestCtx();
+    process.env.PI_DASHBOARD_DEBUG = "1";
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       ctx._listeners.set("ui:list-modules", [
@@ -183,6 +186,7 @@ describe("refreshUiModules — Phase-2 partitioning", () => {
       expect(collisionWarnings.length).toBe(1);
     } finally {
       warn.mockRestore();
+      delete process.env.PI_DASHBOARD_DEBUG;
     }
   });
 
@@ -275,6 +279,7 @@ describe("Per-session ui:invalidate rate cap", () => {
 
   it("coalesces a 100-invalidation burst to a small bounded number of probes with exactly one warning", () => {
     const ctx = createTestCtx();
+    process.env.PI_DASHBOARD_DEBUG = "1";
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       let probeCount = 0;
@@ -304,6 +309,7 @@ describe("Per-session ui:invalidate rate cap", () => {
       expect(rateWarnings.length).toBe(1);
     } finally {
       warn.mockRestore();
+      delete process.env.PI_DASHBOARD_DEBUG;
     }
   });
 });

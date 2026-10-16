@@ -744,6 +744,12 @@ describe("reloadProviders", () => {
  * See change: update-pi-core-0-84-adopt-apis (test-plan #E12, #E13, #X1, #X2, #X3).
  */
 describe("model registry refresh — 0.84.x options/result contract", () => {
+  beforeEach(() => {
+    process.env.PI_DASHBOARD_DEBUG = "1";
+  });
+  afterEach(() => {
+    delete process.env.PI_DASHBOARD_DEBUG;
+  });
 
   function makePi() {
     return {

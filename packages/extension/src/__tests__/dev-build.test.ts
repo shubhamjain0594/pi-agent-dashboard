@@ -7,6 +7,7 @@ describe("runDevBuild", () => {
   let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    process.env.PI_DASHBOARD_DEBUG = "1";
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     mockExecSync = vi.fn();
     mockFetch = vi.fn().mockReturnValue(Promise.resolve({ ok: true }));
@@ -14,6 +15,7 @@ describe("runDevBuild", () => {
 
   afterEach(() => {
     logSpy.mockRestore();
+    delete process.env.PI_DASHBOARD_DEBUG;
   });
 
   function run(overrides: Partial<Parameters<typeof runDevBuild>[0]> = {}) {

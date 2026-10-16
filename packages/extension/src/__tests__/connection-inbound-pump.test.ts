@@ -302,11 +302,13 @@ describe("inbound message pump — immediate lane", () => {
 
 describe("inbound message pump — bounded back-pressure", () => {
   beforeEach(() => {
+    process.env.PI_DASHBOARD_DEBUG = "1";
     MockWebSocket.instances = [];
     vi.useFakeTimers();
     vi.spyOn(console, "warn").mockImplementation(() => {});
   });
   afterEach(() => {
+    delete process.env.PI_DASHBOARD_DEBUG;
     vi.useRealTimers();
     vi.restoreAllMocks();
   });

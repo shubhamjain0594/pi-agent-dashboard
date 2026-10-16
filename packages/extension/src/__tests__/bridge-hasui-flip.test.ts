@@ -9,14 +9,19 @@
  *       specs/bridge-extension/spec.md — requirement
  *       "Bridge SHALL flip `ctx.hasUI` to `true` after wiring the UI proxy".
  */
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { flipHasUI } from "../hasui-flip.js";
 
 describe("flipHasUI", () => {
   const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
+  beforeEach(() => {
+    process.env.PI_DASHBOARD_DEBUG = "1";
+  });
+
   afterEach(() => {
     warnSpy.mockClear();
+    delete process.env.PI_DASHBOARD_DEBUG;
   });
 
   it("headless RPC: flips ctx.hasUI from false to true", () => {

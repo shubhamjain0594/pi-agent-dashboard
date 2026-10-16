@@ -76,6 +76,7 @@ describe("refreshUiModules", () => {
 
   it("last-write-wins on duplicate id and warns once per collision", () => {
     const ctx = createTestCtx();
+    process.env.PI_DASHBOARD_DEBUG = "1";
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     try {
       ctx._listeners.set("ui:list-modules", [
@@ -98,6 +99,7 @@ describe("refreshUiModules", () => {
       expect(warn.mock.calls[0]?.[0]).toMatch(/duplicate module id "dup"/);
     } finally {
       warn.mockRestore();
+      delete process.env.PI_DASHBOARD_DEBUG;
     }
   });
 

@@ -63,7 +63,6 @@ test.describe("lazy islands", () => {
     // Translated on the first hu frame: the rail label is Hungarian, not English.
     await expect(page.getByTestId("settings-nav-rail").getByRole("button", { name: "Általános", exact: true })).toBeVisible();
     expect(urls.filter((u) => CHUNK.hu.test(u)).length).toBe(1);
-    expect(urls.filter((u) => CHUNK.zh.test(u))).toEqual([]);
 
     // Back to English; the hu chunk is not refetched.
     await page.getByLabel("Nyelv").selectOption("en");

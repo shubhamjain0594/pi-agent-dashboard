@@ -50,10 +50,12 @@ function writeSettings(value: unknown): void {
 const ids = (models: M[]) => models.map((m) => `${m.provider}/${m.id}`).sort();
 
 beforeEach(() => {
+  process.env.PI_DASHBOARD_DEBUG = "1";
   HOME = mkdtempSync(join(tmpdir(), "pi-enabled-models-"));
 });
 
 afterEach(() => {
+  delete process.env.PI_DASHBOARD_DEBUG;
   rmSync(home(), { recursive: true, force: true });
 });
 
