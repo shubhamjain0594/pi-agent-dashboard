@@ -19,8 +19,6 @@ describe("bundle-watch-paths.mjs (E23)", () => {
     expect(r.status, r.stderr).toBe(0);
     const lines = r.stdout.trim().split("\n");
     for (const expected of [
-      "packages/gmail-plugin/package.json",
-      "packages/gmail-plugin/src",
       "packages/client-utils/src",
       "packages/client-utils/package.json",
       "packages/server/package.json",

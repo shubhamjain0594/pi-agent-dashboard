@@ -87,6 +87,8 @@ export const DENYLIST: readonly DenylistEntry[] = [
   { pattern: "/api/pair/pending", reason: "pairing ceremony" },
   { pattern: "/api/pair/approve-pending", reason: "pairing ceremony" },
   { pattern: "/api/pair/deny", reason: "pairing ceremony" },
+  // Workspace trust lets a language server run workspace code: human-only, never an agent tool.
+  { pattern: "/api/lsp/", reason: "language-server workspace trust (UI-only; grants code execution)" },
   { pattern: "/api/discover-servers", reason: "fleet discovery UI" },
   { pattern: "/api/known-servers", reason: "fleet discovery UI" },
   { pattern: "/api/known-servers/accept-move", reason: "fleet discovery UI; operator-only" },

@@ -46,6 +46,8 @@ const FAMILY_BY_SEGMENT: Readonly<Record<string, Family>> = {
   browse: "workspace",
   // folder project identity (`GET /api/folder/project`); change: add-project-scoped-apps
   folder: "workspace",
+  // language-server code intelligence + per-workspace trust (`/api/lsp/*`)
+  lsp: "workspace",
   "pinned-dirs": "workspace",
   // openspec
   openspec: "openspec",

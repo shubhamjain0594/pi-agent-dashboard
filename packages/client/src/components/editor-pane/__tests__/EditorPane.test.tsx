@@ -58,6 +58,7 @@ function renderPane(sessionId = "s1") {
 
 beforeEach(() => {
   localStorage.clear();
+  Element.prototype.scrollIntoView = vi.fn();
   globalThis.fetch = vi.fn(() =>
     Promise.resolve({ json: () => Promise.resolve({ success: true, data: { entries: [] } }) }),
   ) as unknown as typeof fetch;
@@ -70,18 +71,19 @@ afterEach(() => {
 });
 
 function RevealProbe() {
-  const { openChanges, paneState } = useSplitWorkspace();
+  const { openChanges, paneState, split } = useSplitWorkspace();
   return (
     <>
       <button type="button" data-testid="reveal" onClick={() => openChanges()}>
         reveal
       </button>
       <div data-testid="open-tabs">{paneState.openFiles.map((f) => f.path).join("|")}</div>
+      <div data-testid="pane-mode">{split.mode}</div>
     </>
   );
 }
 
-describe("EditorPane — openChanges reveals the rail (collapse-diff-file-tree F6)", () => {
+describe("EditorPane — separate Changes workspace", () => {
   it("switches foreground search shortcuts from Tasks back to the visible editor", () => {
     renderPane("task-search");
     fireEvent.click(screen.getByTestId("inspector-tasks"));
@@ -91,7 +93,7 @@ describe("EditorPane — openChanges reveals the rail (collapse-diff-file-tree F
     expect(screen.getByTestId("editor-search-toggle").getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("reveals the rail on openChanges() without opening a diff tab", () => {
+  it("opens review without forcing the editor rail or opening a file tab", () => {
     render(
       <SplitWorkspaceProvider sessionId="s6" cwd="/proj" orientation="h">
         <EditorPane />
@@ -101,8 +103,8 @@ describe("EditorPane — openChanges reveals the rail (collapse-diff-file-tree F
     // Rail hidden by default.
     expect(screen.queryByTestId("rail-divider")).toBeNull();
     fireEvent.click(screen.getByTestId("reveal"));
-    // Rail revealed; no diff tab opened by openChanges itself.
-    expect(screen.queryByTestId("rail-divider")).toBeTruthy();
+    expect(screen.queryByTestId("rail-divider")).toBeNull();
+    expect(screen.getByTestId("pane-mode").textContent).toBe("full");
     expect(screen.getByTestId("open-tabs").textContent).toBe("");
   });
 });
@@ -199,6 +201,22 @@ describe("EditorPane — unread affordance (non-disruptive-file-open F16/F17)", 
 });
 
 describe("EditorPane — rail toggle (#6)", () => {
+  it("opens an explicitly selected source file in its own full-width tab and closes the explorer", async () => {
+    globalThis.fetch = vi.fn(() => Promise.resolve({ json: () => Promise.resolve({
+      success: true, data: { entries: [{ name: "source.ts", isDir: false }], size: 0 },
+    }) })) as unknown as typeof fetch;
+    render(
+      <SplitWorkspaceProvider sessionId="source-separate" cwd="/proj" orientation="h">
+        <EditorPane /><RevealProbe />
+      </SplitWorkspaceProvider>,
+    );
+    fireEvent.click(screen.getByTestId("tree-toggle"));
+    fireEvent.click(await screen.findByText("source.ts"));
+    expect(screen.getByTestId("tree-toggle").getAttribute("aria-pressed")).toBe("false");
+    expect(screen.queryByTestId("rail-divider")).toBeNull();
+    expect(screen.getByTestId("pane-mode").textContent).toBe("full");
+    expect(screen.getByRole("tab", { name: "source.ts" })).toBeTruthy();
+  });
   it("renders a labelled toggle that hides/shows the rail and persists", () => {
     renderPane("s1");
     const toggle = screen.getByTestId("tree-toggle");
@@ -348,5 +366,42 @@ describe("EditorPane — terminal keep-alive (lazy layer + activation latch)", (
     fireEvent.click(screen.getByTestId("open-t1"));
     await screen.findByTestId("terminal-view-t1");
     expect(mockMountCounts.t1).toBe(1);
+  });
+});
+
+// rpiv-todo-panel gate (openspec: gate-rpiv-todo-on-install). The Tasks tab is
+// shown only while the rpiv-todo package is installed (tasksEnabled from the
+// split workspace), and an open Tasks tab falls back to the editor.
+describe("EditorPane — Tasks tab gated on rpiv-todo install", () => {
+  function renderGated(tasksEnabled: boolean, sessionId = "gated") {
+    return render(
+      <SplitWorkspaceProvider sessionId={sessionId} cwd="/proj" orientation="h" tasksEnabled={tasksEnabled}>
+        <EditorPane />
+      </SplitWorkspaceProvider>,
+    );
+  }
+
+  it("hides the Tasks tab when tasksEnabled is false", () => {
+    renderGated(false, "gated-hidden");
+    expect(screen.queryByTestId("inspector-tasks")).toBeNull();
+    expect(screen.getByTestId("inspector-editor")).toBeDefined();
+  });
+
+  it("shows the Tasks tab when tasksEnabled is true", () => {
+    renderGated(true, "gated-shown");
+    expect(screen.getByTestId("inspector-tasks")).toBeDefined();
+  });
+
+  it("falls back to the editor when Tasks is disabled while open", () => {
+    const view = renderGated(true, "gated-fallback");
+    fireEvent.click(screen.getByTestId("inspector-tasks"));
+    expect(screen.getByTestId("inspector-tasks").getAttribute("aria-pressed")).toBe("true");
+    view.rerender(
+      <SplitWorkspaceProvider sessionId="gated-fallback" cwd="/proj" orientation="h" tasksEnabled={false}>
+        <EditorPane />
+      </SplitWorkspaceProvider>,
+    );
+    expect(screen.queryByTestId("inspector-tasks")).toBeNull();
+    expect(screen.getByTestId("inspector-editor").getAttribute("aria-pressed")).toBe("true");
   });
 });

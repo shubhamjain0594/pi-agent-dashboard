@@ -15,7 +15,7 @@ import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ThinkingBlock } from "../components/chat/ThinkingBlock.js";
 
-vi.mock("../components/preview/MarkdownContent.js", () => ({
+vi.mock("../components/preview/MarkdownContentLazy.js", () => ({
   MarkdownContent: ({ content }: { content: string }) => (
     <div data-testid="thinking-body">{content}</div>
   ),

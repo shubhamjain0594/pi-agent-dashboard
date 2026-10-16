@@ -6,63 +6,12 @@
  * shell merges it under `plugin.flows.*`. Component code resolves keys via the
  * scoped `useT()` hook, which auto-prefixes `plugin.flows.`.
  *
- * zh-CN and hu MUST keep parity (identical key sets). {var} placeholders are
+ * hu is the only non-English catalog. {var} placeholders are
  * preserved verbatim so `t(key, vars)` can interpolate.
  *
  * See change: make-all-ui-text-i18n.
  */
 export const catalog = {
-  "zh-CN": {
-    abort: "中止",
-    delete: "删除",
-    run: "运行",
-    abortRunningFlow: "中止正在运行的流程",
-    back: "返回",
-    expandGraph: "展开图表",
-    flowGraph: "流程图",
-    result: "结果",
-    inputs: "输入",
-    dismiss: "关闭",
-    flowsHeading: "流程",
-    editModeLabel: "编辑模式",
-    runFlowTitle: "运行流程：{flowName}",
-    taskPlaceholder: "描述任务（可选）…",
-    summary: "摘要",
-    waitingToStart: "等待开始…",
-    noActivityYet: "暂无活动",
-    closeAgentDetail: "关闭 {name} 详情",
-    viewAgentDetail: "查看 {name} 详情",
-    details: "详情",
-    stepsCount: "{done}/{total} 个步骤",
-    toggleAutonomousMode: "切换自主模式",
-    abortFlow: "中止流程",
-    newFlowOption: "+ 新建流程",
-    newFlowOptionDesc: "使用 edit-flow 技能创建新流程",
-    runFlowButton: "运行流程…",
-    openFlowButton: "打开流程…",
-    openFlowDialogTitle: "打开流程",
-    openFlowDisabledRunning: "有流程正在运行",
-    flowNotStarted: "未开始",
-    runFlow: "运行",
-    closeAttachedFlow: "关闭",
-    flowDefinitionLoadError: "流程定义文件不可用",
-    flowNoLongerAvailable: "已不可用",
-    flowLoading: "加载中…",
-    flowRunRejected: "启动被拒绝",
-    flowRunSendFailed: "无法启动流程",
-    openHandlerInEditor: "在编辑器中打开处理程序",
-    openSourceInEditor: "在编辑器中打开 {name} 源文件",
-    openFlowYamlInEditor: "在编辑器中打开 {name} YAML",
-    newEditButton: "新建 / 编辑…",
-    runFlowDialogTitle: "运行流程",
-    searchFlows: "搜索流程…",
-    noFlowsAvailable: "没有可用的流程",
-    newEditFlowTitle: "新建 / 编辑流程",
-    pickFlowToEdit: "选择要编辑的流程，或 + 新建流程…",
-    noFlowsYet: "还没有流程 — 选择 + 新建流程",
-    deleteFlowTitle: "删除流程",
-    deleteFlowConfirm: '删除流程 "{name}"？这将移除流程文件及所有关联的代理。',
-  },
   hu: {
     abort: "Megszakítás",
     delete: "Törlés",

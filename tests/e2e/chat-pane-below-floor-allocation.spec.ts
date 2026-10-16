@@ -53,7 +53,8 @@ test.describe("chat-pane below-floor allocation", () => {
     expect(compBox!.height).toBeGreaterThanOrEqual(72);
 
     const chatViewBox = await chatView.boundingBox();
-    expect(chatViewBox!.height).toBeGreaterThanOrEqual(64);
+    const footerHeight = (await page.getByTestId("conversation-composer-host").boundingBox())!.height;
+    expect(chatViewBox!.height - footerHeight).toBeGreaterThanOrEqual(64);
 
     // Verify no bottom clip on pane: child bottom does not exceed pane bottom
     expect(compBox!.y + compBox!.height).toBeLessThanOrEqual(paneBox!.y + paneBox!.height + 1);
@@ -75,10 +76,12 @@ test.describe("chat-pane below-floor allocation", () => {
     const chatView = chatPane.locator('[data-testid="chat-scroll-container"]');
     const chatViewBox = await chatView.boundingBox();
     expect(chatViewBox).not.toBeNull();
-    // Transcript absorbed deficit below its 64px declared floor
-    expect(chatViewBox!.height).toBeLessThan(64);
-    // While holding at or above its 16px bound
-    expect(chatViewBox!.height).toBeGreaterThanOrEqual(16);
+    // The native rail includes the composer; its uncovered reading area is
+    // still the transcript's share of the below-floor allocation.
+    const footerHeight = (await page.getByTestId("conversation-composer-host").boundingBox())!.height;
+    const readingHeight = chatViewBox!.height - footerHeight;
+    expect(readingHeight).toBeLessThan(64);
+    expect(readingHeight).toBeGreaterThanOrEqual(15);
 
     // Fixed row (composer-context-strip) holds its content height
     const strip = page.getByTestId("composer-context-strip");

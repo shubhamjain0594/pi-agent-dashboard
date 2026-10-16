@@ -31,8 +31,9 @@ vi.mock("pdfjs-dist/web/pdf_viewer.mjs", () => {
 // Worker `?url` import → a plain string; never loads a real worker.
 vi.mock("pdfjs-dist/build/pdf.worker.min.mjs?url", () => ({ default: "worker.js" }));
 
-const destroy = vi.fn();
-const getDocument = vi.fn(() => ({ promise: Promise.resolve({ numPages: 3, destroy }) }));
+// pdfjs 6: the loading task owns `destroy` (it tears down the document); the proxy has none.
+const destroy = vi.fn(() => Promise.resolve());
+const getDocument = vi.fn(() => ({ promise: Promise.resolve({ numPages: 3 }), destroy }));
 
 vi.mock("pdfjs-dist", () => ({
   getDocument,
@@ -82,7 +83,7 @@ describe("PdfPreview", () => {
 
   it("surfaces a load failure via the error state", async () => {
     getDocument.mockImplementationOnce(() => ({
-      promise: Promise.reject(new Error("boom pdf")),
+      promise: Promise.reject(new Error("boom pdf")), destroy,
     }));
     // The D2 diagnosis probe finds no refusal, so the viewer's own error shows.
     vi.stubGlobal("fetch", vi.fn(async () => new Response("x", { status: 206 })));
@@ -130,7 +131,7 @@ describe("a failed PDF does not block the next target (step-4.5 review round 1)"
       "fetch",
       vi.fn(async () => new Response(JSON.stringify({ success: false, error: "x", denialId: "d", subject: "/o" }), { status: 403 })),
     );
-    getDocument.mockImplementationOnce(() => ({ promise: Promise.reject(new Error("refused")) }));
+    getDocument.mockImplementationOnce(() => ({ promise: Promise.reject(new Error("refused")), destroy }));
     const { rerender, findByTestId } = render(<PdfPreview target={target} />);
     await findByTestId("denial-notice");
     rerender(<PdfPreview target={{ ...target, path: "b.pdf" }} />);

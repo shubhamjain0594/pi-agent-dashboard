@@ -16,6 +16,9 @@ export interface SessionTodoSnapshot {
   timestamp: number;
 }
 
+/** npm name of pi's rpiv-todo extension, which emits the `todo` tool results. */
+export const RPIV_TODO_PACKAGE = "@juicesharp/rpiv-todo";
+
 // Reject whole snapshots above these limits: a partial list would falsely imply
 // completeness. Bounds include deleted tasks and dependency references.
 const MAX_TASKS = 500;

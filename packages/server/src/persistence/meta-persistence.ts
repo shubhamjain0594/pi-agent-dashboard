@@ -102,6 +102,17 @@ export function createMetaPersistence(): MetaPersistence {
     writeSessionMeta(sessionFile, meta);
   }
 
+  // Debounced writes run off a timer. A failure (unwritable session path)
+  // must not surface as an unhandled exception after the caller has moved on.
+  // Synchronous flush() still lets writeNow throw.
+  function writeNowSafe(sessionFile: string): void {
+    try {
+      writeNow(sessionFile);
+    } catch (err) {
+      console.error(`[meta-persistence] write failed for ${sessionFile}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
   return {
     setDisplayPrefsOverride(sessionFile: string, override: PartialDisplayPrefs | null): void {
       const existing = readSessionMeta(sessionFile) ?? {};
@@ -147,9 +158,9 @@ export function createMetaPersistence(): MetaPersistence {
         // Update meta and reset timer
         clearTimeout(existing.timer);
         existing.meta = meta;
-        existing.timer = setTimeout(() => writeNow(sessionFile), DEBOUNCE_MS);
+        existing.timer = setTimeout(() => writeNowSafe(sessionFile), DEBOUNCE_MS);
       } else {
-        const timer = setTimeout(() => writeNow(sessionFile), DEBOUNCE_MS);
+        const timer = setTimeout(() => writeNowSafe(sessionFile), DEBOUNCE_MS);
         pending.set(sessionFile, { sessionFile, meta, timer });
       }
     },

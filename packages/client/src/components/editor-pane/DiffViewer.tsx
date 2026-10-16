@@ -37,9 +37,10 @@ export default function DiffViewer({ path, cwd }: ViewerProps) {
   // (belt-and-suspenders for any caller that opened an absolute `diff:` path).
   // See change: fix-session-diff-open-nongit-and-preview.
   const normPath = normalizeUnderCwd(relPath, cwd);
+  const files = [...(data?.files ?? []), ...(data?.otherChanges ?? [])];
   const file =
-    data?.files.find((f) => f.path === relPath) ??
-    (normPath !== relPath ? data?.files.find((f) => f.path === normPath) : undefined);
+    files.find((f) => f.path === relPath) ??
+    (normPath !== relPath ? files.find((f) => f.path === normPath) : undefined);
 
   if (!file) {
     return (

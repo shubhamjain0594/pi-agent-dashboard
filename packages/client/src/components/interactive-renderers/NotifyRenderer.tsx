@@ -6,7 +6,7 @@ import {
 } from "@mdi/js";
 import { type NotifyRepeat, notifyRenderedText } from "../../lib/chat/collapse-repeated-notifies.js";
 import { t as i18nT, useI18n } from "../../lib/i18n/i18n.js";
-import { MarkdownContent } from "../preview/MarkdownContent.js";
+import { MarkdownContent } from "../preview/MarkdownContentLazy.js";
 import { InlineMessage, type Severity } from "../primitives/InlineMessage.js";
 import type { InteractiveRendererProps } from "./types.js";
 

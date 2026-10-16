@@ -48,20 +48,45 @@ describe("SplitWorkspace", () => {
     expect(screen.queryByTestId("pane-caption-chat")).toBeNull();
   });
 
-  it("E5: divider carries no collapse control; the dotted grip is present", () => {
+  it("E5: divider grip stays visible; the seam knob closes the editor", () => {
+    const onModeChange = vi.fn();
     render(
-      <SplitWorkspace mode="split" ratio={0.5} orientation="h" onRatioChange={vi.fn()} onModeChange={noop} chat={chat} editor={editor} />,
+      <SplitWorkspace mode="split" ratio={0.5} orientation="h" onRatioChange={vi.fn()} onModeChange={onModeChange} chat={chat} editor={editor} />,
     );
-    // No on-divider collapse chevrons (collapse is header-only now).
+    // The old two-way fold chevrons stay gone. One knob, same chrome as the
+    // session rail, closes the editor.
     expect(screen.queryByTestId("split-fold-chat")).toBeNull();
     expect(screen.queryByTestId("split-fold-editor")).toBeNull();
-    // Always-visible dotted grip inside the divider.
     expect(screen.getByTestId("split-divider-grip")).toBeTruthy();
+    const knob = screen.getByTestId("split-collapse-editor");
+    expect(knob.getAttribute("aria-label")).toBe("Close editor");
+    expect(knob.className).toMatch(/z-sidebar/);
+    fireEvent.click(knob);
+    expect(onModeChange).toHaveBeenCalledWith("closed");
   });
 
-  it("F10: collapse is header-only; restore tabs only re-open (never collapse)", () => {
+  it("stacked split closes the editor from the same seam knob", () => {
     const onModeChange = vi.fn();
-    // Split has no control that drives closed/full — only resize.
+    render(
+      <SplitWorkspace mode="split" ratio={0.5} orientation="v" onRatioChange={vi.fn()} onModeChange={onModeChange} chat={chat} editor={editor} />,
+    );
+    fireEvent.click(screen.getByTestId("split-collapse-editor"));
+    expect(onModeChange).toHaveBeenCalledWith("closed");
+  });
+
+  it("editor seam knob does not start a resize drag", () => {
+    const onRatioChange = vi.fn();
+    render(
+      <SplitWorkspace mode="split" ratio={0.5} orientation="h" onRatioChange={onRatioChange} onModeChange={noop} chat={chat} editor={editor} />,
+    );
+    fireEvent.mouseDown(screen.getByTestId("split-collapse-editor"));
+    fireEvent.mouseMove(document, { clientX: 100 });
+    fireEvent.mouseUp(document, { clientX: 100 });
+    expect(onRatioChange).not.toHaveBeenCalled();
+  });
+
+  it("F10: restore tabs only re-open (never collapse)", () => {
+    const onModeChange = vi.fn();
     const { rerender } = render(
       <SplitWorkspace mode="split" ratio={0.5} orientation="h" onRatioChange={vi.fn()} onModeChange={onModeChange} chat={chat} editor={editor} />,
     );
@@ -132,7 +157,7 @@ describe("SplitWorkspace", () => {
   });
 
   it("stacks vertically with a row-resize divider on mobile; keeps the edge-grabber peek", () => {
-    const { container, rerender } = render(
+    const { container } = render(
       <SplitWorkspace mode="split" ratio={0.5} orientation="v" onRatioChange={vi.fn()} onModeChange={noop} chat={chat} editor={editor} />,
     );
     const divider = screen.getByTestId("split-divider");

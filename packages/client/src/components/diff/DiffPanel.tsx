@@ -38,6 +38,8 @@ function getPrismLang(filePath: string): string {
 }
 
 interface DiffPanelProps {
+  /** Inline review sections already have a file header; full viewer tabs retain controls. */
+  hideToolbar?: boolean;
   file: FileDiffEntry;
   selection: FileSelection;
   sessionId: string;
@@ -90,7 +92,7 @@ function buildPreviewLines(gitDiff: string | undefined): PreviewLine[] {
   return out;
 }
 
-export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
+export function DiffPanel({ file, selection, sessionId, cwd, hideToolbar = false }: DiffPanelProps) {
   const { resolved: theme, themeName } = useThemeContext();
   const syntaxStyle = useMemo(() => getSyntaxTheme(theme, themeName), [theme, themeName]);
   const [diffMode, setDiffMode] = useState<DiffModeEnum>(DiffModeEnum.Unified);
@@ -260,6 +262,8 @@ export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
     // yield null), merging any lazily-fetched full payload. Only when none
     // qualifies fall through to the "No diff data available" note. See change:
     // fix-empty-git-aggregate-diff-tab.
+    const cumulative = buildWriteThroughEditsTexts(file);
+    if (cumulative) return { richDiff: { ...cumulative, filePath: file.path } };
     const fallback = pickFallbackChange(file);
     if (fallback) {
       const texts = buildChangeDiffTexts(file.path, mergeFull(fallback));
@@ -272,7 +276,7 @@ export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
   return (
     <div className="code-diff-panel flex min-h-0 min-w-0 flex-col h-full">
       {/* Toolbar */}
-      <div className="code-diff-toolbar flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border-primary)] text-xs shrink-0">
+      {!hideToolbar && <div className="code-diff-toolbar flex items-center gap-2 px-3 py-1.5 border-b border-[var(--border-primary)] text-xs shrink-0">
         <span title={file.path} className="code-diff-path font-mono text-[var(--text-secondary)] truncate flex-1">{file.path}</span>
 
         {/* View mode toggle */}
@@ -343,7 +347,7 @@ export function DiffPanel({ file, selection, sessionId, cwd }: DiffPanelProps) {
             </button>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Content */}
       <div className="code-diff-content min-h-0 min-w-0 flex-1 overflow-auto">
@@ -435,6 +439,38 @@ function pickFallbackChange(file: FileDiffEntry): FileChangeEvent | null {
     if (c.truncated || buildChangeDiffTexts(file.path, c)) return c;
   }
   return null;
+}
+
+/**
+ * Cumulative Path C texts for a file the session wrote and then edited: the
+ * last `write` plus every later `edit` applied in order, shown as all additions
+ * so the Diff matches the File view. Returns null (caller falls back to the
+ * latest change) when there is no write with content, a later change is not a
+ * plain edit (e.g. a detected-on-disk `tool` event), or an edit no longer applies.
+ */
+function buildWriteThroughEditsTexts(file: FileDiffEntry): { oldText: string; newText: string } | null {
+  let start = -1;
+  for (let i = file.changes.length - 1; i >= 0; i--) {
+    if (file.changes[i].type === "write") {
+      start = i;
+      break;
+    }
+  }
+  // Only when at least one edit follows the write; a lone write (or a truncated
+  // one, which needs the lazy full-payload fetch) keeps the existing path.
+  if (start < 0 || start === file.changes.length - 1) return null;
+  const write = file.changes[start];
+  if (!write.content || write.truncated) return null;
+  let text = write.content;
+  for (const change of file.changes.slice(start + 1)) {
+    if (change.type !== "edit" || change.truncated || !change.edits?.length) return null;
+    for (const edit of change.edits) {
+      const at = text.indexOf(edit.oldText);
+      if (at < 0) return null;
+      text = text.slice(0, at) + edit.newText + text.slice(at + edit.oldText.length);
+    }
+  }
+  return { oldText: "", newText: text };
 }
 
 /** Extract { oldText, newText } from a single change event (Edit or Write) for RichDiff. */

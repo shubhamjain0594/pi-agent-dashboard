@@ -86,7 +86,7 @@ export class SessionDiffCache<T> {
     if (hit) return hit.value;
 
     const flight = this.inflight.get(key);
-    if (flight) return flight;
+    if (flight !== undefined) return flight;
 
     const p = (async () => {
       try {

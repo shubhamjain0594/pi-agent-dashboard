@@ -30,7 +30,7 @@ import {
   SettingsSectionByPluginSlot,
 } from "@blackbelt-technology/dashboard-plugin-runtime";
 import { mdiPackageVariantClosed, mdiRestart } from "@mdi/js";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import type { PluginToggle } from "../../hooks/usePluginToggle.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
 import type { PluginRow } from "../../lib/package/plugins-api.js";

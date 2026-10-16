@@ -30,7 +30,9 @@ export interface FixedRowSpec {
 export type ChatPaneRowSpec = ShrinkableRowSpec | FixedRowSpec;
 
 /**
- * Declared floor and bounds for the transcript (`ChatView`).
+ * Declared floor and bounds for the transcript's uncovered reading area.
+ * A shell-composed ChatView adds the measured footer minimum to its outer
+ * basis/bound; the native scrollport includes the anchored composer.
  *
  * Floor (flex-basis): 64px (~2 message lines) — the transcript's share of the floor sum.
  * Bound (min-height): 16px — hard lower bound, TanStack Virtual measures viewport.
@@ -67,7 +69,9 @@ export const CHAT_HEADER_WEIGHT = 2;
 
 /**
  * Single source of truth for row classifications in `split-chat-pane`.
- * Covers every row rendered by `App.tsx` into the chat pane, including conditionals.
+ * Covers every semantic row rendered by `App.tsx` into the chat pane, including
+ * conditionals. Composer furniture now lives in ChatView's native scrollport;
+ * the fixed heights plus composer bound are reserved in its outer allocation.
  */
 export const CHAT_PANE_ROW_TABLE: Record<string, ChatPaneRowSpec> = {
   // Shrinkable rows (own a scrollport)

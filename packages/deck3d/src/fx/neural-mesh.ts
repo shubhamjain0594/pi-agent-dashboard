@@ -1,3 +1,4 @@
+import type * as THREE from "three";
 import type { FxContext, FxFactory, FxHandle, FxParams } from "./types.js";
 
 /** Layered node mesh with signal lines between adjacent layers (topic: ai). */

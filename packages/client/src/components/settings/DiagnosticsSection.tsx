@@ -235,11 +235,17 @@ export function DiagnosticsSection({ fetcher, autoNameFetcher }: Props = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+  }, []);
+
   const copyTo = useCallback(async (text: string) => {
     // copyText: writeText → hidden-textarea fallback; false → manual-copy modal.
     if (await copyText(text)) {
       setToast("Copied to clipboard.");
-      setTimeout(() => setToast(null), 3000);
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+      toastTimer.current = setTimeout(() => setToast(null), 3000);
     } else {
       setCopyModalText(text);
     }

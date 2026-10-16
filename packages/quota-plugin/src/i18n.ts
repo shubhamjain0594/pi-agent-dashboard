@@ -3,34 +3,10 @@
  *
  * The shell merges this under `plugin.quota.*`; component code resolves keys
  * via the scoped `useT()` hook (auto-prefixes `plugin.quota.`) with an English
- * fallback passed inline. zh-CN and hu keep key parity. {var} placeholders are
+ * fallback passed inline. hu is the only non-English catalog. {var} placeholders are
  * preserved verbatim.
  */
 export const catalog = {
-  "zh-CN": {
-    heading: "供应商配额",
-    tosTitle: "警告",
-    tosBody: "配额跟踪调用未公开的供应商端点，可能违反供应商条款。仅供个人/本地使用。",
-    now: "现在",
-    providersLegend: "按供应商启用",
-    enableQuota: "启用配额跟踪",
-    all: "全部",
-    onPace: "正常",
-    overBy: "超出 {pct}%",
-    stale: "重置待定",
-    unavailable: "配额不可用",
-    projected: "预计",
-    reasonNoCredential: "未登录",
-    reasonRejected: "供应商拒绝了请求",
-    reasonNoData: "未报告配额",
-    reasonNoAdapter: "不支持",
-    resetsIn: "{t} 后重置",
-    retained: "非实时",
-    retainedBody: "最近一次刷新失败，显示的是上次已知的数值。",
-    quota: "配额",
-    noQuota: "{modelId} · 无配额",
-    chipAria: "{provider} 配额，{windows}",
-  },
   hu: {
     heading: "Szolgáltatói kvóta",
     tosTitle: "Figyelmeztetés",

@@ -8,6 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { CONFIG_DIR, CONFIG_FILE } from "@blackbelt-technology/pi-dashboard-shared/config.js";
 import { createServer, type DashboardServer } from "../server.js";
 
 let server: DashboardServer;
@@ -19,6 +20,9 @@ beforeAll(async () => {
   teamHome = fs.mkdtempSync(path.join(os.tmpdir(), "team-host-"));
   prevHome = process.env.PI_TEAM_HOME;
   process.env.PI_TEAM_HOME = teamHome;
+  // The team plugin is opt-in (`defaultEnabled: false`): enable it in this host's config.
+  fs.mkdirSync(CONFIG_DIR, { recursive: true });
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify({ plugins: { team: { enabled: true } } }));
   server = await createServer({
     port: 0,
     piPort: 0,

@@ -122,6 +122,8 @@ export const WS_MESSAGE_TIERS: Readonly<Record<string, Tier>> = {
 export const LIVE_PREVIEW_TIER: Tier = "control";
 /** Terminal PTY WebSocket (shell I/O). */
 export const TERMINAL_TIER: Tier = "operate";
+/** Language-server WebSocket (`/ws/lsp`): runs workspace code, so operate-tier like a terminal. */
+export const LSP_TIER: Tier = "operate";
 
 /** Required tier for a browser→server message type. Unlisted → `operate`. */
 export function wsMessageTier(type: string): Tier {

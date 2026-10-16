@@ -117,30 +117,32 @@ export function createAtlasService(deps: AtlasServiceDeps) {
     const warnings: string[] = [];
     const lines: string[] = [];
     const kept: Array<SkillEntry & { size: number; unreadable?: boolean }> = [];
-    for (const e of skillEntries(result, scope)) {
+    // One stat per skill, concurrently. Result order matches skillEntries so
+    // the fingerprint and the later body reads stay stable.
+    const stats = await Promise.all(skillEntries(result, scope).map(async (e) => {
       const meta = `${e.id}\0${e.origin}\0${e.pkg ?? ""}\0${e.description}\0${e.filePath}`;
       try {
         const st = await fs.stat(e.filePath);
-        lines.push(`${meta}\0${st.mtimeMs}\0${st.ctimeMs}\0${st.size}`);
-        kept.push({ ...e, size: st.size });
+        return { line: `${meta}\0${st.mtimeMs}\0${st.ctimeMs}\0${st.size}`, kept: { ...e, size: st.size } };
       } catch (err) {
         if ((err as NodeJS.ErrnoException)?.code === "ENOENT") {
-          lines.push(`missing:${e.filePath}`);
           warnings.push(`skill ${e.id}: file vanished (${e.filePath})`);
-        } else {
-          lines.push(`unreadable:${meta}`);
-          warnings.push(`skill ${e.id}: cannot stat ${e.filePath}`);
-          kept.push({ ...e, size: 0, unreadable: true });
+          return { line: `missing:${e.filePath}` };
         }
+        warnings.push(`skill ${e.id}: cannot stat ${e.filePath}`);
+        return { line: `unreadable:${meta}`, kept: { ...e, size: 0, unreadable: true as const } };
       }
+    }));
+    for (const row of stats) {
+      lines.push(row.line);
+      if (row.kept) kept.push(row.kept);
     }
     lines.sort();
     const fingerprint = sha([scope, degraded ? "degraded" : "ok", ...lines].join("\n"));
 
     const build = async (): Promise<SkillGraphResponse> => {
       const started = now();
-      const inputs: SkillGraphInput[] = [];
-      for (const e of kept) {
+      const inputs: SkillGraphInput[] = await Promise.all(kept.map(async (e) => {
         let body = "";
         if (!e.unreadable) {
           try {
@@ -151,8 +153,8 @@ export function createAtlasService(deps: AtlasServiceDeps) {
           }
         }
         const { size: _size, unreadable: _u, ...input } = e;
-        inputs.push({ ...input, body });
-      }
+        return { ...input, body };
+      }));
       const graph = buildSkillGraph(inputs);
       deps.log?.(`rebuilt ${key}: ${graph.skills.length} skills, ${graph.links.length} links in ${now() - started}ms`);
       return {

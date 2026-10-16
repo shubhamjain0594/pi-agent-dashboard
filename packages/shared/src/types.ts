@@ -883,6 +883,12 @@ export interface ModelInfo {
    * canonical levels. See change: adopt-pi-071-072-073-features.
    */
   supportedThinkingLevels?: string[];
+  /**
+   * True when this model is inside Pi's `enabledModels` scope. The selector
+   * stars these and includes them in Favorites, while still listing every
+   * other available model. Absent when Pi has no scope configured.
+   */
+  scoped?: boolean;
 }
 
 /**

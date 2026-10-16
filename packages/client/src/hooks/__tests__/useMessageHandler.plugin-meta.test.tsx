@@ -50,6 +50,7 @@ function setup() {
   const deps: any = {
     send: vi.fn(),
     navigate: vi.fn(),
+    setSpawnLoadingSince: () => {},
     clearSpawningCwd: vi.fn(),
     spawningCwdsRef: { current: new Set() },
     subscribedRef: { current: new Set() },

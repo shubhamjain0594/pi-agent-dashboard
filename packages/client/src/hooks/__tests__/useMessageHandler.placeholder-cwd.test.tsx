@@ -51,6 +51,7 @@ function setup(pending: Map<string, { cwd: string; kind: "spawn" | "resume"; pla
   const deps: any = {
     send: vi.fn(),
     navigate,
+    setSpawnLoadingSince: () => {},
     clearSpawningCwd,
     spawningCwdsRef: { current: new Set<string>() },
     subscribedRef: { current: new Set<string>() },

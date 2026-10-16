@@ -13,7 +13,7 @@ import type { McpTokenMintedPayload } from "../mcp-token-delivery.js";
 import { refreshAfterCredentialsReload } from "../model-refresh.js";
 import { emitPendingPrompts } from "../pending-prompt-emitter.js";
 import { buildProviderCatalogue, reloadProviders, toModelInfo } from "../provider-register.js";
-import { filterByEnabledModels } from "../session-sync.js";
+import { annotateEnabledScope } from "../session-sync.js";
 import { serveSubagentResync } from "../subagent-forward-sites.js";
 import { readTranscriptChunk, type TranscriptCursor } from "../transcript-backfill.js";
 import { handleUiManagement } from "../ui-modules.js";
@@ -137,7 +137,7 @@ export async function handleInboundMessage(inst: BridgeInstance, data: unknown):
     // Push updated models list to dashboard client
     if (inst.cachedModelRegistry && inst.sessionReady) {
       try {
-        const models = filterByEnabledModels(inst.cachedModelRegistry.getAvailable().map(toModelInfo));
+        const models = annotateEnabledScope(inst.cachedModelRegistry.getAvailable().map(toModelInfo));
         inst.connection.send({ type: "models_list", sessionId: inst.sessionId, models });
         // See change: replace-hardcoded-provider-lists.
         inst.connection.send({ type: "providers_list", sessionId: inst.sessionId, providers: buildProviderCatalogue() });

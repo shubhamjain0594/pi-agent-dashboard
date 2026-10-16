@@ -73,7 +73,7 @@ function describedBy(hint: ReactNode, hintId: string, error: string | null | und
 }
 
 const CONTROL_BASE =
-  "focus-ring rounded border border-[var(--border-secondary)] bg-[var(--bg-tertiary)] px-2 py-1 text-sm text-[var(--text-primary)] " +
+  "focus-ring rounded-md border border-[var(--border-secondary)] bg-[var(--bg-primary)] px-2 py-1 text-[12px] text-[var(--text-primary)] " +
   "disabled:cursor-not-allowed aria-[invalid=true]:border-[var(--severity-error-border)]";
 
 /** What `FieldShell` hands a custom control. */
@@ -116,45 +116,54 @@ export function FieldShell({
     (state === "changed" ? t("settingsField.changed", undefined, "Changed") : t("settingsField.default", undefined, "Default"));
   return (
     <div className={disabled ? "opacity-50" : ""}>
-      <div className={stacked ? "" : "flex flex-wrap items-center justify-between gap-x-3 gap-y-1"}>
+      <div className={stacked ? "flex flex-col gap-1.5 py-3" : "flex items-start justify-between gap-6 py-3"}>
         {/* A <span>, not a <div>: `label.closest("div")` is the row that also holds the control. */}
-        <span className={`flex flex-wrap items-center gap-x-1.5 gap-y-1 min-w-0 ${stacked ? "mb-1" : ""}`}>
-          <label htmlFor={controlId} className="text-xs font-semibold text-[var(--text-primary)]">
-            {label}
-            {unit ? (
-              <span className="ml-1.5 px-1.5 py-px rounded border border-[var(--border-secondary)] bg-[var(--bg-tertiary)] text-[12px] font-semibold align-middle text-[var(--text-secondary)]">
-                {unit}
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+            <label htmlFor={controlId} className="text-sm font-medium text-[var(--text-primary)]">
+              {label}
+              {unit ? (
+                <span className="ml-1.5 px-1.5 py-px rounded border border-[var(--border-secondary)] bg-[var(--bg-tertiary)] text-[12px] font-semibold align-middle text-[var(--text-secondary)]">
+                  {unit}
+                </span>
+              ) : null}
+            </label>
+            {keyLabel ? <code className="font-mono text-[11px] text-[var(--text-secondary)]">{keyLabel}</code> : null}
+            {state ? (
+              <span
+                data-testid={testIds?.state}
+                className={`inline-flex items-center rounded-full border px-1.5 py-px text-[11px] font-semibold ${
+                  state === "changed"
+                    ? "bg-[var(--severity-info-bg)] border-[var(--severity-info-border)] text-[var(--severity-info-fg)]"
+                    : "bg-[var(--severity-neutral-bg)] border-[var(--severity-neutral-border)] text-[var(--severity-neutral-fg)]"
+                }`}
+              >
+                {pillText}
               </span>
             ) : null}
-          </label>
-          {keyLabel ? <code className="font-mono text-[11px] text-[var(--text-secondary)]">{keyLabel}</code> : null}
-          {state ? (
-            <span
-              data-testid={testIds?.state}
-              className={`inline-flex items-center rounded-full border px-1.5 py-px text-[11px] font-semibold ${
-                state === "changed"
-                  ? "bg-[var(--severity-info-bg)] border-[var(--severity-info-border)] text-[var(--severity-info-fg)]"
-                  : "bg-[var(--severity-neutral-bg)] border-[var(--severity-neutral-border)] text-[var(--severity-neutral-fg)]"
-              }`}
-            >
-              {pillText}
-            </span>
-          ) : null}
-          {onReset ? (
-            <button
-              type="button"
-              data-testid={testIds?.reset}
-              onClick={onReset}
-              className="focus-ring rounded text-[12px] font-semibold text-[var(--text-secondary)] underline hover:text-[var(--text-primary)]"
-            >
-              {resetLabel ?? t("settingsField.reset", undefined, "Reset to default")}
-            </button>
+            {onReset ? (
+              <button
+                type="button"
+                data-testid={testIds?.reset}
+                onClick={onReset}
+                className="focus-ring rounded text-[12px] font-semibold text-[var(--text-secondary)] underline hover:text-[var(--text-primary)]"
+              >
+                {resetLabel ?? t("settingsField.reset", undefined, "Reset to default")}
+              </button>
+            ) : null}
+          </span>
+          {hasHint(hint) && !stacked ? (
+            <p id={hintId} className="text-[12px] leading-snug text-[var(--text-tertiary)]">
+              {hint}
+            </p>
           ) : null}
         </span>
-        {control({ id: controlId, describedBy: describedBy(hint, hintId, error, errorId), invalid })}
+        <span className={stacked ? "min-w-0" : "mt-0.5 shrink-0"}>
+          {control({ id: controlId, describedBy: describedBy(hint, hintId, error, errorId), invalid })}
+        </span>
       </div>
-      {hasHint(hint) ? (
-        <p id={hintId} className="mt-1 text-xs text-[var(--text-secondary)]">
+      {hasHint(hint) && stacked ? (
+        <p id={hintId} className="pb-3 text-[12px] leading-snug text-[var(--text-tertiary)]">
           {hint}
         </p>
       ) : null}
@@ -253,13 +262,13 @@ export function ToggleField({
             aria-invalid={invalid || undefined}
             disabled={rest.disabled}
             onClick={() => onChange(!value)}
-            className={`focus-ring relative h-[22px] w-10 shrink-0 rounded-full border transition-colors disabled:cursor-not-allowed ${
-              value ? "border-[var(--accent-solid)] bg-[var(--accent-solid)]" : "border-[var(--border-strong)] bg-[var(--bg-tertiary)]"
+            className={`focus-ring relative inline-flex h-4 w-7 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:cursor-not-allowed ${
+              value ? "bg-[var(--accent-solid)]" : "bg-[var(--text-muted)]"
             }`}
           >
             <span
-              className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full transition-transform ${
-                value ? "translate-x-[18px] bg-white" : "translate-x-0 bg-[var(--text-secondary)]"
+              className={`h-3 w-3 rounded-full bg-white transition-transform ${
+                value ? "translate-x-3" : "translate-x-0"
               }`}
             />
           </button>

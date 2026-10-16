@@ -6,7 +6,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { usePreviewFetch } from "../../lib/access-grants/preview-provenance.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
 import { logRejection } from "../../lib/report-error.js";
-import { MarkdownContent } from "./MarkdownContent.js";
+import { MarkdownContent } from "./MarkdownContentLazy.js";
 import { readTextUrl } from "./raw-url.js";
 import { dirname } from "./resolve-local-image-src.js";
 

@@ -1,49 +1,12 @@
 /**
  * context-mode-settings plugin i18n catalog — UNPREFIXED leaf keys, merged by the
- * shell under `plugin.context-mode-settings.*`. `zh-CN` and `hu` MUST keep
- * identical key sets (scripts/i18n-parity). English lives at call sites as the
+ * shell under `plugin.context-mode-settings.*`. `hu` is the only non-English catalog (scripts/i18n-parity). English lives at call sites as the
  * `t(key, vars, fallback)` fallback. Field labels/help are presentation data in
  * the descriptor table, not i18n keys.
  *
  * See change: add-context-mode-settings-plugin.
  */
 export const catalog = {
-  "zh-CN": {
-    loadError: "加载设置失败：{error}",
-    loading: "加载中…",
-    intro: "以下为",
-    introTail: "扩展的调优设置。保持默认的字段使用 context-mode 的内置值。",
-    file: "文件：",
-    exists: "已存在",
-    notCreated: "尚未创建",
-    newSessionsNotice: "更改仅对新启动的会话生效；运行中的会话保持当前设置。",
-    precedenceNotice: "会话环境中已导出的变量优先于这些设置（仅存在于 tmux 服务器全局环境中的值除外）。",
-    storageNotice: "存储设置仅适用于由仪表板启动的会话。终端启动的 pi 请在 shell 中导出对应变量。",
-    fields: "个字段",
-    noChanges: "无更改",
-    unsaved: "有未保存的更改",
-    unsavedOne: "1 项未保存的更改",
-    unsavedMany: "{count} 项未保存的更改",
-    on: "开",
-    off: "关",
-    viewRawJson: "查看原始 JSON",
-    defaultBadge: "默认",
-    reset: "重置",
-    fixInvalidFields: "保存前请修正无效字段。",
-    group_storage: "存储",
-    group_search: "搜索限流",
-    group_locale: "区域",
-    group_stats: "统计",
-    group_network: "网络",
-    err_expected_boolean: "应为布尔值",
-    err_expected_positive_number: "应为正数",
-    err_expected_positive_integer: "应为正整数",
-    err_expected_string: "应为非空字符串",
-    err_expected_path: "应为路径",
-    err_expected_absolute_path: "应为绝对路径或以 ~ 开头",
-    err_invalid_locale: "无效的区域标签",
-    err_invalid_time_zone: "无效的 IANA 时区",
-  },
   hu: {
     loadError: "A beállítások betöltése sikertelen: {error}",
     loading: "Betöltés…",

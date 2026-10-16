@@ -6,8 +6,9 @@ import { t as i18nT } from "../../lib/i18n/i18n.js";
 import { THEMES } from "../../lib/theme/themes.js";
 import { useThemeContext } from "./ThemeProvider.js";
 
-export function ThemePicker() {
+export function ThemePicker({ showName = false }: { showName?: boolean }) {
   const { themeName, setThemeName, resolved } = useThemeContext();
+  const active = THEMES.find((theme) => theme.id === themeName);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -30,18 +31,22 @@ export function ThemePicker() {
       <button
         ref={triggerRef}
         onClick={() => setOpen(!open)}
-        className="p-0.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+        className="p-0.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] inline-flex items-center gap-1"
         title={i18nT("common.colorTheme", undefined, "Color theme")}
         data-testid="theme-picker-trigger"
       >
         <Icon path={mdiPalette} size={0.5} />
+        {showName && (
+          <span className="text-[11px] leading-none">{active?.name ?? themeName}</span>
+        )}
       </button>
 
       {/* Structurally immune — re-audited for fix-popover-pane-bounded-height
-          (task 5.6) after panes started provisioning boundaries. ThemePicker's
-          only mount is the SessionList header bar, a sibling ABOVE that view's
-          scroll list, so no `overflow` pane encloses it on either axis and it
-          keeps the viewport measurement (no boundaryRef).
+          (task 5.6) after panes started provisioning boundaries. Mounts are the
+          SessionList header (a sibling ABOVE that view's scroll list) and the
+          workbench status bar (the workbench clips at the viewport edge). No
+          offset `overflow` pane encloses either, so both keep the viewport
+          measurement (no boundaryRef).
           First audited in fix-popover-container-clip. */}
       {open && (
         <div

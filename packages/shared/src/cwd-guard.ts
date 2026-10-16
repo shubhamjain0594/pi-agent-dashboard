@@ -254,7 +254,7 @@ function derive(
   enteredAt: number,
 ): Promise<Derived> {
   const existing = inflight.get(canon);
-  if (existing) return existing;
+  if (existing !== undefined) return existing;
 
   const promise = new Promise<Derived>((resolveOuter) => {
     const abort = new AbortController();

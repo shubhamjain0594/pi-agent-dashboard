@@ -111,11 +111,11 @@ test.describe("internal Monaco editor pane", () => {
 
 // Browser E2E — editor layout modes (change: editor-layout-modes).
 //
-// Drives the header `Chat│Split│Editor` segmented switch + on-divider collapse
-// chevrons + edge peeks through the real split workspace against the Docker
-// harness. Feature data-testids: layout-mode-switch, layout-mode-{closed,split,
-// full}, split-{chat,editor}-pane, split-divider, split-fold-{chat,editor},
-// editor-peek, chat-peek.
+// Drives the header `Chat│Split│Editor` segmented switch, the seam close knob,
+// and edge peeks through the real split workspace against the Docker harness.
+// Feature data-testids: layout-mode-switch, layout-mode-{closed,split,full},
+// split-{chat,editor}-pane, split-divider, split-collapse-editor, editor-peek,
+// chat-peek.
 //
 // The harness emits recurring "Pi session started in tmux" toasts at
 // `fixed top-4 right-4` that overlap the header switch and intercept pointer
@@ -145,14 +145,16 @@ test.describe("editor layout modes", () => {
     await expect(page.getByPlaceholder(/message/i).first()).toBeVisible();
   });
 
-  test("E5: the divider carries no collapse control in any mode (chevrons removed)", async ({ page }) => {
+  test("E5: the old fold chevrons stay gone; the seam knob closes the editor", async ({ page }) => {
     await openSessionWithSwitch(page);
-    // Mode-agnostic invariant: the removed on-divider collapse chevrons never
-    // exist anywhere in the workspace — collapse is header-only now. This needs
-    // no mode-changing click, so it is immune to the harness's nondeterministic
-    // initial split mode (a fresh session may hydrate closed/split/full).
+    // The removed two-way fold chevrons never come back. Mode-agnostic, so this
+    // needs no click and stays immune to the harness's initial split mode.
     await expect(page.getByTestId("split-fold-chat")).toHaveCount(0);
     await expect(page.getByTestId("split-fold-editor")).toHaveCount(0);
+    await robustClick(page, "layout-mode-split");
+    await page.getByTestId("split-collapse-editor").click();
+    await expect(page.getByTestId("editor-peek")).toBeVisible();
+    await expect(page.getByTestId("split-editor-pane")).toHaveCount(0);
     // F10's interactive half ("header drives collapse; restore tabs only
     // re-open") is covered deterministically at L1 by SplitWorkspace.test.tsx
     // — the same robustness call already made for F9/F11/F12 below, since the

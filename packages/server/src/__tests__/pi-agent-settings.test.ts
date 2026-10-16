@@ -7,11 +7,13 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   applyPiSettingsPatch,
   computePiSettingsEtag,
+  nextEnabledModels,
   PI_RETRY_DEFAULTS,
   readPiRetryPolicy,
   readPiSettings,
   validatePiRetryPolicy,
   withPiSettingsLock,
+  writeEnabledModelToggle,
   writePiRetryPolicy,
   writePiSettingsRaw,
 } from "../pi-agent-settings.js";
@@ -592,5 +594,41 @@ describe("pi-agent-settings", () => {
       await applyPiSettingsPatch({ steeringMode: "all" }, token(), deps);
       expect(existsSync(`${file}.lock`)).toBe(false);
     });
+  });
+});
+
+describe("enabledModels favorite toggle", () => {
+  it("adds an exact label and removes it, deleting the key when none remain", () => {
+    expect(nextEnabledModels(undefined, "openai/gpt-5", true)).toEqual({
+      changed: true,
+      enabledModels: ["openai/gpt-5"],
+    });
+    expect(nextEnabledModels(["openai/gpt-5", "anthropic/*"], "openai/gpt-5", false)).toEqual({
+      changed: true,
+      enabledModels: ["anthropic/*"],
+    });
+    expect(nextEnabledModels(["OpenAI/gpt-5:high"], "openai/gpt-5", false)).toEqual({
+      changed: true,
+      enabledModels: undefined,
+    });
+    expect(nextEnabledModels(["anthropic/*"], "anthropic/claude", false)).toEqual({ changed: false });
+    expect(nextEnabledModels(["openai/gpt-5"], "openai/gpt-5", true)).toEqual({ changed: false });
+  });
+
+  it("writes the exact label into settings.json and leaves other keys", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "pi-scope-"));
+    const file = join(dir, "settings.json");
+    writeFileSync(file, JSON.stringify({ theme: "earth", enabledModels: ["anthropic/*"] }, null, 2));
+    const deps = { agentDirEnv: dir };
+    const added = await writeEnabledModelToggle("openai/gpt-5", true, deps);
+    expect(added).toEqual({ ok: true, changed: true });
+    expect(JSON.parse(readFileSync(file, "utf-8"))).toMatchObject({
+      theme: "earth",
+      enabledModels: ["anthropic/*", "openai/gpt-5"],
+    });
+    const removed = await writeEnabledModelToggle("openai/gpt-5", false, deps);
+    expect(removed).toEqual({ ok: true, changed: true });
+    expect(JSON.parse(readFileSync(file, "utf-8")).enabledModels).toEqual(["anthropic/*"]);
+    expect(await writeEnabledModelToggle("not a label", true, deps)).toEqual({ ok: false, error: "invalid" });
   });
 });

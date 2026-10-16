@@ -94,7 +94,7 @@ describe("scope is a derived rule", () => {
     expect(files).toContain("packages/server/src/changelog/changelog-fs.ts");
   });
 
-  it("seed 3 — plugin server/bridge entries are a superset of the twelve known", () => {
+  it("seed 3 — plugin server/bridge entries are a superset of the known set", () => {
     for (const e of [
       "packages/apple-tools/src/server/index.ts",
       "packages/automation-plugin/src/server/index.ts",
@@ -103,7 +103,6 @@ describe("scope is a derived rule", () => {
       "packages/goal-plugin/src/server/index.ts",
       "packages/hermes-memory-plugin/src/server/index.ts",
       "packages/kb-plugin/src/server/index.ts",
-      "packages/subagents-plugin/src/server/index.ts",
       "packages/automation-plugin/src/bridge/index.ts",
       "packages/flows-anthropic-bridge-plugin/src/bridge/index.ts",
       "packages/flows-plugin/src/bridge/index.ts",

@@ -9,7 +9,7 @@ import {
 import { mdiAlertCircleOutline, mdiCheck, mdiChevronDown, mdiChevronUp, mdiClose, mdiCommentQuestionOutline, mdiContentCopy, mdiLanDisconnect, mdiLoading, mdiSourceFork, mdiTextBox } from "@mdi/js";
 import { Icon } from "@mdi/react";
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
-import React, { forwardRef, lazy, Suspense, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { forwardRef, lazy, Suspense, useCallback, useContext, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useActiveChatSelection } from "../../hooks/useActiveChatSelection.js";
 import { isDebugTool } from "../../hooks/useDebugToolsVisible.js";
 import { useDisplayPrefs } from "../../hooks/useDisplayPrefs.js";
@@ -37,6 +37,7 @@ import { derivePendingFreeFloating } from "../../lib/chat/pending-free-floating.
 import { computeAnchorCorrection } from "../../lib/chat/selection-anchor.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
 import {
+  CHAT_COMPOSER_BOUND,
   CHAT_TRANSCRIPT_BOUND,
   CHAT_TRANSCRIPT_FLOOR,
   CHAT_TRANSCRIPT_WEIGHT,
@@ -45,13 +46,13 @@ import type { HistoryLoadPhase } from "../../lib/replay/history-load-phase.js";
 import { REPLAY_PILL_DELAY_MS } from "../../lib/replay/loading-history.js";
 import { promptDesyncGatesFromState, usePromptDesync } from "../../lib/session/prompt-desync.js";
 import { formatMessageTime } from "../../lib/util/format.js";
-import { buildTurnSummaries, type TurnSummary } from "../../lib/util/lineDelta.js";
+import type { TurnSummary } from "../../lib/util/lineDelta.js";
 import { isOutOfCwd, normalizeUnderCwd } from "../../lib/util/normalize-path.js";
 import { ChangeSummaryBlock } from "../diff/ChangeSummaryBlock.js";
 import { getInteractiveRenderer } from "../interactive-renderers/registry.js";
 import { FilePreviewHost, FilePreviewProvider } from "../preview/FilePreviewContext.js";
 import { ImageLightbox } from "../preview/ImageLightbox.js";
-import { MarkdownContent } from "../preview/MarkdownContent.js";
+import { MarkdownContent } from "../preview/MarkdownContentLazy.js";
 import { CopyButton } from "../primitives/CopyButton.js";
 import { ErrorBoundary } from "../primitives/ErrorBoundary.js";
 import { RetriedErrorBadge } from "../session/RetriedErrorBadge.js";
@@ -72,6 +73,7 @@ import { BashOutputCard } from "./BashOutputCard.js";
 import { CollapsedToolGroup } from "./CollapsedToolGroup.js";
 import { CommandFeedbackCard } from "./CommandFeedbackCard.js";
 import { CustomEntryRow } from "./CustomEntryRow.js";
+import { ConversationComposerHost } from "./ConversationLayout.js";
 import { HistoryGapDivider } from "./HistoryGapDivider.js";
 import { MissingToolInlineError } from "./MissingToolInlineError.js";
 import { MultiAskPanel } from "./MultiAskPanel.js";
@@ -481,6 +483,12 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
   }, [replayInFlight, sessionId]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const composerHostRef = useRef<HTMLDivElement | null>(null);
+  const registerComposerHost = useContext(ConversationComposerHost);
+  const setComposerHost = useCallback((node: HTMLDivElement | null) => {
+    composerHostRef.current = node;
+    registerComposerHost?.(node);
+  }, [registerComposerHost]);
   // Pending-prompt desync affordance (design D10): the session reports
   // `ask_user` but no dialog renders, not ended, no replay in flight, held
   // past the 5 s grace. Disappears the moment a dialog renders — a `pending`
@@ -903,9 +911,25 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
     (path: string) => splitWs?.openDiffTab(normalizeUnderCwd(path, cwd)),
     [splitWs, cwd],
   );
+  // lineDelta depends on the `diff` package. Load it on demand so the chat shell
+  // stays off the cold-landing graph; summaries appear once the module resolves.
+  const [rawTurnSummaries, setRawTurnSummaries] = useState<TurnSummary[]>([]);
+  useEffect(() => {
+    if (!prefs.changeSummaryTable) return;
+    let cancelled = false;
+    void import("../../lib/util/lineDelta.js").then(({ buildTurnSummaries }) => {
+      if (cancelled) return;
+      const next = buildTurnSummaries(state.messages);
+      // Skip the update when there is nothing to show: an empty→empty write would add a commit.
+      setRawTurnSummaries((prev) => (prev.length === 0 && next.length === 0 ? prev : next));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [state.messages, prefs.changeSummaryTable]);
   const turnSummaries = useMemo(() => {
     if (!prefs.changeSummaryTable) return [];
-    const raw = buildTurnSummaries(state.messages);
+    const raw = rawTurnSummaries;
     // Normalize file paths at the source so the displayed row and the
     // diff-open lookup share the relative key and can never diverge. Files this
     // session wrote OUTSIDE cwd are suppressed unless the opt-in pref is on
@@ -918,7 +942,7 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
       const totalDeletions = files.reduce((n, f) => n + f.deletions, 0);
       return { ...s, files, totalAdditions, totalDeletions };
     });
-  }, [state.messages, prefs.changeSummaryTable, prefs.showOutOfCwdSessionDiffs, cwd]);
+  }, [rawTurnSummaries, prefs.changeSummaryTable, prefs.showOutOfCwdSessionDiffs, cwd]);
   const { anchoredSummaries, tailSummary } = useMemo(() => {
     const anchored = new Map<string, TurnSummary>();
     let tail: TurnSummary | null = null;
@@ -1230,6 +1254,7 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
   // native copy still owns cross-boundary drags.
   const handleCopy = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
     const container = scrollRef.current;
+    if (composerHostRef.current?.contains(e.target as Node)) return;
     const sel = window.getSelection();
     if (!container || !sel || sel.rangeCount === 0 || sel.isCollapsed) return;
     const range = sel.getRangeAt(0);
@@ -1442,6 +1467,19 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
     lastProgrammaticScrollRef.current = null;
     pinnedSnapshotRef.current = null;
   }, []);
+
+  // Native capture also sees gestures in the portaled composer: React portal
+  // events follow the shell tree, bypassing ChatView's synthetic handlers.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", cancelDescent, { passive: true, capture: true });
+    el.addEventListener("touchmove", cancelDescent, { passive: true, capture: true });
+    return () => {
+      el.removeEventListener("wheel", cancelDescent, true);
+      el.removeEventListener("touchmove", cancelDescent, true);
+    };
+  }, [cancelDescent]);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -1685,6 +1723,74 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
     }
   }, [state.messages.length, state.streamingText, state.pendingPrompt, state.streamingThinking, pendingSteering, isSelecting]);
 
+  // Composer growth changes the visible reading area without changing the
+  // scrollport's height. Keep overlays clear and preserve bottom-follow, but
+  // never move a reader who scrolled away or holds a transcript selection.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    const footer = composerHostRef.current;
+    const viewport = el?.parentElement;
+    if (!el || !footer || !viewport) return;
+    const syncGeometry = () => {
+      const composer = footer.querySelector<HTMLElement>('[data-testid="composer-root"]');
+      const footerHeight = footer.getBoundingClientRect().height;
+      // Preserve the existing below-floor allocation: fixed furniture keeps
+      // its height, the input can shrink to 72px, and reading keeps 16px.
+      const footerMinimum = composer
+        ? Math.max(0, footer.scrollHeight - composer.getBoundingClientRect().height) + CHAT_COMPOSER_BOUND
+        : footer.scrollHeight;
+      viewport.style.setProperty("--chat-viewport-height", `${el.clientHeight}px`);
+      viewport.style.setProperty("--chat-footer-height", `${footerHeight}px`);
+      viewport.style.setProperty("--chat-footer-min-height", `${footerMinimum}px`);
+      if (stickToBottomRef.current && !isSelectingRef.current && !spliceSuppressRef.current) {
+        stampProgrammaticScroll(true, "pin-bottom");
+        el.scrollTop = el.scrollHeight;
+        pinnedSnapshotRef.current = { top: el.scrollTop, height: el.scrollHeight };
+        lastScrollHeightRef.current = el.scrollHeight;
+      }
+    };
+    // Browser focus/autosize scrolling can arrive BEFORE ResizeObserver. Mark
+    // it before the footer mutates, or the temporary gap releases bottom-follow.
+    // Native capture is required because the footer is a React portal.
+    const preserveFollowOnInput = () => {
+      if (stickToBottomRef.current && !isSelectingRef.current) stampProgrammaticScroll(false);
+    };
+    footer.addEventListener("focusin", preserveFollowOnInput, true);
+    footer.addEventListener("input", preserveFollowOnInput, true);
+    const observer = new ResizeObserver(syncGeometry);
+    observer.observe(el);
+    observer.observe(footer);
+    // A capped host's border box can stay fixed while tools/queue/footer
+    // furniture grows inside it. Observe those direct rows, not the whole
+    // subtree, and reconcile roots added/removed by the shell's portal.
+    const rows = new Set<Element>();
+    const syncRows = () => {
+      const current = new Set(footer.children);
+      for (const row of rows) {
+        if (!current.has(row)) {
+          observer.unobserve(row);
+          rows.delete(row);
+        }
+      }
+      for (const row of current) {
+        if (!rows.has(row)) {
+          rows.add(row);
+          observer.observe(row);
+        }
+      }
+      syncGeometry();
+    };
+    syncRows();
+    const mutations = new MutationObserver(syncRows);
+    mutations.observe(footer, { childList: true });
+    return () => {
+      mutations.disconnect();
+      observer.disconnect();
+      footer.removeEventListener("focusin", preserveFollowOnInput, true);
+      footer.removeEventListener("input", preserveFollowOnInput, true);
+    };
+  }, [sessionId, registerComposerHost, stampProgrammaticScroll, isSelectingRef]);
+
   // Anchor the viewport to the selection's drag-origin row while a selection is
   // held (change: anchor-chat-selection-against-row-growth, D1/D3/D5).
   //
@@ -1790,15 +1896,13 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
   }), [turnToFirstRowIndex, virtualizer, stampProgrammaticScroll]);
 
   return (
-    // Key by sessionId so switching sessions (ChatView is reused, not remounted)
-    // resets the hoisted preview — a preview open in session A never leaks into B.
-    <FilePreviewProvider key={sessionId}>
     <div
       style={{
-        flex: `${CHAT_TRANSCRIPT_WEIGHT} ${CHAT_TRANSCRIPT_WEIGHT} ${CHAT_TRANSCRIPT_FLOOR}px`,
-        minHeight: `${CHAT_TRANSCRIPT_BOUND}px`,
+        ...{ "--chat-footer-min-height": `${registerComposerHost ? CHAT_COMPOSER_BOUND : 0}px` },
+        flex: `${CHAT_TRANSCRIPT_WEIGHT} ${CHAT_TRANSCRIPT_WEIGHT} ${registerComposerHost ? `calc(${CHAT_TRANSCRIPT_FLOOR}px + var(--chat-footer-min-height))` : `${CHAT_TRANSCRIPT_FLOOR}px`}`,
+        minHeight: registerComposerHost ? `calc(${CHAT_TRANSCRIPT_BOUND}px + var(--chat-footer-min-height))` : `${CHAT_TRANSCRIPT_BOUND}px`,
       }}
-      className="relative overflow-hidden flex flex-col"
+      className="conversation-viewport relative overflow-hidden flex flex-col"
     >
     {/* overflowAnchor:"none" is load-bearing: TanStack's built-in above-viewport
         correction (resizeItem) drives scroll compensation itself, so browser
@@ -1806,7 +1910,11 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
         `scroll-behavior: smooth` here or on an ancestor — smooth would animate
         each synchronous measurement correction and race the next, reintroducing
         the scroll-to-top drift. See change: fix-chat-scroll-to-top-estimate-drift. */}
-    <div ref={scrollRef} onScroll={handleScroll} onCopy={handleCopy} onWheel={cancelDescent} onTouchMove={cancelDescent} style={{ overflowAnchor: "none" }} data-testid="chat-scroll-container" className={`conversation-transcript chat-cv h-full overflow-y-auto ${isMobile ? "p-2" : "p-4"}`}>
+    <div ref={scrollRef} onScroll={handleScroll} onCopy={handleCopy} style={{ overflowAnchor: "none" }} data-testid="chat-scroll-container" className="conversation-scrollport h-full overflow-y-auto">
+      {/* Reset previews per session, but keep the native scrollport and footer
+          host stable so switching sessions does not remount composer state. */}
+      <FilePreviewProvider key={sessionId}>
+      <div data-testid="chat-transcript-content" className={`conversation-transcript chat-cv ${isMobile ? "p-2" : "p-4"}`}>
       {/* Windowed historical rows (TanStack Virtual): only viewport + overscan
           are mounted. The spacer reserves getTotalSize(); each row is absolutely
           positioned + re-measured on mount. chat-cv-skip keeps Step A's
@@ -2366,7 +2474,14 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
           </div>
         )
       )}
+      </div>
+      <FilePreviewHost />
+      </FilePreviewProvider>
+      {registerComposerHost && (
+        <div ref={setComposerHost} data-testid="conversation-composer-host" className="conversation-composer-host" />
+      )}
     </div>
+    <div className="conversation-scroll-overlays">
     {/*
       Auto-load announcement. Lives HERE, outside the virtualized list, because
       a live region only announces if it is in the DOM when its text changes —
@@ -2469,8 +2584,7 @@ const ChatViewInner = forwardRef<ChatViewHandle, Props>(function ChatView({ sess
       </button>
     )}
     </div>
-    <FilePreviewHost />
-    </FilePreviewProvider>
+    </div>
   );
 });
 

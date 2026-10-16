@@ -41,6 +41,8 @@ describe("subagents-plugin bridge entry", () => {
         channels: {
           "subagents:entry": { as: "subagent_entry", delivery: "stream", key: "agentId" },
           "subagents:delta": { as: "subagent_delta", delivery: "stream", key: "agentId" },
+          "subagents:status": { as: "subagent_status", delivery: "latest", key: "widget" },
+          "subagents:inspect": { as: "subagent_inspect", delivery: "stream", key: "widget" },
         },
       });
     }

@@ -68,6 +68,7 @@ function makeHarness(initialState: Map<string, SessionState>) {
   const deps: MessageHandlerDeps = {
     send: () => {},
     navigate: () => {},
+    setSpawnLoadingSince: () => {},
     clearSpawningCwd: () => {},
     ...makeRefs(),
   };

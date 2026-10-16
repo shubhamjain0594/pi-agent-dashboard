@@ -466,6 +466,80 @@ export async function applyPiSettingsPatch(
   return toWriteResult(r, () => ({}));
 }
 
+const SCOPE_THINKING_LEVELS = new Set(["off", "minimal", "low", "medium", "high", "xhigh", "max"]);
+
+/** `provider/id` from the selector. Rejects globs and whitespace so a click cannot write a pattern. */
+export function isModelScopeLabel(label: string): boolean {
+  return (
+    label.length >= 3 &&
+    label.length <= 200 &&
+    !/[\s*?[\]]/.test(label) &&
+    label.indexOf("/") > 0 &&
+    !label.endsWith("/")
+  );
+}
+
+function exactScopePattern(pattern: string, label: string): boolean {
+  const colon = pattern.lastIndexOf(":");
+  const body =
+    colon > 0 && SCOPE_THINKING_LEVELS.has(pattern.slice(colon + 1)) ? pattern.slice(0, colon) : pattern;
+  if (/[*?[]/.test(body)) return false;
+  return body.toLowerCase() === label.toLowerCase();
+}
+
+/**
+ * Add or remove one exact `provider/id` in Pi's `enabledModels`.
+ * A glob that also matches is left alone. Removing the last exact entry
+ * deletes the key (`undefined`), which Pi treats as no scope.
+ */
+export function nextEnabledModels(
+  current: unknown,
+  label: string,
+  enabled: boolean,
+): { changed: false } | { changed: true; enabledModels: string[] | undefined } {
+  const entries = Array.isArray(current) ? current : [];
+  if (enabled) {
+    if (entries.some((entry) => typeof entry === "string" && exactScopePattern(entry, label))) {
+      return { changed: false };
+    }
+    return { changed: true, enabledModels: [...entries.filter((entry) => typeof entry === "string"), label] };
+  }
+  const next = entries.filter((entry) => !(typeof entry === "string" && exactScopePattern(entry, label)));
+  if (next.length === entries.length) return { changed: false };
+  const strings = next.filter((entry): entry is string => typeof entry === "string");
+  return { changed: true, enabledModels: strings.length > 0 ? strings : undefined };
+}
+
+/**
+ * Persist one favorite click into pi's global `enabledModels`. Does not reload
+ * sessions — callers ask bridges to resend `models_list` when `changed`.
+ */
+export async function writeEnabledModelToggle(
+  label: string,
+  enabled: boolean,
+  deps: FsDeps = {},
+): Promise<{ ok: true; changed: boolean } | { ok: false; error: "invalid" | "parse" | "busy" | "io"; message?: string }> {
+  if (!isModelScopeLabel(label)) return { ok: false, error: "invalid" };
+  const r = await withPiSettingsLock<{ changed: boolean }, { error: "parse" }>(
+    (state) => {
+      if (state.parseError) return { fail: { error: "parse" } };
+      const step = nextEnabledModels(state.settings.enabledModels, label, enabled);
+      if (!step.changed) return { value: { changed: false } };
+      const next = { ...state.settings };
+      if (step.enabledModels === undefined) delete next.enabledModels;
+      else next.enabledModels = step.enabledModels;
+      return { value: { changed: true }, write: formatJson(next) };
+    },
+    {},
+    deps,
+  );
+  if (r.ok) return { ok: true, changed: r.value.changed };
+  if (r.error === "fn") return { ok: false, error: "parse" };
+  if (r.error === "busy") return { ok: false, error: "busy" };
+  if (r.error === "io") return { ok: false, error: "io", message: r.message };
+  return { ok: false, error: "io" };
+}
+
 // ── Raw editor (design D6) ───────────────────────────────────────────
 
 const isStringArray = (v: unknown): boolean => Array.isArray(v) && v.every((x) => typeof x === "string");

@@ -136,8 +136,8 @@ describe("every field kind (#E5)", () => {
       expect(el.className, el.outerHTML).toContain("focus-ring");
     }
     for (const label of container.querySelectorAll("label")) {
-      expect(label.className).toContain("text-xs");
-      expect(label.className).toContain("font-semibold");
+      expect(label.className).toContain("text-sm");
+      expect(label.className).toContain("font-medium");
       expect(label.className).toContain("text-[var(--text-primary)]");
     }
     const html = container.innerHTML;
@@ -152,6 +152,9 @@ describe("every field kind (#E5)", () => {
     const onChange = vi.fn();
     render(<ToggleField label="Tog" value={true} onChange={onChange} hint={null} onLabel="On" offLabel="Off" />);
     const sw = screen.getByRole("switch", { name: "Tog" });
+    expect(sw.className).toContain("h-4");
+    expect(sw.className).toContain("w-7");
+    expect(sw.className).not.toContain("h-[22px]");
     expect(sw.getAttribute("aria-checked")).toBe("true");
     expect(screen.getByText("On")).toBeTruthy();
     fireEvent.click(sw);

@@ -389,8 +389,9 @@ describe("GET /api/file/render (AsciiDoc) — sanitization", () => {
       ].join("\n"),
     );
     const html: string = res.json().data.html;
-    expect(html).toMatch(/<col style="width: ?25%;?">/);
-    expect(html).toMatch(/<col style="width: ?75%;?">/);
+    // asciidoctor 4 emits the column width as a `width` attribute (not an inline style).
+    expect(html).toMatch(/<col (?:style="width: ?25%;?"|width="25%")>/);
+    expect(html).toMatch(/<col (?:style="width: ?75%;?"|width="75%")>/);
     expect(html).toContain("\\(a^2\\)");
     const { splitAdocDiagramSegments } = await import("../../../client/src/lib/preview/adoc-diagram-splitter.js");
     const types = splitAdocDiagramSegments(html)

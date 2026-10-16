@@ -1,3 +1,4 @@
+import type * as THREE from "three";
 import { TessellateModifier } from "three/examples/jsm/modifiers/TessellateModifier.js";
 import type { FxContext, FxFactory, FxHandle, FxParams } from "./types.js";
 import { countFor, num } from "./util.js";

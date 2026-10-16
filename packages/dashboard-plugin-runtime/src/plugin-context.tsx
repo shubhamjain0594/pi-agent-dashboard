@@ -174,7 +174,7 @@ export interface PluginContextValue {
    * See change: make-all-ui-text-i18n.
    */
   t?: (key: string, vars?: Record<string, string | number>, fallback?: string) => string;
-  /** The active UI language code (e.g. "en", "zh-CN", "hu"). */
+  /** The active UI language code (e.g. "en", "hu"). */
   language?: string;
 }
 

@@ -186,17 +186,7 @@ const D9_KEYS = [
 
 describe("user-facing copy — keys and translations stable (E8)", () => {
   const enSource = JSON.parse(readFileSync(join(PACKAGES, "client", "src", "lib", "i18n-en-source.json"), "utf8")) as Record<string, string>;
-  const zhSource = readFileSync(join(PACKAGES, "client", "src", "lib", "i18n", "i18n-zh-CN.ts"), "utf8");
 
-  it("every D9 client key still has a Hungarian and a zh-CN entry (no key renamed)", () => {
-    const missing: string[] = [];
-    for (const k of D9_KEYS) {
-      if (k === "git.spawnIntoThatWorktree") continue; // code-only fallback, never catalogued
-      if (!(k in huCatalog)) missing.push(`hu:${k}`);
-      if (!zhSource.includes(`"${k}":`)) missing.push(`zh:${k}`);
-    }
-    expect(missing).toEqual([]);
-  });
 
   it("the nine en-source D9 keys keep their key and carry the new copy", () => {
     expect(enSource["session.spawnASessionAttachedToThis"]).toBe("New session for this proposal");
@@ -219,11 +209,4 @@ describe("user-facing copy — keys and translations stable (E8)", () => {
     expect(huCatalog["session.noSpawnFailuresRecorded"]).toBe("Nincs rögzített indítási hiba.");
   });
 
-  it("goal-plugin zh says restart (重启), never respawn (重生); keys unchanged", () => {
-    const zh = goalCatalog["zh-CN"] as Record<string, string>;
-    for (const k of ["autoRespawnLabel", "autoRespawnDefaultLabel", "autoRespawnHelp"]) {
-      expect(zh[k], k).toContain("重启");
-      expect(zh[k], k).not.toContain("重生");
-    }
-  });
 });

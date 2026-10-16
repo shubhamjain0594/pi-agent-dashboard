@@ -50,7 +50,7 @@ export function CardSectionsSection() {
             <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
               {groupTitle(g)}
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               {items.map((m) => (
                 <GlobalRow
                   key={m.id}
@@ -98,31 +98,34 @@ function GlobalRow({
 }) {
   const id = useId();
   const hintId = `${id}-hint`;
+  const hint = !showCount
+    ? meta.description()
+    : overrides > 0
+      ? i18nT("cardSections.folderOverrideCount", { count: overrides }, "{count} folder(s) override this")
+      : null;
   return (
-    <div className="flex items-center justify-between gap-3" data-testid={`card-sections-global-${meta.id}`}>
+    <div className="flex items-start justify-between gap-6 py-2.5" data-testid={`card-sections-global-${meta.id}`}>
       <div className="min-w-0">
         <label htmlFor={id} className="text-sm text-[var(--text-secondary)]">
           {meta.label()}
         </label>
-        <p id={hintId} className="text-xs text-[var(--text-tertiary)]" data-testid={`card-sections-global-count-${meta.id}`}>
-          {!showCount
-            ? meta.description()
-            : overrides > 0
-            ? i18nT("cardSections.folderOverrideCount", { count: overrides }, "{count} folder(s) override this")
-            : i18nT("cardSections.noFolderOverrides", undefined, "No folder overrides")}
-        </p>
+        {hint != null && (
+          <p id={hintId} className="text-[11px] leading-snug text-[var(--text-tertiary)]" data-testid={`card-sections-global-count-${meta.id}`}>
+            {hint}
+          </p>
+        )}
       </div>
       <button
         id={id}
         type="button"
         role="switch"
         aria-checked={visible}
-        aria-describedby={hintId}
+        aria-describedby={hint != null ? hintId : undefined}
         disabled={disabled}
         onClick={() => onToggle(!visible)}
-        className={`relative shrink-0 w-10 h-5 rounded-full transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed ${visible ? "bg-blue-600" : "bg-[var(--bg-tertiary)]"}`}
+        className={`focus-ring relative mt-0.5 inline-flex h-4 w-7 shrink-0 items-center rounded-full p-0.5 transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${visible ? "bg-[var(--accent-solid)]" : "bg-[var(--text-muted)]"}`}
       >
-        <span className={`absolute left-0.5 top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${visible ? "translate-x-5" : "translate-x-0"}`} />
+        <span className={`h-3 w-3 rounded-full bg-white transition-transform ${visible ? "translate-x-3" : "translate-x-0"}`} />
       </button>
     </div>
   );

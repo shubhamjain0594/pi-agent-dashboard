@@ -1,6 +1,6 @@
 import { LayerPortal } from "@blackbelt-technology/pi-dashboard-client-utils/LayerPortal";
 import type { CommandInfo, DashboardSession, ImageContent, OpenSpecChange } from "@blackbelt-technology/pi-dashboard-shared/types.js";
-import { mdiArrowLeft, mdiCrosshairsGps, mdiFileCompare, mdiLinkOff, mdiPaperclip, mdiPencilOutline, mdiPlay, mdiPlayCircleOutline, mdiRefresh, mdiSourceFork, mdiViewGridOutline } from "@mdi/js";
+import { mdiArrowLeft, mdiClose, mdiCrosshairsGps, mdiFileCompare, mdiLinkOff, mdiLoading, mdiPaperclip, mdiPencilOutline, mdiPlay, mdiPlayCircleOutline, mdiRefresh, mdiSourceFork, mdiViewGridOutline } from "@mdi/js";
 import { Icon } from "@mdi/react";
 import React, { useEffect, useRef, useState } from "react";
 import { useMobile } from "../../hooks/useMobile.js";
@@ -67,6 +67,8 @@ interface Props {
    *  scroll + flash). Desktop-only button; hidden on mobile. When omitted
    *  the button does not render. See change: add-seek-to-session-card. */
   onSeekToCard?: () => void;
+  /** Exit a live session. Desktop header button; mobile uses mobileActions.onShutdown. */
+  onShutdown?: () => void;
   /** Mobile action menu props (only used on mobile) */
   mobileActions?: {
     openspecChanges?: OpenSpecChange[];
@@ -340,7 +342,7 @@ function formatDuration(ms: number): string {
   return `${seconds}s`;
 }
 
-export function SessionHeader({ usage, session, state, onRename, showBack, onBack, mobileActions, commands, onSendPrompt, openspecChanges, onAttachProposal, onDetachProposal, hasFileChanges, onOpenDiffView, onRefresh, onReadArtifact, onOpenExtensionModulePicker, onResume, allTags, onSetTags, onSeekToCard }: Props) {
+export function SessionHeader({ usage, session, state, onRename, showBack, onBack, mobileActions, commands, onSendPrompt, openspecChanges, onAttachProposal, onDetachProposal, hasFileChanges, onOpenDiffView, onRefresh, onReadArtifact, onOpenExtensionModulePicker, onResume, allTags, onSetTags, onSeekToCard, onShutdown }: Props) {
   const [now, setNow] = useState(Date.now());
   const [isRenaming, setIsRenaming] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -603,6 +605,23 @@ export function SessionHeader({ usage, session, state, onRename, showBack, onBac
           <Icon path={mdiRefresh} size={0.6} className={refreshing ? "animate-spin" : ""} />
         </button>
       )}
+      {session.status !== "ended" && onShutdown && (
+        <button
+          type="button"
+          data-testid="session-header-exit"
+          disabled={session.closing}
+          onClick={() => {
+            if (session.closing) return;
+            if (session.status === "streaming" && !window.confirm(i18nT("session.exitWhileRunningConfirm", undefined, "Session is currently running. Exit anyway?"))) return;
+            onShutdown();
+          }}
+          className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded border border-[var(--tint-red-border)] text-[var(--tint-red-fg)] hover:bg-[var(--tint-red-bg)] disabled:opacity-50 disabled:cursor-not-allowed"
+          title={session.closing ? i18nT("session.closing", undefined, "Closing…") : i18nT("session.exitPiSession", undefined, "Exit pi session")}
+        >
+          <Icon path={session.closing ? mdiLoading : mdiClose} size={0.45} className={session.closing ? "animate-spin" : undefined} />
+          {session.closing ? i18nT("session.closing", undefined, "Closing…") : i18nT("session.exitSession", undefined, "Exit session")}
+        </button>
+      )}
       {openspecPickerOpen && onAttachProposal && (
         <SearchableSelectDialog
           title={i18nT("openspec.attachOpenspecChange2", undefined, "Attach OpenSpec Change")}
@@ -665,9 +684,10 @@ function ChangedFilesChip({
   );
 }
 
-function SessionTasksChip() {
+export function SessionTasksChip() {
   const workspace = useOptionalSplitWorkspace();
-  if (!workspace?.openTasks) return null;
+  // Hidden while rpiv-todo is not installed (gate-rpiv-todo-on-install).
+  if (!workspace?.openTasks || workspace.tasksEnabled === false) return null;
   const count = workspace.todoSnapshot?.tasks.filter(task => task.status !== "deleted").length;
   return <button type="button" className="session-tasks-chip" data-testid="session-tasks-chip" onClick={workspace.openTasks} title={i18nT("review.todoSource", undefined, "Tasks from Pi’s todo extension")}>
     {i18nT("review.tasks", undefined, "Tasks")}{count != null && <span>{count}</span>}

@@ -6,7 +6,7 @@
  * shell merges it under `plugin.hermes-memory.*`. Component code resolves keys
  * via the scoped `useT()` hook, which auto-prefixes `plugin.hermes-memory.`.
  *
- * `zh-CN` and `hu` MUST keep parity (identical key sets — scripts/i18n-parity).
+ * `hu` is the only non-English catalog.
  * English lives at the call sites as the `t(key, vars, fallback)` fallback.
  * Field labels/help are presentation DATA (field-groups.ts), not i18n keys.
  * {var} placeholders are preserved verbatim so `t(key, vars)` can interpolate.
@@ -14,41 +14,6 @@
  * See change: add-hermes-memory-settings-plugin.
  */
 export const catalog = {
-  "zh-CN": {
-    loadError: "加载配置失败：{error}",
-    loading: "加载中…",
-    intro: "以下为",
-    introTail: "扩展的配置。保持默认的字段将跟随扩展的内置值。",
-    file: "文件：",
-    exists: "已存在",
-    notCreated: "尚未创建",
-    newSessionsNotice:
-      "更改仅对新启动的会话生效。Hermes 在扩展加载时读取一次配置，因此运行中的会话在重启前保持当前设置。",
-    fields: "个字段",
-    nChanged: "已更改 {count} 个字段 · 尚未保存",
-    noChanges: "无更改",
-    viewRawJson: "查看原始 JSON",
-    revert: "还原",
-    saving: "保存中…",
-    save: "保存",
-    resolved: "已解析",
-    close: "关闭",
-    defaultBadge: "默认",
-    reset: "重置",
-    modelSelectorUnavailable: "模型选择器不可用",
-    inheritSessionModel: "继承会话模型",
-    errEnterNumber: "请输入数字",
-    errMin: "必须 ≥ {min}",
-    errWhole: "必须为整数",
-    errRegex: "无效的正则表达式：{line}",
-    noModels: "没有可用的模型。请先添加提供商，再选择模型。",
-    openProviders: "打开提供商",
-    on: "开",
-    off: "关",
-    inheritUnset: "（继承 / 未设置）",
-    groupChanged: "已更改",
-    rawTitle: "已解析的配置",
-  },
   hu: {
     loadError: "A konfiguráció betöltése sikertelen: {error}",
     loading: "Betöltés…",

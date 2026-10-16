@@ -57,12 +57,13 @@ export interface SceneRig {
 /**
  * Per-slide mirror state.
  *
- * `Reflector` reflects with its OWN camera (`virtualCamera = this.camera`),
- * created as a bare `PerspectiveCamera` — so its mask is the content layer
- * only, and every backdrop-layer object (scene backgrounds, local fx) is
- * absent from the reflection. The lab reflected them because it had no layers
- * at all. Set per slide rather than at construction, so the configurator
- * toggles it live.
+ * `Reflector` reflects through its OWN camera: three 0.186 keeps a cached
+ * clone of the view camera per view camera (`getReflectionCamera`). The clone
+ * is created content-only in `createParts`, so every backdrop-layer object
+ * (scene backgrounds, local fx) is absent from the reflection unless
+ * `applyMirror` enables `BACKDROP_LAYER` on it. The lab reflected them because
+ * it had no layers at all. Set per slide rather than at construction, so the
+ * configurator toggles it live.
  */
 /**
  * Matte reflection.
@@ -141,10 +142,12 @@ function mirrorUniforms(mirror: Reflector): MirrorUniforms {
   return (mirror.material as THREE.ShaderMaterial).uniforms as unknown as MirrorUniforms;
 }
 
-function applyMirror(mirror: Reflector, P: PaletteColors, cfg: SlideConfig, visible: boolean): void {
+function applyMirror(mirror: Reflector, view: THREE.Camera, P: PaletteColors, cfg: SlideConfig, visible: boolean): void {
   mirror.visible = visible;
-  if (cfg.reflectBackdrop !== false) mirror.camera.layers.enable(BACKDROP_LAYER);
-  else mirror.camera.layers.disable(BACKDROP_LAYER);
+  // three 0.186: the reflection camera is a cached clone of the view camera (`getReflectionCamera`).
+  const reflection = mirror.getReflectionCamera(view);
+  if (cfg.reflectBackdrop !== false) reflection.layers.enable(BACKDROP_LAYER);
+  else reflection.layers.disable(BACKDROP_LAYER);
   const u = mirrorUniforms(mirror);
   u.color.value.set(cfg.mode === "dark" ? 0x777777 : 0xbbbbbb);
   u.matte.value = Math.min(Math.max(cfg.floorMatte ?? 0, 0), 1);
@@ -381,7 +384,7 @@ export function createSceneRig(profile: QualityProfile): SceneRig {
       r.floor.add(r.water);
       markBackdrop(r.water);
     }
-    if (r.mirror) applyMirror(r.mirror, P, cfg, mirrored && !wantWater);
+    if (r.mirror) applyMirror(r.mirror, r.camera, P, cfg, mirrored && !wantWater);
     if (r.water) {
       r.water.visible = wantWater;
       const u = r.water.material.uniforms;
@@ -434,7 +437,7 @@ export function createSceneRig(profile: QualityProfile): SceneRig {
     rimColor: () => r.rimLight.color,
     floorMode: () => floorNow,
     reflectsBackdrop: () => backdropReflected,
-    mirrorMask: () => r.mirror?.camera.layers.mask ?? 0,
+    mirrorMask: () => (r.mirror ? r.mirror.getReflectionCamera(r.camera).layers.mask : 0),
     // Read from the uniform, not from the config that was meant to set it: a
     // knob that stages a value without reaching the frame must still fail.
     floorMatte: () => (r.mirror ? mirrorUniforms(r.mirror).matte.value : 0),
@@ -511,7 +514,7 @@ function createParts(profile: QualityProfile): RigParts {
   const post = createPostStack(renderer, scene, camera, new BackdropRenderPass(scene, camera), renderLayered, profile.bloom);
 
   const pmrem = new THREE.PMREMGenerator(renderer);
-  const envMap = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  const envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
   const key = new THREE.DirectionalLight(0xffffff, 2.2);
   key.position.set(6, 10, 8);
@@ -543,6 +546,10 @@ function createParts(profile: QualityProfile): RigParts {
   markBackdrop(floor);
   scene.add(floor);
 
+  // three 0.186 clones the view camera into the reflection camera on first use, copying its layers.
+  // Create it here, with the view camera still on the content layer, so it starts as the content-only
+  // camera the mirror always reflected through.
+  mirror?.getReflectionCamera(camera).layers.set(CONTENT_LAYER);
   return { renderer, scene, camera, post, key, fill, rimLight, floor, veil, mirror, water: null, envMap };
 }
 

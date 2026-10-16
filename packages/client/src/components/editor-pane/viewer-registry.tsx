@@ -32,7 +32,6 @@ import { AudioPreview } from "../preview/AudioPreview.js";
 import { DiagramPreview } from "../preview/DiagramPreview.js";
 import { DocxPreview } from "../preview/DocxPreview.js";
 import { EmlPreview } from "../preview/EmlPreview.js";
-import { HtmlPreview } from "../preview/HtmlPreview.js";
 import { ImagePreview } from "../preview/ImagePreview.js";
 import { PptxPreview } from "../preview/PptxPreview.js";
 import { SpreadsheetPreview } from "../preview/SpreadsheetPreview.js";
@@ -40,6 +39,7 @@ import { VideoPreview } from "../preview/VideoPreview.js";
 import BinaryWarn from "./BinaryWarn.js";
 import { EditablePreviewTab } from "./EditablePreviewTab.js";
 import EditableSpreadsheetTab from "./EditableSpreadsheetTab.js";
+import { HtmlTab } from "./HtmlTab.js";
 import MarkdownViewer from "./MarkdownViewer.js";
 import MermaidViewer from "./MermaidViewer.js";
 import type { ViewerProps } from "./types.js";
@@ -68,7 +68,8 @@ const PdfViewer = (p: ViewerProps) => (
     <PdfPreview target={asTarget(p)} />
   </Suspense>
 );
-const HtmlViewer = (p: ViewerProps) => <HtmlPreview target={asTarget(p)} restrictCsp={p.restrictCsp} />;
+// Source (Monaco) by default; Preview toggles to the sandboxed HtmlPreview.
+const HtmlViewer = (p: ViewerProps) => <HtmlTab {...p} />;
 const VideoViewer = (p: ViewerProps) => <VideoPreview target={asTarget(p)} />;
 const ImageTab = (p: ViewerProps) => <ImagePreview target={asTarget(p)} variant="full" />;
 const AudioViewer = (p: ViewerProps) => <AudioPreview target={asTarget(p)} />;

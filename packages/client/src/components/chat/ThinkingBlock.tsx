@@ -3,7 +3,7 @@ import { Icon } from "@mdi/react";
 import { useEffect, useRef, useState } from "react";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
 import { ElapsedBadge } from "../session/ElapsedBadge.js";
-import { MarkdownContent } from "../preview/MarkdownContent.js";
+import { MarkdownContent } from "../preview/MarkdownContentLazy.js";
 
 interface Props {
   content: string;

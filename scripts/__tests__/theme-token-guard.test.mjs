@@ -121,25 +121,6 @@ describe("theme-token-guard ratchet", () => {
   });
 });
 
-// test-plan #E7 (improve-gmail-settings-ux): the Gmail plugin client is scanned,
-// and an undeclared token there fails the undeclared arm.
-describe("Gmail plugin client is guarded", () => {
-  const GMAIL = "packages/gmail-plugin/src/client";
-  it("SCAN_ROOTS includes the gmail plugin client dir", () => {
-    expect(SCAN_ROOTS).toContain(GMAIL);
-  });
-  it("a var(--border) under that root is an undeclared-token violation", () => {
-    const root = mkdtempSync(join(tmpdir(), "theme-guard-gmail-"));
-    mkdirSync(join(root, GMAIL), { recursive: true });
-    mkdirSync(join(root, "packages", "client", "src"), { recursive: true });
-    writeFileSync(join(root, "packages", "client", "src", "index.css"), readFileSync(join(REPO_ROOT, "packages/client/src/index.css"), "utf8"));
-    writeFileSync(join(root, GMAIL, "Row.tsx"), 'const a = "border-[var(--border)]";\n');
-    const { undeclared } = scan({ root, roots: [GMAIL] });
-    expect(undeclared[`${GMAIL}/Row.tsx::--border`]).toBe(1);
-    expect(ratchet(undeclared, loadBaseline().undeclared).added.length).toBeGreaterThan(0);
-  });
-});
-
 describe("theme-token-guard against the real tree", () => {
   const found = scan();
   const baseline = loadBaseline();

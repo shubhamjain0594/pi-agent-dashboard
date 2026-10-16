@@ -3,9 +3,20 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Router } from "wouter";
 import { memoryLocation } from "wouter/memory-location";
+import { ThemeProvider } from "../../settings/ThemeProvider.js";
 import { DesktopWorkbench } from "../DesktopWorkbench.js";
 
 beforeEach(() => {
+  localStorage.clear();
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: query === "(prefers-color-scheme: dark)",
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  });
   HTMLDialogElement.prototype.showModal = vi.fn(function (
     this: HTMLDialogElement,
   ) {
@@ -27,6 +38,7 @@ function setup(sessionPage = false) {
   const onToggleSidebar = vi.fn();
   render(
     <Router hook={location.hook}>
+    <ThemeProvider>
     <DesktopWorkbench
       sessions={[
         {
@@ -48,6 +60,7 @@ function setup(sessionPage = false) {
     >
       <div>Existing workspace</div>
     </DesktopWorkbench>
+    </ThemeProvider>
     </Router>,
   );
   return { onSelect, navigate, onToggleSidebar };
@@ -82,6 +95,21 @@ describe("DesktopWorkbench", () => {
     fireEvent.keyDown(input, { key: "Enter" });
     expect(onSelect).toHaveBeenCalledWith("one");
     expect(HTMLDialogElement.prototype.close).toHaveBeenCalled();
+  });
+
+  it("keeps the named palettes and light/dark switch on the status bar", () => {
+    setup(true);
+    const bar = document.querySelector(".workbench-statusbar");
+    expect(bar?.querySelector('[data-testid="theme-picker"]')).toBeTruthy();
+    expect(bar?.querySelector('[data-testid="theme-toggle"]')).toBeTruthy();
+    expect(screen.getByTestId("theme-picker-trigger").textContent).toContain("Base");
+    fireEvent.click(screen.getByTestId("theme-picker-trigger"));
+    expect(screen.getByTestId("theme-option-dracula")).toBeTruthy();
+    expect(screen.getByTestId("theme-option-nord")).toBeTruthy();
+    expect(screen.getByTestId("theme-option-catppuccin")).toBeTruthy();
+    expect(screen.getByTestId("theme-light")).toBeTruthy();
+    expect(screen.getByTestId("theme-system")).toBeTruthy();
+    expect(screen.getByTestId("theme-dark")).toBeTruthy();
   });
 
   it("routes settings through the shell's tracked navigation callback", () => {

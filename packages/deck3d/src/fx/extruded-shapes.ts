@@ -1,3 +1,4 @@
+import type * as THREE from "three";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 import type { FxContext, FxFactory, FxHandle, FxParams } from "./types.js";
 import { countFor, num, str } from "./util.js";

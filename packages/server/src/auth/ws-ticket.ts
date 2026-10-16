@@ -20,7 +20,7 @@ import crypto from "node:crypto";
 import type { Principal } from "@blackbelt-technology/pi-dashboard-shared/identity.js";
 
 /** Core WS route scopes — the only scopes a ticket may ever be bound to. */
-const CORE_WS_ROUTE_SCOPES = ["browser", "terminal", "live", "bridge"] as const;
+const CORE_WS_ROUTE_SCOPES = ["browser", "terminal", "live", "bridge", "lsp"] as const;
 export type CoreWsRouteScope = (typeof CORE_WS_ROUTE_SCOPES)[number];
 
 /**
@@ -106,6 +106,7 @@ export function routeScopeForUrl(url: string | undefined): WsRouteScope | null {
   if (pathOnly.startsWith("/ws/terminal/")) return "terminal";
   if (pathOnly.startsWith("/live/")) return "live";
   if (pathOnly === "/ws/bridge") return "bridge";
+  if (pathOnly === "/ws/lsp") return "lsp";
   // Plugin-registered scopes resolve LAST, so the core prefixes above always
   // win (plugin prefixes are validated to never overlap them).
   return pluginScopeResolver ? pluginScopeResolver(pathOnly) : null;

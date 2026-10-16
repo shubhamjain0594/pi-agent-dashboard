@@ -49,7 +49,7 @@ export class CustomEventGroupResolver {
   resolve(customType: string): Promise<string | undefined> {
     if (customType === "flow-event") return Promise.resolve(undefined);
     const hit = this.memo.get(customType);
-    if (hit) return hit;
+    if (hit !== undefined) return hit;
     const p = this.run(customType);
     this.memo.set(customType, p);
     return p;

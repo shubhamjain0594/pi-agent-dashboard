@@ -1,8 +1,11 @@
-import { act, render } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createInitialState } from "../../lib/chat/event-reducer.js";
 import { ChatView } from "../chat/ChatView.js";
 import { ThemeProvider } from "../settings/ThemeProvider.js";
+
+// Warm the lazy MarkdownContent chunk at collection time, so its first load is not charged to a test timer.
+await import("../preview/MarkdownContent.js");
 import type { ToolContext } from "../tool-renderers/index.js";
 
 const defaultToolContext: ToolContext = {};
@@ -37,7 +40,7 @@ function dispatchCopy(scrollEl: HTMLElement): { text: string | null; prevented: 
 }
 
 describe("ChatView copy fidelity", () => {
-  it("rebuilds clipboard text from a partial-node transcript selection", () => {
+  it("rebuilds clipboard text from a partial-node transcript selection", async () => {
     const state = createInitialState();
     state.messages.push({ id: "0", role: "user", content: "the quick brown fox", timestamp: Date.now() });
     const { container } = render(
@@ -46,6 +49,8 @@ describe("ChatView copy fidelity", () => {
       </ThemeProvider>,
     );
     const scrollEl = getScrollContainer(container);
+    // User text is markdown-rendered by the lazy MarkdownContent: wait for its <p>.
+    await waitFor(() => expect(scrollEl.querySelector("[data-index] p")).not.toBeNull());
     const textNode = scrollEl.querySelector("[data-index] p")!.firstChild!;
     const range = document.createRange();
     range.setStart(textNode, 4);

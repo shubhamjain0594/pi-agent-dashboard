@@ -6,14 +6,14 @@
 import type { ServerToBrowserMessage } from "@blackbelt-technology/pi-dashboard-shared/browser-protocol.js";
 import { act, renderHook } from "@testing-library/react";
 import { useCallback, useRef, useState } from "react";
-import { vi } from "vitest";
+import { type Mock, vi } from "vitest";
 import { useHistoryLoadState } from "../hooks/useHistoryLoadState.js";
 import { useMessageHandler } from "../hooks/useMessageHandler.js";
 import type { SessionState } from "../lib/chat/event-reducer.js";
 import { deriveHistoryLoadPhase, hasChatContent } from "../lib/replay/history-load-phase.js";
 
 export function setupHistoryLoad(initialStatus = "connected") {
-  const markSpy = vi.fn();
+  const markSpy: Mock = vi.fn();
   const hook = renderHook(
     ({ status }: { status: string }) => {
       const [sessionStates, setSessionStates] = useState<Map<string, SessionState>>(new Map());

@@ -12,7 +12,7 @@ import { useMessageHandler } from "../useMessageHandler.js";
 function setup() {
   const setters: any = new Proxy({}, { get: () => vi.fn() });
   const deps: any = {
-    send: vi.fn(), navigate: vi.fn(), clearSpawningCwd: vi.fn(),
+    send: vi.fn(), navigate: vi.fn(), setSpawnLoadingSince: () => {}, clearSpawningCwd: vi.fn(),
     spawningCwdsRef: { current: new Set() }, subscribedRef: { current: new Set() },
     pendingTerminalCwdRef: { current: null }, lastCreatedTerminalIdRef: { current: null },
     maxSeqMapRef: { current: new Map() }, selectedSessionIdRef: { current: undefined },

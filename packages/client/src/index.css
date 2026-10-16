@@ -21,7 +21,6 @@
 @source "../../automation-plugin/src/client";
 @source "../../mcp-client-plugin/src/client";
 @source "../../system-one-plugin/src/client";
-@source "../../gmail-plugin/src/client";
 @source "../../context-mode-settings-plugin/src/client";
 @source "../../hermes-memory-plugin/src/client";
 @source "../../kb-plugin/src/client";
@@ -368,6 +367,59 @@
 html, body {
   overscroll-behavior: none;
 }
+
+/* ── Thin, theme-blended scrollbars (Cursor-style) ───────────────
+   Chromium/Electron and WebKit honour ::-webkit-scrollbar: 6px lane, transparent
+   track, faint token-tinted thumb that strengthens while its scroller is hovered
+   and again on the thumb. Firefox has no such pseudo-element, so it falls back
+   to scrollbar-width/color. Never set scrollbar-width/color on an element:
+   Chromium 121+ then ignores ::-webkit-scrollbar for it. */
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-tertiary) 25%, transparent);
+  border-radius: 3px;
+}
+*:hover::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text-tertiary) 55%, transparent); }
+*::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+@media (forced-colors: active) {
+  *::-webkit-scrollbar-thumb,
+  *:hover::-webkit-scrollbar-thumb,
+  *::-webkit-scrollbar-thumb:hover { background: CanvasText; }
+}
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: var(--text-tertiary) transparent; }
+}
+
+/* One native conversation rail spans transcript and anchored composer. Do not
+   add scroll-behavior:smooth: virtual row corrections must remain synchronous. */
+.conversation-scrollport {
+  display: flex;
+  flex-direction: column;
+  scrollbar-gutter: stable;
+  scroll-padding-bottom: var(--chat-footer-height, 0px);
+}
+.conversation-scrollport > .conversation-transcript { flex: 1 0 auto; }
+.conversation-composer-host {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  max-height: calc(var(--chat-viewport-height, 100vh) - 16px);
+  background: var(--bg-secondary);
+}
+.conversation-composer-host [data-testid="composer-root"] {
+  max-height: calc(var(--chat-viewport-height, 100vh) * .4);
+}
+.conversation-scroll-overlays {
+  position: absolute;
+  inset: 0 0 var(--chat-footer-height, 0px);
+  pointer-events: none;
+}
+.conversation-scroll-overlays > button { pointer-events: auto; }
 
 body {
   margin: 0;

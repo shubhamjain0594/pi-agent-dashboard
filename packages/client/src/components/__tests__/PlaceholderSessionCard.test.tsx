@@ -20,4 +20,15 @@ describe("PlaceholderSessionCard", () => {
     render(<PlaceholderSessionCard />);
     expect(screen.getByText("Starting new session…")).toBeDefined();
   });
+
+  it("shows elapsed loading-extensions text once Pi has started", () => {
+    render(<PlaceholderSessionCard loadingSince={Date.now() - 3000} />);
+    expect(screen.getByText(/loading extensions/i)).toBeDefined();
+    expect(screen.getByText(/3s/)).toBeDefined();
+  });
+
+  it("adds a slow-startup hint after 15 seconds of loading", () => {
+    render(<PlaceholderSessionCard loadingSince={Date.now() - 16000} />);
+    expect(screen.getByText(/still loading/i)).toBeDefined();
+  });
 });

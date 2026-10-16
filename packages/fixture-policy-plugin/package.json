@@ -23,7 +23,8 @@
     "claims": [],
     "priority": 100,
     "server": "./src/server/index.ts",
-    "configSchema": "./src/configSchema.json"
+    "configSchema": "./src/configSchema.json",
+    "defaultEnabled": false
   },
   "dependencies": {
     "@blackbelt-technology/dashboard-plugin-runtime": "^0.9.0",

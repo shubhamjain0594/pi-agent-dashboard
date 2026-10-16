@@ -89,6 +89,7 @@ describe("governed tool-result error surfaces use severity tokens, not raw red l
     // enrolled. Asserting only "not in GOVERNED" would pass without ever
     // exercising rawRedViolations.
     const outside = walkClientSources()
+      .filter((f) => fs.existsSync(path.join(repoRoot, f)))
       .filter((f) => !GOVERNED.includes(f))
       .map((f) => ({ file: f, hits: rawRedViolations(f, fs.readFileSync(path.join(repoRoot, f), "utf8")) }))
       .filter((r) => r.hits.length > 0);

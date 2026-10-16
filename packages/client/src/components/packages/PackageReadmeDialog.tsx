@@ -5,7 +5,7 @@ import { Icon } from "@mdi/react";
 import React, { useEffect, useState } from "react";
 import { getApiBase } from "../../lib/api/api-context.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
-import { MarkdownContent } from "../preview/MarkdownContent.js";
+import { MarkdownContent } from "../preview/MarkdownContentLazy.js";
 
 interface PackageReadmeDialogProps {
   pkg: NpmPackageResult;

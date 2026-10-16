@@ -226,4 +226,101 @@ describe("WorkspaceExplorer", () => {
       "none",
     );
   });
+
+  it("opens an ended session from its compact row", () => {
+    const onSelect = vi.fn();
+    render(
+      <WorkspaceExplorer
+        sessions={[
+          {
+            id: "done",
+            cwd: "/work/app",
+            name: "Done work",
+            status: "ended",
+            source: "dashboard",
+            startedAt: 1,
+          } as DashboardSession,
+        ]}
+        folders={["/work/app"]}
+        onSelect={onSelect}
+        onOpenFolder={vi.fn()}
+        onSpawnSession={vi.fn()}
+        onAddFolder={vi.fn()}
+      >
+        <div>Controls</div>
+      </WorkspaceExplorer>,
+    );
+    const row = document.querySelector(".workspace-explorer-session") as HTMLButtonElement;
+    expect(row.closest("details")?.open).toBe(false);
+    fireEvent.click(row);
+    expect(onSelect).toHaveBeenCalledWith("done");
+  });
+
+  it("exits a live session from the compact row and leaves ended rows alone", () => {
+    const onShutdownSession = vi.fn();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(
+      <WorkspaceExplorer
+        sessions={[
+          {
+            id: "live",
+            cwd: "/work/app",
+            name: "Live work",
+            status: "idle",
+            source: "dashboard",
+            startedAt: 2,
+          } as DashboardSession,
+          {
+            id: "done",
+            cwd: "/work/app",
+            name: "Done work",
+            status: "ended",
+            source: "dashboard",
+            startedAt: 1,
+          } as DashboardSession,
+        ]}
+        folders={["/work/app"]}
+        onSelect={vi.fn()}
+        onOpenFolder={vi.fn()}
+        onSpawnSession={vi.fn()}
+        onAddFolder={vi.fn()}
+        onShutdownSession={onShutdownSession}
+      >
+        <div>Controls</div>
+      </WorkspaceExplorer>,
+    );
+    expect(screen.queryByRole("button", { name: "Exit session Done work" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Exit session Live work" }));
+    expect(confirm).not.toHaveBeenCalled();
+    expect(onShutdownSession).toHaveBeenCalledWith("live");
+  });
+
+  it("asks before exiting a streaming session from the compact row", () => {
+    const onShutdownSession = vi.fn();
+    vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(
+      <WorkspaceExplorer
+        sessions={[
+          {
+            id: "busy",
+            cwd: "/work/app",
+            name: "Busy work",
+            status: "streaming",
+            source: "dashboard",
+            startedAt: 2,
+          } as DashboardSession,
+        ]}
+        folders={["/work/app"]}
+        onSelect={vi.fn()}
+        onOpenFolder={vi.fn()}
+        onSpawnSession={vi.fn()}
+        onAddFolder={vi.fn()}
+        onShutdownSession={onShutdownSession}
+      >
+        <div>Controls</div>
+      </WorkspaceExplorer>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Exit session Busy work" }));
+    expect(onShutdownSession).not.toHaveBeenCalled();
+  });
 });

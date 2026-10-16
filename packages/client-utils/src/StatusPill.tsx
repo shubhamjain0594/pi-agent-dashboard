@@ -13,7 +13,7 @@ import type {
   UiStatusPillProps,
   UiStatusPillState,
 } from "@blackbelt-technology/pi-dashboard-shared/dashboard-plugin/ui-primitives.js";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import React, { useEffect, useState } from "react";
 import { useMdiIconByKey } from "./mdi-by-key.js";
 

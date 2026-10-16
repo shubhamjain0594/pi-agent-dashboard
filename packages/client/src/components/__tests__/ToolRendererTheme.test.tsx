@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import type React from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -36,7 +36,7 @@ function renderWithTheme(ui: React.ReactElement) {
 }
 
 describe("ReadToolRenderer theme integration", () => {
-  it("passes background var(--bg-code) via customStyle", () => {
+  it("passes background var(--bg-code) via customStyle", async () => {
     const { getByTestId } = renderWithTheme(
       <ReadToolRenderer
         toolName="read"
@@ -46,14 +46,15 @@ describe("ReadToolRenderer theme integration", () => {
         context={ctx}
       />,
     );
-    const highlighter = getByTestId("syntax-highlighter");
+    // LazySyntaxHighlighter suspends until the Prism chunk resolves.
+    const highlighter = await waitFor(() => getByTestId("syntax-highlighter"));
     const customStyle = JSON.parse(highlighter.getAttribute("data-custom-style")!);
     expect(customStyle.background).toBe("var(--bg-code)");
   });
 });
 
 describe("WriteToolRenderer theme integration", () => {
-  it("passes background var(--bg-code) via customStyle", () => {
+  it("passes background var(--bg-code) via customStyle", async () => {
     const { getAllByTestId } = renderWithTheme(
       <WriteToolRenderer
         toolName="write"
@@ -62,7 +63,7 @@ describe("WriteToolRenderer theme integration", () => {
         context={ctx}
       />,
     );
-    const highlighters = getAllByTestId("syntax-highlighter");
+    const highlighters = await waitFor(() => getAllByTestId("syntax-highlighter"));
     const customStyle = JSON.parse(highlighters[0].getAttribute("data-custom-style")!);
     expect(customStyle.background).toBe("var(--bg-code)");
   });

@@ -78,6 +78,31 @@ describe("ModelSelector favorites", () => {
     expect(onToggle).toHaveBeenCalledWith("anthropic/claude-opus-4-7", false);
   });
 
+  it("stars Pi-scoped models and still lists every model", () => {
+    const catalogue: ModelInfo[] = [
+      { provider: "anthropic", id: "claude-opus-4-7", scoped: true },
+      { provider: "openai", id: "gpt-5" },
+    ];
+    const onToggle = vi.fn();
+    render(<ModelSelector models={catalogue} onSelect={() => {}} favorites={[]} onToggleFavorite={onToggle} />);
+    open();
+    expect(screen.getAllByTestId("model-row")).toHaveLength(2);
+    const scoped = screen.getAllByTestId("model-row").find((r) => r.textContent?.includes("claude-opus-4-7"))!;
+    const other = screen.getAllByTestId("model-row").find((r) => r.textContent?.includes("gpt-5"))!;
+    expect(within(scoped).getByTestId("model-fav-toggle").getAttribute("aria-pressed")).toBe("true");
+    expect(within(other).getByTestId("model-fav-toggle").getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(within(scoped).getByTestId("model-fav-toggle"));
+    expect(onToggle).toHaveBeenCalledWith("anthropic/claude-opus-4-7", false);
+    expect(within(scoped).getByTestId("model-fav-toggle").getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(within(other).getByTestId("model-fav-toggle"));
+    expect(onToggle).toHaveBeenCalledWith("openai/gpt-5", true);
+    expect(within(other).getByTestId("model-fav-toggle").getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(screen.getByTestId("favs-only-toggle"));
+    const rows = screen.getAllByTestId("model-row");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].textContent).toContain("gpt-5");
+  });
+
   it("favs-only filter narrows to favorites", () => {
     render(<ModelSelector models={models} onSelect={() => {}} favorites={["anthropic/claude-haiku-4-5"]} onToggleFavorite={() => {}} />);
     open();

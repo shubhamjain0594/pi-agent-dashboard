@@ -158,7 +158,7 @@ export function reindexNow(state: ReindexState, cwd: string): Promise<{ changed:
     return Promise.resolve({ changed: 0, chunks: 0 });
   }
   const existing = state.inflight.get(cwd);
-  if (existing) return existing;
+  if (existing !== undefined) return existing;
   const p = (async () => {
     const { store, cfg } = getKb(state, cwd);
     let changed = 0, chunks = 0;

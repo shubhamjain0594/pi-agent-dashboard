@@ -119,7 +119,7 @@ export function createLiveStateReader(deps: LiveStateReaderDeps): LiveStateReade
         // + 1 queued per cwd; later fresh reads join the same follow-up).
         if (!opts?.fresh) return hit.value;
         const pending = queued.get(cwd);
-        if (pending) return pending;
+        if (pending !== undefined) return pending;
         const next = hit.value.then(() => {
           queued.delete(cwd);
           return start(cwd);

@@ -39,17 +39,6 @@ function stripThinkingLevel(pattern: string): string {
 }
 
 /**
- * Filter a models array to only include models matching the `enabledModels`
- * patterns from `~/.pi/agent/settings.json`. When `enabledModels` is absent or
- * empty the full list is returned unchanged.
- *
- * Matching mirrors pi core's `resolveModelScope`: each pattern is tested with
- * minimatch (case-insensitive) against both the canonical `provider/id` and the
- * bare `id`, so exact refs (`anthropic/claude-sonnet-4-6`), provider wildcards
- * (`anthropic/*`), and bare globs (`*sonnet*`) all work. A trailing
- * `:<thinkingLevel>` suffix is stripped before matching.
- */
-/**
  * Read the server-minted spawn correlation token and SCRUB it from the env.
  *
  * Single-use by construction: a pi this pi later spawns (subagent, nested `pi`,
@@ -72,13 +61,14 @@ export function consumeSpawnToken(): string | undefined {
   return token;
 }
 
-export function filterByEnabledModels<T extends { provider: string; id: string }>(models: T[]): T[] {
+/** `null` when Pi has no model scope (absent file, absent/empty `enabledModels`, or a bad file). */
+export function readEnabledModelPatterns(): string[] | null {
   try {
     const settingsPath = join(homedir(), ".pi", "agent", "settings.json");
-    if (!existsSync(settingsPath)) return models;
+    if (!existsSync(settingsPath)) return null;
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
     const rawPatterns: unknown[] | undefined = settings.enabledModels;
-    if (!Array.isArray(rawPatterns) || rawPatterns.length === 0) return models;
+    if (!Array.isArray(rawPatterns) || rawPatterns.length === 0) return null;
 
     const patterns: string[] = [];
     for (let i = 0; i < rawPatterns.length; i++) {
@@ -91,16 +81,74 @@ export function filterByEnabledModels<T extends { provider: string; id: string }
         );
       }
     }
-    if (patterns.length === 0) return models;
-
-    return models.filter((m) => {
-      const fullId = `${m.provider}/${m.id}`;
-      return patterns.some(
-        (p) => minimatch(fullId, p, { nocase: true }) || minimatch(m.id, p, { nocase: true }),
-      );
-    });
+    return patterns.length > 0 ? patterns : null;
   } catch {
-    return models; // fall back to full list on any error
+    return null;
+  }
+}
+
+function matchesEnabledPattern(model: { provider: string; id: string }, patterns: string[]): boolean {
+  const fullId = `${model.provider}/${model.id}`;
+  return patterns.some(
+    (p) => minimatch(fullId, p, { nocase: true }) || minimatch(model.id, p, { nocase: true }),
+  );
+}
+
+/**
+ * Models matching Pi's `enabledModels` scope. Absent or empty scope returns
+ * the list unchanged. Matching mirrors pi core's `resolveModelScope`: minimatch
+ * (case-insensitive) against `provider/id` and the bare `id`. A trailing
+ * `:<thinkingLevel>` suffix is stripped before matching.
+ */
+export function filterByEnabledModels<T extends { provider: string; id: string }>(models: T[]): T[] {
+  const patterns = readEnabledModelPatterns();
+  if (!patterns) return models;
+  return models.filter((m) => matchesEnabledPattern(m, patterns));
+}
+
+/**
+ * Catalogue for the dashboard selector: every available model, with Pi's
+ * `enabledModels` scope marked `scoped: true` so the picker can star those
+ * without hiding the rest. No scope configured → the list is returned unchanged.
+ */
+export function annotateEnabledScope<T extends { provider: string; id: string }>(
+  models: T[],
+): Array<T & { scoped?: true }> {
+  const patterns = readEnabledModelPatterns();
+  if (!patterns) return models;
+  return models.map((m) => (matchesEnabledPattern(m, patterns) ? { ...m, scoped: true as const } : m));
+}
+
+/**
+ * Make Pi's live scope array match `patterns`. `ctx.scopedModels` is the
+ * session's own array, so in-place edits update model cycling in this process.
+ * No scope (`null`) clears it. Existing entries keep their thinking level.
+ */
+export function syncLiveScopedModels(
+  live: unknown,
+  available: Array<{ provider: string; id: string }>,
+  patterns: string[] | null,
+): void {
+  if (!Array.isArray(live)) return;
+  if (!patterns) {
+    if (live.length > 0) live.length = 0;
+    return;
+  }
+  const keyOf = (model: { provider: string; id: string }) => `${model.provider}/${model.id}`.toLowerCase();
+  const wanted = available.filter((model) => matchesEnabledPattern(model, patterns));
+  const missing = new Set(wanted.map(keyOf));
+  for (let i = live.length - 1; i >= 0; i--) {
+    const model = (live[i] as { model?: { provider?: string; id?: string } } | null)?.model;
+    if (!model?.provider || !model.id) {
+      live.splice(i, 1);
+      continue;
+    }
+    const key = keyOf(model as { provider: string; id: string });
+    if (!missing.has(key)) live.splice(i, 1);
+    else missing.delete(key);
+  }
+  for (const model of wanted) {
+    if (missing.has(keyOf(model))) live.push({ model });
   }
 }
 
@@ -188,7 +236,7 @@ export function sendStateSync(
 
   if (bc.cachedModelRegistry) {
     try {
-      const models = filterByEnabledModels(bc.cachedModelRegistry.getAvailable().map(toModelInfo));
+      const models = annotateEnabledScope(bc.cachedModelRegistry.getAvailable().map(toModelInfo));
       bc.connection.send({ type: "models_list", sessionId: bc.sessionId, models });
       // See change: replace-hardcoded-provider-lists.
       bc.connection.send({ type: "providers_list", sessionId: bc.sessionId, providers: buildProviderCatalogue() });
@@ -339,7 +387,7 @@ export function handleSessionChange(
 
   if (bc.cachedModelRegistry) {
     try {
-      const models = filterByEnabledModels(bc.cachedModelRegistry.getAvailable().map(toModelInfo));
+      const models = annotateEnabledScope(bc.cachedModelRegistry.getAvailable().map(toModelInfo));
       bc.connection.send({ type: "models_list", sessionId: bc.sessionId, models });
       // See change: replace-hardcoded-provider-lists.
       bc.connection.send({ type: "providers_list", sessionId: bc.sessionId, providers: buildProviderCatalogue() });

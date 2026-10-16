@@ -19,12 +19,17 @@ import {
   type EventForwardDeclaration,
   REGISTER_EVENT_FORWARD_CHANNEL,
 } from "@blackbelt-technology/pi-dashboard-shared/event-forward-declaration.js";
+import { SUBAGENT_WIDGET_FORWARD_AS, SUBAGENT_WIDGET_KEY_FIELD } from "@blackbelt-technology/pi-dashboard-shared/subagent-widget-protocol.js";
 
 export const SUBAGENTS_FORWARD_DECLARATION: EventForwardDeclaration = {
   pluginId: "subagents",
   channels: {
     "subagents:entry": { as: "subagent_entry", delivery: "stream", key: "agentId" },
     "subagents:delta": { as: "subagent_delta", delivery: "stream", key: "agentId" },
+    // pi-subagents' live status: only the newest snapshot per session is kept.
+    "subagents:status": { as: SUBAGENT_WIDGET_FORWARD_AS["subagents:status"], delivery: "latest", key: SUBAGENT_WIDGET_KEY_FIELD },
+    // Inspect replies: every reply kept, matched by requestId in the browser.
+    "subagents:inspect": { as: SUBAGENT_WIDGET_FORWARD_AS["subagents:inspect"], delivery: "stream", key: SUBAGENT_WIDGET_KEY_FIELD },
   },
 };
 

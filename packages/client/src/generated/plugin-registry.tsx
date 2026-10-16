@@ -14,7 +14,6 @@ import { catalog as subagents_catalog } from "@blackbelt-technology/pi-dashboard
 import { FolderTeamSection, catalog as team_catalog } from "@blackbelt-technology/pi-dashboard-team-plugin";
 import { MemorySubcard, shouldRenderMemorySubcard, isPipelineDetailActive, OmEntryCard, catalog as blackhole_catalog } from "@blackbelt-technology/pi-dashboard-blackhole-plugin";
 import { catalog as system_one_catalog } from "@blackbelt-technology/pi-dashboard-system-one-plugin";
-import { GmailSettings, catalog as gmail_catalog } from "@blackbelt-technology/pi-dashboard-gmail-plugin";
 import { BrowserRelayBadge, hasRelayTabsForBadge, BrowserRelayFeed, BrowserTabLabel, catalog as browser_catalog } from "@blackbelt-technology/pi-dashboard-browser-plugin";
 import { catalog as flows_anthropic_bridge_catalog } from "@blackbelt-technology/pi-dashboard-flows-anthropic-bridge-plugin";
 import { QuotaWidget, catalog as quota_catalog } from "@blackbelt-technology/pi-dashboard-quota-plugin";
@@ -47,6 +46,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "client": "./src/client/index.tsx",
         "server": "./src/server/index.ts",
         "configSchema": "./config.schema.json",
+        "defaultEnabled": false,
         "requires": {
             "paths": [
                 "${imcpServerPath}"
@@ -103,6 +103,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "server": "./src/server/index.ts",
         "bridge": "./src/bridge/index.ts",
         "configSchema": "./src/configSchema.json",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog"
     },
     claims: [
@@ -113,29 +114,6 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
       { pluginId: "automation", priority: 100, slot: "settings-section", tab: "general", Component: lazyClaim(() => import("../../../automation-plugin/src/client/AutomationSettings"), "AutomationSettings") },
     ],
     catalog: automation_catalog,
-  },
-  {
-    manifest: {
-        "id": "chat-gateway",
-        "displayName": "Chat Gateway",
-        "priority": 100,
-        "claims": [
-            {
-                "slot": "settings-section",
-                "component": "ChatGatewaySettings",
-                "module": "./src/client/ChatGatewaySettings.tsx",
-                "config": {
-                    "tab": "general"
-                }
-            }
-        ],
-        "client": "./src/client/index.tsx",
-        "server": "./src/server/index.ts",
-        "configSchema": "./src/configSchema.json"
-    },
-    claims: [
-      { pluginId: "chat-gateway", priority: 100, slot: "settings-section", config: {"tab":"general"}, Component: lazyClaim(() => import("../../../chat-gateway/src/client/ChatGatewaySettings"), "ChatGatewaySettings") },
-    ],
   },
   {
     manifest: {
@@ -189,7 +167,8 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         ],
         "client": "./src/client/index.tsx",
         "server": "./src/server/index.ts",
-        "configSchema": "./src/configSchema.json"
+        "configSchema": "./src/configSchema.json",
+        "defaultEnabled": false
     },
     claims: [
       { pluginId: "cost-estimator", priority: 100, slot: "command-route", command: "cost", Component: lazyClaim(() => import("../../../cost-estimator/src/client/CostEstimator"), "CostView") },
@@ -248,6 +227,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "server": "./src/server/index.ts",
         "bridge": "./src/bridge/index.ts",
         "configSchema": "./src/configSchema.json",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog"
     },
     claims: [
@@ -307,6 +287,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "server": "./src/server/index.ts",
         "bridge": "./src/bridge/index.ts",
         "configSchema": "./src/configSchema.json",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog",
         "requires": {
             "piExtensions": [
@@ -344,6 +325,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "client": "./src/index.tsx",
         "server": "./src/server/index.ts",
         "configSchema": "./configSchema.json",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog"
     },
     claims: [
@@ -404,6 +386,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         ],
         "client": "./src/client/index.tsx",
         "server": "./src/server/index.ts",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog"
     },
     claims: [
@@ -473,6 +456,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "client": "./src/index.tsx",
         "server": "./src/server/index.ts",
         "bridge": "./src/bridge/index.ts",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog"
     },
     claims: [
@@ -541,12 +525,6 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "priority": 100,
         "claims": [
             {
-                "slot": "settings-section",
-                "component": "SubagentsSettings",
-                "module": "./src/client/SubagentsSettings.tsx",
-                "tab": "general"
-            },
-            {
                 "slot": "shell-overlay-route",
                 "component": "SubagentPopoutClaim",
                 "module": "./src/client/SubagentPopoutClaim.tsx",
@@ -557,18 +535,16 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
             }
         ],
         "client": "./src/client/index.tsx",
-        "server": "./src/server/index.ts",
         "bridge": "./src/bridge/index.ts",
         "configSchema": "./src/configSchema.json",
         "i18nCatalog": "catalog",
         "requires": {
             "piExtensions": [
-                "@blackbelt-technology/pi-dashboard-subagents"
+                "pi-subagents"
             ]
         }
     },
     claims: [
-      { pluginId: "subagents", priority: 100, slot: "settings-section", tab: "general", Component: lazyClaim(() => import("../../../subagents-plugin/src/client/SubagentsSettings"), "SubagentsSettings") },
       { pluginId: "subagents", priority: 100, slot: "shell-overlay-route", path: "/session/:sessionId/subagent/:agentId", sessionParam: "sessionId", depth: 2, parentPath: "/session/:sessionId", Component: lazyClaim(() => import("../../../subagents-plugin/src/client/SubagentPopoutClaim"), "SubagentPopoutClaim") },
     ],
     catalog: subagents_catalog,
@@ -587,6 +563,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "client": "./src/client/index.tsx",
         "server": "./src/server/index.ts",
         "configSchema": "./src/configSchema.json",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog"
     },
     claims: [
@@ -636,6 +613,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "client": "./src/client/index.tsx",
         "server": "./src/server/index.ts",
         "configSchema": "./src/configSchema.json",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog",
         "requires": {
             "piExtensions": [
@@ -668,35 +646,13 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         ],
         "client": "./src/client/index.tsx",
         "server": "./src/server/index.ts",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog"
     },
     claims: [
       { pluginId: "system-one", priority: 200, slot: "settings-section", tab: "general", Component: lazyClaim(() => import("../../../system-one-plugin/src/client/SystemOneSettings"), "SystemOneSettings") },
     ],
     catalog: system_one_catalog,
-  },
-  {
-    manifest: {
-        "id": "gmail",
-        "displayName": "Gmail",
-        "priority": 210,
-        "claims": [
-            {
-                "slot": "settings-section",
-                "component": "GmailSettings",
-                "tab": "general"
-            }
-        ],
-        "client": "./src/client/index.tsx",
-        "server": "./src/server/index.ts",
-        "bridge": "./src/bridge/index.ts",
-        "configSchema": "./src/configSchema.json",
-        "i18nCatalog": "catalog"
-    },
-    claims: [
-      { pluginId: "gmail", priority: 210, slot: "settings-section", tab: "general", Component: GmailSettings },
-    ],
-    catalog: gmail_catalog,
   },
   {
     manifest: {
@@ -758,6 +714,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "server": "./src/server/index.ts",
         "bridge": "./src/bridge/index.ts",
         "configSchema": "./configSchema.json",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog"
     },
     claims: [
@@ -785,6 +742,7 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
         "client": "./src/client.tsx",
         "server": "./src/server/index.ts",
         "configSchema": "./configSchema.json",
+        "defaultEnabled": false,
         "i18nCatalog": "catalog"
     },
     claims: [
@@ -820,4 +778,4 @@ export const PLUGIN_REGISTRY: RegistryEntry[] = [
   },
 ];
 
-export const PLUGIN_REGISTRY_HASH = "e4dd926759a84366a62cfda14cb810598d00d25f3c540620ddcd94e0d26ec786";
+export const PLUGIN_REGISTRY_HASH = "2d8622547bf5b4a53a895f8b9f7399804d595e964cbaa7dabc562f3bacca376a";

@@ -2,7 +2,7 @@
  * Shared per-session diff context (change: add-change-summary-table).
  *
  * Hoists ONE `useSessionDiff(sessionId)` per session so the `DiffViewer` tab,
- * the `ChangesRailSection`, and the fallback `FileDiffView` all read the same
+ * the `SessionChangesPanel`, and the fallback `FileDiffView` all read the same
  * cached `files[].gitDiff` + numstat counts — no per-tab / per-file fetch
  * (design D5). Refreshes on a caller-supplied change signal (new Edit/Write
  * count) and via the manual `refresh()`.

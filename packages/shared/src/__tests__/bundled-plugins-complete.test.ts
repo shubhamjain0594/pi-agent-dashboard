@@ -131,7 +131,7 @@ describe("piDashboard.bundledPlugins completeness", () => {
       resolveSource: (id) => path.join(PACKAGES_DIR, id),
       workspaceManifests: readBundledWorkspacePkgs().map((dir) => readPkg(dir)),
     });
-    for (const dep of ["oauth4webapi", "yaml", "debug", "discord.js"]) expect(union).toHaveProperty(dep);
+    for (const dep of ["yaml", "debug", "jose", "ws"]) expect(union).toHaveProperty(dep);
     expect(Object.keys(union).filter((d) => d.startsWith("@blackbelt-technology/"))).toEqual([]);
   });
 

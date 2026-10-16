@@ -21,7 +21,7 @@ function setup() {
     setResumeErrors: vi.fn(), setLoadingHistory: vi.fn(),
   };
   const deps: any = {
-    send: vi.fn(), navigate: vi.fn(), clearSpawningCwd: vi.fn(),
+    send: vi.fn(), navigate: vi.fn(), setSpawnLoadingSince: () => {}, clearSpawningCwd: vi.fn(),
     spawningCwdsRef: { current: new Set() }, subscribedRef: { current: new Set() },
     pendingTerminalCwdRef: { current: null }, lastCreatedTerminalIdRef: { current: null },
     maxSeqMapRef: { current: new Map() }, selectedSessionIdRef: { current: undefined },

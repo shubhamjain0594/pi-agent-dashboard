@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
 	classifySource,
 	groupInstalledPackages,
+	hasInstalledPiPackage,
 	isSourceOverride,
 	npmNameFromSource,
 } from "../package/package-classifier.js";
@@ -134,5 +135,24 @@ describe("groupInstalledPackages", () => {
 		const out = groupInstalledPackages(installed, CORE_NAMES);
 		expect(out.recommended.length).toBe(1);
 		expect(out.other.length).toBe(1);
+	});
+});
+
+describe("hasInstalledPiPackage (rpiv-todo-panel gate)", () => {
+	const row = (source: string) => ({ source, scope: "user", filtered: false }) as InstalledPackage;
+	it("matches an installed npm package regardless of version", () => {
+		expect(hasInstalledPiPackage([row("npm:@juicesharp/rpiv-todo@2.12.0")], "@juicesharp/rpiv-todo")).toBe(true);
+	});
+	it("matches an unversioned npm source", () => {
+		expect(hasInstalledPiPackage([row("npm:@juicesharp/rpiv-todo")], "@juicesharp/rpiv-todo")).toBe(true);
+	});
+	it("is false when only other packages are installed", () => {
+		expect(hasInstalledPiPackage([row("npm:pi-web-access@0.40.0")], "@juicesharp/rpiv-todo")).toBe(false);
+	});
+	it("is false for an empty or still-loading list", () => {
+		expect(hasInstalledPiPackage([], "@juicesharp/rpiv-todo")).toBe(false);
+	});
+	it("ignores non-npm sources", () => {
+		expect(hasInstalledPiPackage([row("/home/me/rpiv-todo")], "@juicesharp/rpiv-todo")).toBe(false);
 	});
 });

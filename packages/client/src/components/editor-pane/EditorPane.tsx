@@ -27,7 +27,6 @@ import { stripTermId } from "../../lib/layout/use-terminal-pane-tabs.js";
 import { SplitDivider } from "../split/SplitDivider.js";
 import { useSplitWorkspace } from "../split/SplitWorkspaceContext.js";
 import { ChangedOnDiskBanner } from "./ChangedOnDiskBanner.js";
-import { ChangesRailSection } from "./ChangesRailSection.js";
 import { EditorFileTree } from "./EditorFileTree.js";
 import { EditorSearchPanel } from "./EditorSearchPanel.js";
 import { EditorTabs } from "./EditorTabs.js";
@@ -46,6 +45,8 @@ import { pseudoTabRegistry } from "./pseudo-tab-registry.js";
 import { isPseudoTabViewer } from "./viewer-kinds.js";
 import { TabActions, type TabActionTarget } from "./TabActions.js";
 import { SessionTodosPanel } from "../session/SessionTodosPanel.js";
+import { useSubagentSnapshot } from "@blackbelt-technology/pi-dashboard-subagents-plugin/client/useSubagentData";
+const SubagentsPanel = lazy(() => import("@blackbelt-technology/pi-dashboard-subagents-plugin/client/SubagentsPanel").then((m) => ({ default: m.SubagentsPanel })));
 import { SessionChangesPanel } from "../diff/SessionChangesPanel.js";
 import { useOptionalSessionDiff } from "../diff/SessionDiffContext.js";
 
@@ -60,6 +61,8 @@ export function EditorPane() {
     openChanges,
     openTasks,
     todoSnapshot = null,
+    tasksEnabled = true,
+    openSubagent,
     cwd,
     paneState: state,
     dispatch,
@@ -71,13 +74,18 @@ export function EditorPane() {
     onFilenameSearch,
     changedFiles,
     clearChanged,
-    changesRevealSignal,
     openDiffTab,
     terminal,
     terminalActivated,
   } = useSplitWorkspace();
   const sessionDiff = useOptionalSessionDiff();
   const taskCount = todoSnapshot?.tasks.filter(task => task.status !== "deleted").length;
+  // Subagents sub-tab: shown only while the session reports runs. See change: rewrite-subagent-inspector-for-pi-subagents.
+  const subagentSnapshot = useSubagentSnapshot(sessionId);
+  const hasSubagents = (subagentSnapshot?.runs.length ?? 0) > 0;
+  const [tasksTab, setTasksTab] = useState<"todos" | "subagents">("todos");
+  useEffect(() => setTasksTab("todos"), [sessionId]);
+  const activeTasksTab = tasksTab === "subagents" && hasSubagents ? "subagents" : "todos";
   const terminalTitle = useCallback(
     (id: string) => {
       const s = terminal.terminals.find((t) => t.id === id);
@@ -93,27 +101,26 @@ export function EditorPane() {
     [shellSession],
   );
   const [treeVisible, setTreeVisible] = useTreeVisible(sessionId);
-  // Rail-local `this session only` (D3 — NOT lifted to context; that would
-  // break the FileDiffView takeover, which renders DiffFileTree outside the
-  // SplitWorkspaceProvider). Shared by the summary bar + the tree's other-
-  // changes group; ephemeral, resets each mount.
-  const [sessionOnly, setSessionOnly] = useState(false);
-  // Reset the filter when the pane is reused for a different session.
-  useEffect(() => setSessionOnly(false), [sessionId]);
-
-  // openChanges() (the Changed Files chip) bumps changesRevealSignal to request
-  // the Changes rail. The tree rail defaults to collapsed (change:
-  // collapse-files-panel-by-default), so reveal it here — otherwise the split
-  // opens but ChangesRailSection (mounted only when treeVisible) stays hidden
-  // and the chip appears to do nothing. Skip the initial mount value so it does
-  // not fight a user's collapse choice. See change: detect-tool-created-files.
-  const prevRevealRef = useRef(changesRevealSignal);
+  // Preserve review selection/scroll when opening a separate source tab, but
+  // do not mount a review (or its diff viewers) before it has been visited.
+  const [reviewSession, setReviewSession] = useState<string | null>(null);
   useEffect(() => {
-    if (changesRevealSignal !== prevRevealRef.current) {
-      prevRevealRef.current = changesRevealSignal;
-      setTreeVisible(true);
-    }
-  }, [changesRevealSignal, setTreeVisible]);
+    if (workPanel === "changes") setReviewSession(sessionId);
+  }, [workPanel, sessionId]);
+  // rpiv-todo uninstalled while the Tasks tab was open: fall back to the editor.
+  useEffect(() => {
+    if (!tasksEnabled && workPanel === "tasks") setWorkPanel?.("editor");
+  }, [tasksEnabled, workPanel, setWorkPanel]);
+  const openFileEditor = (path: string, line?: number) => {
+    openInSplit(path, line);
+    setTreeVisible(false);
+    updateSplit({ mode: "full" });
+  };
+  const openDiffEditor = (path: string) => {
+    openDiffTab(path);
+    setTreeVisible(false);
+    updateSplit({ mode: "full" });
+  };
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [railWidth, setRailWidth] = useRailWidth(sessionId);
@@ -235,7 +242,7 @@ export function EditorPane() {
     <div className="flex min-h-0 flex-1 flex-col" data-testid="session-inspector">
       <nav className="session-work-tabs" aria-label={t("review.inspectorViews", undefined, "Session inspector views")}>
         <button type="button" aria-pressed={workPanel === "changes"} onClick={() => openChanges?.()} data-testid="inspector-changes">{t("common.changes", undefined, "Changes")}{sessionDiff?.data && <span>{sessionDiff.data.files.length}</span>}</button>
-        <button type="button" aria-pressed={workPanel === "tasks"} onClick={() => openTasks?.()} data-testid="inspector-tasks">{t("review.tasks", undefined, "Tasks")}{taskCount != null && <span>{taskCount}</span>}</button>
+        {tasksEnabled && <button type="button" aria-pressed={workPanel === "tasks"} onClick={() => openTasks?.()} data-testid="inspector-tasks">{t("review.tasks", undefined, "Tasks")}{taskCount != null && <span>{taskCount}</span>}</button>}
         <button type="button" aria-pressed={workPanel === "editor"} onClick={() => setWorkPanel?.("editor")} data-testid="inspector-editor">{t("editor.editorTitle", undefined, "Editor")}</button>
         {workPanel === "editor" && (
           <div className="session-work-tools">
@@ -299,8 +306,28 @@ export function EditorPane() {
         )}
         <button type="button" className="session-work-close" onClick={() => updateSplit({ mode: "closed" })} aria-label={t("review.closeInspector", undefined, "Close session inspector")}><Icon path={mdiClose} size={0.65} /></button>
       </nav>
-      {workPanel === "changes" && <div className="session-work-scroll"><SessionChangesPanel onOpenDiff={openDiffTab} /></div>}
-      {workPanel === "tasks" && <div className="session-work-scroll"><SessionTodosPanel key={sessionId} snapshot={todoSnapshot} /></div>}
+      {(workPanel === "changes" || reviewSession === sessionId) && (
+        <div className="min-h-0 flex-1 flex-col" style={{ display: workPanel === "changes" ? "flex" : "none" }}>
+          <SessionChangesPanel key={sessionId} cwd={cwd} onOpenFile={openFileEditor} onOpenDiff={openDiffEditor} />
+        </div>
+      )}
+      {workPanel === "tasks" && tasksEnabled && (
+        <div className="session-work-scroll flex flex-col">
+          {hasSubagents && (
+            <div role="tablist" className="flex gap-3 px-2 py-1 text-[11px]">
+              <button type="button" role="tab" aria-selected={activeTasksTab === "todos"} data-testid="tasks-subtab-todos" onClick={() => setTasksTab("todos")} className={activeTasksTab === "todos" ? "text-[var(--text-primary)] font-medium" : "text-[var(--text-muted)]"}>{t("tasks.todos", undefined, "Todos")}</button>
+              <button type="button" role="tab" aria-selected={activeTasksTab === "subagents"} data-testid="tasks-subtab-subagents" onClick={() => setTasksTab("subagents")} className={activeTasksTab === "subagents" ? "text-[var(--text-primary)] font-medium" : "text-[var(--text-muted)]"}>{t("tasks.subagents", undefined, "Subagents")}</button>
+            </div>
+          )}
+          {activeTasksTab === "subagents" ? (
+            <Suspense fallback={null}>
+              <SubagentsPanel sessionId={sessionId} onOpen={(runId, childId) => openSubagent?.(runId, childId)} />
+            </Suspense>
+          ) : (
+            <SessionTodosPanel key={sessionId} snapshot={todoSnapshot} />
+          )}
+        </div>
+      )}
       <div className="editor-workspace min-h-0 min-w-0 flex-1 flex-col" style={{ display: workPanel === "editor" ? "flex" : "none" }}>
 
       {/* Tabs */}
@@ -327,18 +354,14 @@ export function EditorPane() {
         {treeVisible && (
           <>
             <div className="shrink-0 flex min-h-0 flex-col" style={{ width: railWidth }}>
-              {/* Changes section pinned atop the project-tree rail (change:
-                  add-change-summary-table). Absent when no changes. */}
-              <ChangesRailSection sessionOnly={sessionOnly} onSessionOnlyChange={setSessionOnly} />
               <div className="min-h-0 flex-1 overflow-hidden">
                 <EditorFileTree
                   cwd={cwd}
                   treeOpenRoots={state.treeOpenRoots}
                   onToggleRoot={(relPath) => dispatch({ type: "toggleTreeRoot", relPath })}
-                  onOpenFile={(relPath) => openInSplit(relPath)}
-                  onOpenDiff={(relPath) => openDiffTab(relPath)}
+                  onOpenFile={(path) => openFileEditor(path)}
+                  onOpenDiff={openDiffEditor}
                   activePath={activePath}
-                  sessionOnly={sessionOnly}
                 />
               </div>
             </div>
@@ -360,7 +383,7 @@ export function EditorPane() {
               fileResults={fileResults}
               onFilenameSearch={onFilenameSearch}
               onContentSearch={onContentSearch}
-              onOpen={(relPath, line) => openInSplit(relPath, line)}
+              onOpen={openFileEditor}
               onClose={() => setSearchOpen(false)}
             />
           )}
@@ -410,9 +433,8 @@ export function EditorPane() {
       {/* Status footer */}
       {activeTab && (
         <div className="flex shrink-0 items-center gap-3 border-t border-[var(--border-primary)] px-3 py-1 text-xs text-[var(--text-tertiary)]">
-          <span>{activeTab.viewer}</span>
           {language && <span>{language}</span>}
-          <span className="truncate">{activePath}</span>
+          <span className="truncate" title={activePath?.replace(/^diff:/, "")}>{activePath?.replace(/^diff:/, "")}</span>
         </div>
       )}
       </div>

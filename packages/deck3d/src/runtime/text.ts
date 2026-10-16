@@ -46,7 +46,7 @@ export function ttfShapes(font: Font, text: string, size: number): THREE.Shape[]
     else if (c.type === "C") sp.bezierCurveTo(c.x1, -c.y1, c.x2, -c.y2, c.x, -c.y);
     else if (c.type === "Z") sp.currentPath?.closePath();
   }
-  return sp.toShapes(false);
+  return sp.toShapes();
 }
 
 export interface TitleResult {

@@ -73,7 +73,7 @@ export class KbJobRegistry {
    */
   start(cwd: string, fn: () => Promise<KbReindexResult>): { coalesced: boolean; promise: Promise<KbReindexResult> } {
     const existing = this.inflight.get(cwd);
-    if (existing) return { coalesced: true, promise: existing };
+    if (existing !== undefined) return { coalesced: true, promise: existing };
 
     const priorOutcomes = this.jobs.get(cwd)?.outcomes;
     this.jobs.set(cwd, { status: "running", startedAt: Date.now(), ...(priorOutcomes ? { outcomes: priorOutcomes } : {}) });

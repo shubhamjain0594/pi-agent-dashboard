@@ -40,7 +40,7 @@ import type { ToolBurstGroup as ToolBurstGroupData } from "../../lib/chat/group-
 import type { ChatItem, ToolCallGroup } from "../../lib/chat/group-tool-calls.js";
 import { getSummary, getToolIcon } from "../../lib/chat/tool-summary.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
-import { MarkdownContent } from "../preview/MarkdownContent.js";
+import { MarkdownContent } from "../preview/MarkdownContentLazy.js";
 import type { ToolContext } from "../tool-renderers/index.js";
 import { CollapsedToolGroup } from "./CollapsedToolGroup.js";
 import { CustomEntryRow } from "./CustomEntryRow.js";

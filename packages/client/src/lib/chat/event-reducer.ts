@@ -3329,6 +3329,13 @@ export function reduceEvent(
       break;
     }
 
+    // pi-subagents widget lines: the subagents plugin reads them from the session
+    // events store (see plugin-context). They are not transcript rows.
+    // See change: rewrite-subagent-inspector-for-pi-subagents.
+    case "subagent_status":
+    case "subagent_inspect":
+      break;
+
     default: {
       // Flow / architect events flow through the plugin's own reducer
       // via useSessionEvents in flows-plugin. The shell ignores them

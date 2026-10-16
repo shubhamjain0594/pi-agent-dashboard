@@ -250,6 +250,12 @@ export interface MessageHandlerDeps {
    */
   pendingSpawnsRef: React.MutableRefObject<Map<string, PendingSpawnEntry>>;
   /**
+   * Records the epoch ms a spawned placeholder's Pi process started (on a
+   * successful `spawn_result`), keyed by placeholder cwd. Drives the
+   * loading-extensions timer. Cleared by App's `clearSpawningCwd`.
+   */
+  setSpawnLoadingSince: React.Dispatch<React.SetStateAction<Map<string, number>>>;
+  /**
    * Notified with the browser `requestId` of a spawn that failed after the
    * server accepted it: a failed `spawn_result` or a `spawn_register_timeout`
    * that echoes the id. Lets the folder home re-enable its Start control for
@@ -330,7 +336,7 @@ export function useMessageHandler(
     setEndedTotalsMap, setArchivedCountMap, setPagedCount, setSnapshotGeneration,
     setPageReplyGen, setPageExhausted,
   } = setters;
-  const { send, navigate, clearSpawningCwd, spawningCwdsRef, subscribedRef, pendingTerminalCwdRef, lastCreatedTerminalIdRef, maxSeqMapRef, selectedSessionIdRef, pendingSpawnsRef, onSpawnFailed, loadingHistoryTimersRef, replayInFlightTimersRef, replayPersister, showToast, sessionsRef, openspecGetInflightRef, endedTotalsMap, markHistoryLoadFailed, clearHistoryLoadFailed } = deps;
+  const { send, navigate, clearSpawningCwd, spawningCwdsRef, subscribedRef, pendingTerminalCwdRef, lastCreatedTerminalIdRef, maxSeqMapRef, selectedSessionIdRef, pendingSpawnsRef, setSpawnLoadingSince, onSpawnFailed, loadingHistoryTimersRef, replayInFlightTimersRef, replayPersister, showToast, sessionsRef, openspecGetInflightRef, endedTotalsMap, markHistoryLoadFailed, clearHistoryLoadFailed } = deps;
   // One-shot per session: suppress a repeat auto-name toast for the same
   // session id. See change: add-auto-session-naming.
   const autoNameToastedRef = useRef<Set<string>>(new Set());
@@ -1518,6 +1524,16 @@ export function useMessageHandler(
             next.delete(msg.cwd);
             return next;
           });
+          // Pi's process is up: start the placeholder's loading-extensions timer.
+          // Keyed like the placeholder (parent repo for worktree spawns).
+          const successEntry = msg.requestId ? pendingSpawnsRef.current.get(msg.requestId) : undefined;
+          const cwdForPlaceholder = successEntry?.placeholderCwd ?? msg.cwd;
+          setSpawnLoadingSince((prev) => {
+            if (prev.has(cwdForPlaceholder)) return prev;
+            const next = new Map(prev);
+            next.set(cwdForPlaceholder, Date.now());
+            return next;
+          });
         }
         break;
 
@@ -2050,5 +2066,5 @@ export function useMessageHandler(
         break;
       }
     }
-  }, [send, clearSpawningCwd, navigate, setSessions, setSessionStates, setSessionCommands, setFileResults, setChangedOnDisk, setOpenspecMap, setModelsMap, setModelRefreshErrorsMap, setRolesMap, setSpawnResult, setSessionOrderMap, setPinnedDirectories, setCollapsedFolders, setExpandedFolders, setCardSections, setGroupByPrefs, setFavoriteModels, setWorkspaces, setTerminals, setDiscoveredServers, setLoadingHistory, setReplayInFlight, setCanvasMap, spawningCwdsRef, subscribedRef, pendingTerminalCwdRef, maxSeqMapRef, selectedSessionIdRef, loadingHistoryTimersRef, replayInFlightTimersRef, replayPersister, flushLiveEvents, scheduleLiveFlush, publishGap, setHistorySpliceRev, setEndedTotalsMap, setPagedCount, setSnapshotGeneration, setPageReplyGen, setPageExhausted, sessionsRef, openspecGetInflightRef, markHistoryLoadFailed, clearHistoryLoadFailed, onSpawnFailed]);
+  }, [send, clearSpawningCwd, setSpawnLoadingSince, navigate, setSessions, setSessionStates, setSessionCommands, setFileResults, setChangedOnDisk, setOpenspecMap, setModelsMap, setModelRefreshErrorsMap, setRolesMap, setSpawnResult, setSessionOrderMap, setPinnedDirectories, setCollapsedFolders, setExpandedFolders, setCardSections, setGroupByPrefs, setFavoriteModels, setWorkspaces, setTerminals, setDiscoveredServers, setLoadingHistory, setReplayInFlight, setCanvasMap, spawningCwdsRef, subscribedRef, pendingTerminalCwdRef, maxSeqMapRef, selectedSessionIdRef, loadingHistoryTimersRef, replayInFlightTimersRef, replayPersister, flushLiveEvents, scheduleLiveFlush, publishGap, setHistorySpliceRev, setEndedTotalsMap, setPagedCount, setSnapshotGeneration, setPageReplyGen, setPageExhausted, sessionsRef, openspecGetInflightRef, markHistoryLoadFailed, clearHistoryLoadFailed, onSpawnFailed]);
 }

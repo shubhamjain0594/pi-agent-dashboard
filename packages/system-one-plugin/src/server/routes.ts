@@ -35,7 +35,7 @@ import {
   writeKey,
 } from "@blackbelt-technology/pi-system-one";
 import rateLimit from "@fastify/rate-limit";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest, FastifyPluginAsync } from "fastify";
 import { mergeWrite, readRaw, StaleRevisionError } from "./config-io.js";
 import { listConsumers, loadFixtures } from "./consumers.js";
 import { runEval } from "./eval.js";
@@ -154,10 +154,11 @@ function validateCalibration(body: Record<string, unknown>): CalibrationInput {
  * Returns the registration promise; routes exist after `app.ready()`.
  */
 export async function mountSystemOneRoutes(app: FastifyInstance, deps: SystemOneRouteDeps): Promise<void> {
-  await app.register(async (scope) => {
+  const scoped: FastifyPluginAsync = async (scope) => {
     await scope.register(rateLimit, { global: true, max: 600, timeWindow: "1 minute", allowList: ["127.0.0.1", "::1"] });
     mountInScope(scope, deps);
-  });
+  };
+  await app.register(scoped);
 }
 
 function mountInScope(app: FastifyInstance, deps: SystemOneRouteDeps): void {

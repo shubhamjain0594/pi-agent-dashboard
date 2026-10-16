@@ -89,8 +89,9 @@ const RULES = [
       "See change: update-pi-core-1-0-adopt-apis. 1.1.0 moves the lockstep " +
       "floor once more (recorded tool durations, sampling-by-thinking-level, " +
       "the azure-openai-responses provider-id rename the dashboard surfaces). " +
-      "See change: update-pi-core-1-1-adopt-apis.",
-    minVersion: "1.1.0",
+      "See change: update-pi-core-1-1-adopt-apis. 1.3.0 raises the floor again in " +
+      "the pi/openspec upgrade pass (no update-pi-core change record for 1.3.0 yet).",
+    minVersion: "1.3.0",
   },
   {
     pkgPath: "packages/server/package.json",
@@ -103,10 +104,10 @@ const RULES = [
       "installed copy the session shim resolves. Pinned EXACT (not ^1.6.0): the " +
       "vendored .pi/skills/openspec-* carry `generatedBy: 1.6.0`, so the CLI and " +
       "the skills must move together — a caret let a routine install drift the " +
-      "CLI out from under them unreviewed. 1.11.0 itself is CLI-compatible with " +
-      "openspec-poller.ts (`status --change <name> --json` unchanged, artifact " +
-      "shape unchanged + additive isPlanningComplete).",
-    minVersion: "1.11.0",
+      "CLI out from under them unreviewed. Bumped 1.11.0 → 1.14.2 in the pi/openspec " +
+      "upgrade pass; openspec-poller.ts compatibility (`status --change <name> --json`) " +
+      "is checked by its unit tests, not re-audited against the 1.14.2 changelog.",
+    minVersion: "1.14.2",
   },
   {
     pkgPath: "packages/extension/package.json",
@@ -116,8 +117,8 @@ const RULES = [
       "provision-openspec-cli-in-sessions task 1.4 — the bridge shim " +
       "(openspec-cli-shim.ts) require.resolves this dep, so it must travel with " +
       "the published extension into generic projects (no dashboard copy hoisted " +
-      "there). Floor tracks the single-source version 1.11.0.",
-    minVersion: "1.11.0",
+      "there). Floor tracks the single-source version 1.14.2.",
+    minVersion: "1.14.2",
   },
   {
     pkgPath: "packages/server/package.json",

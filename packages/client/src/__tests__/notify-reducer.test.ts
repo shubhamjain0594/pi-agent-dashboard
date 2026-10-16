@@ -30,6 +30,7 @@ function makeMainAppHarness(initial: SessionState = createInitialState()) {
   const deps: MessageHandlerDeps = {
     send: () => {},
     navigate: () => {},
+    setSpawnLoadingSince: () => {},
     clearSpawningCwd: () => {},
     spawningCwdsRef: { current: new Set<string>() },
     subscribedRef: { current: new Set<string>() },

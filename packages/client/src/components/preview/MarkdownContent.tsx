@@ -27,7 +27,7 @@ import { MermaidBlock } from "./MermaidBlock.js";
 import { MARKDOWN_SCHEMA, safeUrlTransform } from "./markdown-sanitize.js";
 import { type ImageBase, resolveLocalImageSrc } from "./resolve-local-image-src.js";
 
-interface Props {
+export interface MarkdownContentProps {
   content: string;
   /**
    * When provided, inline prose text and inline-`code` spans are run through
@@ -604,7 +604,7 @@ const REHYPE_PLUGINS_NO_MATH: NonNullable<Options["rehypePlugins"]> = [
   stripReactRefAttributes,
 ];
 
-export const MarkdownContent = React.memo(function MarkdownContent({ content, context, frontmatter = "hide", imageBase }: Props) {
+export const MarkdownContent = React.memo(function MarkdownContent({ content, context, frontmatter = "hide", imageBase }: MarkdownContentProps) {
   // ASCII table monospace fixer — disabled pending further refinement
   // const processedContent = useMemo(() => wrapAsciiTables(content), [content]);
   const processedContent = content;

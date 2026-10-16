@@ -46,6 +46,12 @@ export function isSourceOverride(pkg: InstalledPackage): boolean {
 	return pkg.isRecommended === true && classifySource(pkg.source) !== "npm";
 }
 
+/** True when any installed row is the npm package `name` (any version).
+ * Pure. Used to gate UI that depends on a pi extension. */
+export function hasInstalledPiPackage(packages: readonly InstalledPackage[], name: string): boolean {
+	return packages.some((pkg) => npmNameFromSource(pkg.source) === name);
+}
+
 /** Extract the npm package name from an `npm:<name>[@<version>]` source.
  * Returns null if the source isn't an npm spec. Pure. */
 export function npmNameFromSource(source: string): string | null {

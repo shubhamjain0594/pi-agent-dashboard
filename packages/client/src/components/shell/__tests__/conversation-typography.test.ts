@@ -20,6 +20,17 @@ describe("conversation typography and rhythm", () => {
     expect(css).toContain("@media (hover: none)");
   });
 
+  it("keeps both split stop controls equally tall on desktop and touch devices", () => {
+    const [desktop, touch] = css.split("@media (pointer: coarse)");
+    for (const [rules, size] of [[desktop, 32], [touch, 44]] as const) {
+      const afterTurn = rules.match(/\[data-testid="stop-after-turn-button"\]\s*\{([^}]+)\}/)?.[1];
+      expect(afterTurn).toContain(`height: ${size}px`);
+      expect(afterTurn).toContain(`min-height: ${size}px`);
+      expect(afterTurn).not.toContain("width:");
+      expect(rules).toMatch(new RegExp(`\\[data-testid="stop-button"\\][^{]+\\{[^}]*height: ${size}px; min-height: ${size}px`));
+    }
+  });
+
   it("keeps small user cards and restrained heading sizes", () => {
     expect(css).toContain("--conversation-user-padding: 8px 12px");
     expect(css).toContain("padding: var(--conversation-user-padding)");

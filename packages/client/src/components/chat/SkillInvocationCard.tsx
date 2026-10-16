@@ -33,7 +33,7 @@ import React, { useCallback, useRef, useState } from "react";
 import { formatMessageTime } from "../../lib/util/format.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
 import { CopyButton } from "../primitives/CopyButton.js";
-import { MarkdownContent } from "../preview/MarkdownContent.js";
+import { MarkdownContent } from "../preview/MarkdownContentLazy.js";
 
 interface Props {
   /** Parsed skill metadata stamped on the ChatMessage. */

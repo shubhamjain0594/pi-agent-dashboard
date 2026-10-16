@@ -8,7 +8,7 @@
  */
 import { useT } from "@blackbelt-technology/dashboard-plugin-runtime";
 import { mdiSpellcheck } from "@mdi/js";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import { useEffect } from "react";
 import { GrammarPanel } from "./GrammarPanel.js";
 import { GrammarRedlinePanel } from "./GrammarRedlinePanel.js";

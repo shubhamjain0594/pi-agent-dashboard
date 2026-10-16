@@ -20,6 +20,7 @@ describe("workbench typography", () => {
     expect(css).toMatch(/--workbench-font-sans:\s*"Inter Variable"[^;]*sans-serif/);
     expect(css).toMatch(/--workbench-font-mono:\s*"Iosevka Extended"[^;]*monospace/);
     expect(css).toContain("font-family: var(--workbench-font-sans)");
+    expect(css).toContain("body:has(.desktop-workbench)");
     expect(css).toContain("font-family: var(--workbench-font-mono)");
     expect(css).toContain("font-variant-numeric: tabular-nums");
   });

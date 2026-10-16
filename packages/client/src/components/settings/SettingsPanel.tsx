@@ -1234,6 +1234,18 @@ export function SettingsPanel({ availableModels, onMessage, onBack, selectedCwd,
     return { page, label: item?.label ?? page, to: `/settings/${page}` };
   });
 
+  const activePageLabel = (() => {
+    if (activePluginId) {
+      const promo = promotions.get(activePluginId);
+      if (promo) return promo.label;
+      return pluginRows.find((r) => r.id === activePluginId)?.displayName ?? activePluginId;
+    }
+    return (
+      navGroups.flatMap((g) => g.items).find((i) => i.id === activeTab)?.label
+      ?? t("common.settings", undefined, "Settings")
+    );
+  })();
+
   return (
     <SettingsDraftProvider registry={draftRegistry}>
     {/* `min-h-0`, not `h-full`: the flush Dialog panel is a max-h-capped flex
@@ -1243,16 +1255,30 @@ export function SettingsPanel({ availableModels, onMessage, onBack, selectedCwd,
         MobileShell detail panel, which is also a definite-height flex column.
         See change: fix-flush-dialog-scroll-and-close-collision. */}
     <div className="flex-1 flex flex-col min-w-0 min-h-0">
-      {/* Header */}
-      <div data-testid="settings-header" className="flex items-center gap-3 p-4 border-b border-[var(--border-primary)] shrink-0">
+      {message && (
+        <div className={`px-4 py-2 text-sm shrink-0 ${
+          message.type === "success" ? "bg-green-600/20 text-green-400" :
+          message.type === "warn" ? "bg-amber-600/20 text-amber-400" :
+          "bg-red-600/20 text-red-400"
+        }`}>
+          {message.type === "warn" && <Icon path={mdiAlert} size={0.5} className="inline mr-1" />}
+          {message.text}
+        </div>
+      )}
+      {/* Sidebar and page share one surface. Back lives in the rail; the page
+          name and Restart live with the content. */}
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+      <div className="flex w-full shrink-0 flex-col border-[var(--border-secondary)] md:w-60 md:border-r">
+      <div data-testid="settings-header" className="flex items-center gap-2 px-3 min-h-11 shrink-0">
         <button
           onClick={() => requestBack()}
-          className="text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+          className="flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
           title={t("common.back", undefined, "Back")}
         >
-          <Icon path={mdiArrowLeft} size={0.8} />
+          <Icon path={mdiArrowLeft} size={0.7} />
+          {t("common.back", undefined, "Back")}
         </button>
-        <h1 className="text-lg font-bold text-[var(--text-primary)]">{t("common.settings", undefined, "Settings")}</h1>
+        <span className="text-[13px] font-medium tracking-[-0.02em] text-[var(--text-primary)] md:sr-only">{t("common.settings", undefined, "Settings")}</span>
         {dirtyPageEntries.length > 0 && (
           <span
             data-testid="settings-dirty-page-count"
@@ -1266,54 +1292,17 @@ export function SettingsPanel({ availableModels, onMessage, onBack, selectedCwd,
             {dirtyPageEntries.length}
           </span>
         )}
-        <div className="flex-1" />
-        <button
-          onClick={() => { setMessage(null); restart.run(); }}
-          disabled={restarting || saving}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] text-sm font-medium disabled:opacity-50 border border-[var(--border-secondary)]"
-          title={
-            restartPendingForBindHost
-              ? t("settings.restartPendingBindHost", undefined, "Restart required — the saved listen interface is not the one this server bound")
-              : t("settings.restartServer", undefined, "Restart server")
-          }
-          data-testid="settings-restart-button"
-          data-restart-pending={restartPendingForBindHost ? "true" : "false"}
-        >
-          <Icon path={mdiRestart} size={0.6} />
-          {restarting ? t("common.restarting", undefined, "Restarting...") : t("common.restart", undefined, "Restart")}
-          {restartPendingForBindHost && (
-            <span
-              data-testid="settings-restart-pending-dot"
-              aria-label={t("settings.restartPending", undefined, "Restart pending")}
-              className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-[var(--warn-fg,#e2b24a)]"
-            />
-          )}
-        </button>
       </div>
 
-      {/* Message */}
-      {message && (
-        <div className={`px-4 py-2 text-sm shrink-0 ${
-          message.type === "success" ? "bg-green-600/20 text-green-400" :
-          message.type === "warn" ? "bg-amber-600/20 text-amber-400" :
-          "bg-red-600/20 text-red-400"
-        }`}>
-          {message.type === "warn" && <Icon path={mdiAlert} size={0.5} className="inline mr-1" />}
-          {message.text}
-        </div>
-      )}
-
-      {/* Body: left nav rail + page content */}
-      <div className="flex-1 flex flex-col md:flex-row min-h-0">
         <nav
           data-testid="settings-nav-rail"
           aria-label={t("common.settings", undefined, "Settings")}
-          className="shrink-0 w-full md:w-56 flex md:flex-col gap-0.5 overflow-x-auto md:overflow-y-auto border-b md:border-b-0 md:border-r border-[var(--border-primary)] p-2"
+          className="flex w-full shrink-0 gap-0.5 overflow-x-auto border-b border-[var(--border-secondary)] p-2 md:flex-1 md:flex-col md:overflow-y-auto md:border-b-0"
         >
           {navGroups.map((group) => (
             <div key={group.id} className="contents md:block" data-testid={`settings-nav-group-${group.id}`}>
               <div
-                className="hidden md:block px-3 pt-3 pb-1 text-[11px] font-bold uppercase tracking-wide text-[var(--text-tertiary)]"
+                className="hidden md:block px-2 pt-4 pb-1 text-[11px] font-medium text-[var(--text-tertiary)]"
                 data-testid={`settings-nav-group-label-${group.id}`}
               >
                 {group.label}
@@ -1332,10 +1321,10 @@ export function SettingsPanel({ availableModels, onMessage, onBack, selectedCwd,
                   <button
                     onClick={() => requestRailNavigate("/settings/" + item.id)}
                     aria-current={active ? "page" : undefined}
-                    className={`${item.id === "plugins" ? "flex-1 min-w-0" : "w-full"} flex items-center gap-2.5 px-3 py-2 rounded-md text-sm whitespace-nowrap transition-colors cursor-pointer ${
+                    className={`${item.id === "plugins" ? "flex-1 min-w-0" : "w-full"} flex items-center gap-2 min-h-[32px] px-2 py-1.5 rounded-md text-[13px] whitespace-nowrap transition-colors cursor-pointer ${
                       active
-                        ? "bg-blue-600/15 text-[var(--text-primary)] font-semibold"
-                        : "text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-secondary)]"
+                        ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                     }`}
                   >
                     <Icon path={item.icon} size={0.65} />
@@ -1401,8 +1390,8 @@ export function SettingsPanel({ availableModels, onMessage, onBack, selectedCwd,
                           data-testid={`nav-plugin-${p.id}`}
                           className={`w-full flex items-center gap-2 pl-9 pr-3 py-1.5 rounded-md text-[13px] whitespace-nowrap transition-colors cursor-pointer ${
                             childActive
-                              ? "bg-blue-600/15 text-[var(--text-primary)] font-semibold"
-                              : "text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-secondary)]"
+                              ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
+                              : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                           }`}
                         >
                           <span
@@ -1445,10 +1434,10 @@ export function SettingsPanel({ availableModels, onMessage, onBack, selectedCwd,
                       aria-current={promoActive ? "page" : undefined}
                       type="button"
                       data-testid={`nav-promoted-${promo.pluginId}`}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm whitespace-nowrap transition-colors cursor-pointer ${
+                      className={`w-full flex items-center gap-2 min-h-[32px] px-2 py-1.5 rounded-md text-[13px] whitespace-nowrap transition-colors cursor-pointer ${
                         promoActive
-                          ? "bg-blue-600/15 text-[var(--text-primary)] font-semibold"
-                          : "text-[var(--text-muted)] hover:bg-[var(--bg-secondary)] hover:text-[var(--text-secondary)]"
+                          ? "bg-[var(--bg-selected)] text-[var(--text-primary)]"
+                          : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
                       } ${enabled ? "" : "opacity-60"}`}
                     >
                       <Icon path={mdiPackageVariantClosed} size={0.65} />
@@ -1482,12 +1471,39 @@ export function SettingsPanel({ availableModels, onMessage, onBack, selectedCwd,
             </div>
           ))}
         </nav>
+      </div>
 
         {/* Page content. The Instructions page is a full-bleed split editor, so
             it renders directly in the content area (no padded/max-width/scroll
             wrapper that would collapse its height). See change:
             directory-settings-page-and-scoped-md-editing. */}
-        <div data-testid="settings-content" className="flex-1 min-h-0 min-w-0 flex flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="flex shrink-0 items-center gap-3 px-4 pt-4 md:px-8 md:pt-6">
+            <h1 className="text-lg font-medium tracking-[-0.02em] text-[var(--text-primary)]">{activePageLabel}</h1>
+            <button
+              onClick={() => { setMessage(null); restart.run(); }}
+              disabled={restarting || saving}
+              className="ml-auto flex items-center gap-1.5 min-h-8 px-2.5 rounded-md text-[12px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50"
+              title={
+                restartPendingForBindHost
+                  ? t("settings.restartPendingBindHost", undefined, "Restart required — the saved listen interface is not the one this server bound")
+                  : t("settings.restartServer", undefined, "Restart server")
+              }
+              data-testid="settings-restart-button"
+              data-restart-pending={restartPendingForBindHost ? "true" : "false"}
+            >
+              <Icon path={mdiRestart} size={0.6} />
+              {restarting ? t("common.restarting", undefined, "Restarting...") : t("common.restart", undefined, "Restart")}
+              {restartPendingForBindHost && (
+                <span
+                  data-testid="settings-restart-pending-dot"
+                  aria-label={t("settings.restartPending", undefined, "Restart pending")}
+                  className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-[var(--warn-fg,#e2b24a)]"
+                />
+              )}
+            </button>
+          </div>
+        <div data-testid="settings-content" className="flex min-h-0 min-w-0 flex-1 flex-col">
           {/* The settings pages scroll in `settingsPaneRef` below — that pane is
               what clips a popover opened inside it (e.g. the Default Model
               selector), so it provides itself as the popover boundary.
@@ -1514,7 +1530,7 @@ export function SettingsPanel({ availableModels, onMessage, onBack, selectedCwd,
               />
             </div>
           ) : (
-          <div ref={settingsPaneRef} className="p-4 space-y-6 max-w-3xl overflow-y-auto">
+          <div ref={settingsPaneRef} className="space-y-7 overflow-y-auto px-4 pb-8 pt-4 md:px-8 md:pt-5 max-w-3xl">
 
             {activeTab === "general" && (
               <>
@@ -1540,20 +1556,20 @@ export function SettingsPanel({ availableModels, onMessage, onBack, selectedCwd,
                       CONFIG_FIELD_PAGE entry moved to "general" in the same
                       change so the Save Bar chip follows it.
                       See change: reorganize-settings-pages-and-descriptions. */}
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm text-[var(--text-secondary)]">{i18nT("landing.pwaDisplayName", undefined, "PWA Display Name")}</label>
-                      <input
-                        type="text"
-                        className="w-56 bg-[var(--bg-secondary)] border border-[var(--border-secondary)] rounded px-2 py-1 text-sm text-[var(--text-primary)]"
-                        placeholder={i18nT("common.autoFromHostname", undefined, "(auto from hostname)")}
-                        value={config.dashboardName ?? ""}
-                        onChange={(e) => update((c) => { c.dashboardName = e.target.value; })}
-                      />
-                    </div>
-                    <p className="mt-1 text-xs text-[var(--text-tertiary)]">
-                      {i18nT("landing.shownOnTheHomeScreenApp", undefined, "Shown on the home screen / app drawer when the dashboard is installed as a PWA. Leave blank to auto-derive from the request")} <code>{i18nT("common.host", undefined, "Host")}</code> {i18nT("common.headerOrTheServerHostnameDistinguishe", undefined, "header (or the server hostname). Distinguishes installs from multiple machines or tunnels.")}
-                    </p>
+                  <div className="flex items-center justify-between gap-6 py-3">
+                    <span className="min-w-0">
+                      <label className="text-sm font-medium text-[var(--text-primary)]">{i18nT("landing.pwaDisplayName", undefined, "PWA Display Name")}</label>
+                      <p className="text-[12px] leading-snug text-[var(--text-tertiary)]">
+                        {i18nT("landing.shownOnTheHomeScreenApp", undefined, "Shown on the home screen / app drawer when the dashboard is installed as a PWA. Leave blank to auto-derive from the request")} <code>{i18nT("common.host", undefined, "Host")}</code> {i18nT("common.headerOrTheServerHostnameDistinguishe", undefined, "header (or the server hostname). Distinguishes installs from multiple machines or tunnels.")}
+                      </p>
+                    </span>
+                    <input
+                      type="text"
+                      className="w-56 shrink-0 rounded-md border border-[var(--border-secondary)] bg-[var(--bg-primary)] px-2 py-1 text-[12px] text-[var(--text-primary)]"
+                      placeholder={i18nT("common.autoFromHostname", undefined, "(auto from hostname)")}
+                      value={config.dashboardName ?? ""}
+                      onChange={(e) => update((c) => { c.dashboardName = e.target.value; })}
+                    />
                   </div>
                 </Section>
                 <DisplayPrefsSection />
@@ -2620,6 +2636,7 @@ export function SettingsPanel({ availableModels, onMessage, onBack, selectedCwd,
           )}
           </PopoverBoundaryProvider>
         </div>
+        </div>
       </div>
 
       {/* Save Bar — present only while dirty (dirty-gated friction) or a
@@ -2909,7 +2926,7 @@ function DisplayPrefsSection() {
       </p>
       {/* Three visual sub-sections, ONE draft source. Registering three would
           triple the dirty-chip noise for a single preference blob (D8). */}
-      <h3 className="text-xs font-semibold text-[var(--text-primary)] mt-3 mb-2">{t("settings.chatDisplayMessageElements", undefined, "Message elements")}</h3>
+      <h3 className="text-[12px] font-medium text-[var(--text-tertiary)]">{t("settings.chatDisplayMessageElements", undefined, "Message elements")}</h3>
       <ToggleField label={t("settings.tokenStatsBar", undefined, "Token stats bar")} value={prefs.tokenStatsBar} onChange={(v) => patch({ tokenStatsBar: v })} hint={i18nT("settings.hint.tokenStatsBar", undefined, "Per-turn token counts and cost under each assistant message.")} />
       <ToggleField label={t("settings.contextUsageBar", undefined, "Context usage bar")} value={prefs.contextUsageBar} onChange={(v) => patch({ contextUsageBar: v })} hint={i18nT("settings.hint.contextUsageBar", undefined, "Bar showing how full the model's context window is. Hide it if you never hit the limit.")} />
       <ToggleField label={t("settings.turnMetadata", undefined, "Turn metadata separators")} value={prefs.turnMetadata} onChange={(v) => patch({ turnMetadata: v })} hint={i18nT("settings.hint.turnMetadataSeparators", undefined, "Thin rule between turns carrying model, duration, and timestamp.")} />
@@ -2934,17 +2951,20 @@ function DisplayPrefsSection() {
           single "Custom entries in chat" switch. Labels come from the
           groups file; an id absent from prefs resolves to the group's
           configured default. See change: add-custom-event-group-filters. */}
-      <div className="text-xs font-semibold text-[var(--text-primary)] mt-3 mb-2">{i18nT("settings.customEventGroups", undefined, "Custom event groups")}</div>
+      <div className="text-xs font-semibold text-[var(--text-primary)] mt-3 mb-1">{i18nT("settings.customEventGroups", undefined, "Custom event groups")}</div>
+      <p className="mb-2 text-[11px] leading-snug text-[var(--text-tertiary)]">
+        {i18nT("settings.hint.customEventGroups", undefined, "One toggle per group defined in ~/.pi/dashboard/custom-event-groups.json (restart to apply edits to that file). om.* memory telemetry ships hidden.")}
+      </p>
       {(customGroups ?? []).map((g) => (
         <ToggleField
           key={g.id}
           label={g.label}
           value={prefs.customEventGroups[g.id] ?? g.default}
           onChange={(v) => patch({ customEventGroups: { [g.id]: v } })}
-          hint={i18nT("settings.hint.customEventGroups", undefined, "One toggle per group defined in ~/.pi/dashboard/custom-event-groups.json (restart to apply edits to that file). om.* memory telemetry ships hidden.")}
+          hint={null}
         />
       ))}
-      <h3 className="text-xs font-semibold text-[var(--text-primary)] mt-3 mb-2">{t("settings.chatDisplayReasoning", undefined, "Reasoning")}</h3>
+      <h3 className="text-[12px] font-medium text-[var(--text-tertiary)]">{t("settings.chatDisplayReasoning", undefined, "Reasoning")}</h3>
       <ToggleField label={t("settings.reasoningBlocks", undefined, "Reasoning blocks")} value={prefs.reasoning} onChange={(v) => patch({ reasoning: v })} hint={i18nT("settings.hint.reasoningBlocks", undefined, "Show the model's thinking. Off hides it entirely and disables the two settings below.")} />
       <GatedGroup>
         <NumberField
@@ -2970,7 +2990,7 @@ function DisplayPrefsSection() {
           disabled={!prefs.reasoning}
         />
       </GatedGroup>
-      <h3 className="text-xs font-semibold text-[var(--text-primary)] mt-3 mb-2">{t("settings.chatDisplayToolCalls", undefined, "Tool calls")}</h3>
+      <h3 className="text-[12px] font-medium text-[var(--text-tertiary)]">{t("settings.chatDisplayToolCalls", undefined, "Tool calls")}</h3>
       <ToggleField
         hint={i18nT("settings.hint.toolGroupsCollapsed", undefined, "Consecutive tool calls open collapsed; click to expand.")}
         label={t("settings.toolGroupDefaultCollapsed", undefined, "Keep tool groups collapsed by default")}
@@ -2980,7 +3000,7 @@ function DisplayPrefsSection() {
       <ToggleField label={t("settings.toolResultBodies", undefined, "Tool result bodies")} value={prefs.toolResults} onChange={(v) => patch({ toolResults: v })} hint={i18nT("settings.hint.toolResultBodies", undefined, "Show what a tool returned, not just that it ran.")} />
       <ToggleField label={t("settings.debugEvents", undefined, "Debug events")} value={prefs.debugTools} onChange={(v) => patch({ debugTools: v })} hint={i18nT("settings.hint.debugEvents", undefined, "Raw protocol traffic (flow:list-flows, resources_discover, …). Noisy — for diagnosing the bridge.")} />
       <div className="pt-2">
-        <h3 className="text-xs font-semibold text-[var(--text-primary)] mb-2">{t("settings.toolCallsHeader", undefined, "Tool calls - show these types")}</h3>
+        <h3 className="text-[12px] font-medium text-[var(--text-tertiary)]">{t("settings.toolCallsHeader", undefined, "Tool calls - show these types")}</h3>
         <ToggleField label={t("settings.toolRead", undefined, "Read")} value={prefs.toolCalls.read} onChange={(v) => patch({ toolCalls: { read: v } })} hint={i18nT("settings.hint.toolRead", undefined, "File reads.")} />
         <ToggleField label={t("settings.toolBash", undefined, "Bash")} value={prefs.toolCalls.bash} onChange={(v) => patch({ toolCalls: { bash: v } })} hint={i18nT("settings.hint.toolBash", undefined, "Shell commands.")} />
         <ToggleField label={t("settings.toolEdit", undefined, "Edit / Write")} value={prefs.toolCalls.edit} onChange={(v) => patch({ toolCalls: { edit: v } })} hint={i18nT("settings.hint.toolEditWrite", undefined, "File mutations.")} />
@@ -3584,15 +3604,26 @@ function ElectronRuntimeUpdates() {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const items = React.Children.toArray(children);
+  const first = items[0];
+  // A leading paragraph explains the section. It sits under the heading,
+  // outside the card, so it is not a row with a divider and no control.
+  const lead = React.isValidElement(first) && first.type === "p" ? first : null;
+  const body = lead ? items.slice(1) : items;
   return (
-    <div>
-      <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-3 pb-1 border-b border-[var(--border-secondary)]">
-        {title}
-      </h2>
-      <div className="space-y-3">
-        {children}
+    <section className="space-y-2">
+      <div className="px-1 [&>p]:mb-0 [&>p]:mt-1 [&>p]:text-[12px] [&>p]:leading-snug [&>p]:text-[var(--text-tertiary)]">
+        <h2 className="text-sm font-medium tracking-[-0.011em] text-[var(--text-primary)]">
+          {title}
+        </h2>
+        {lead}
       </div>
-    </div>
+      {body.length > 0 && (
+        <div className="overflow-hidden rounded-lg bg-[var(--bg-secondary)] px-4 [&>*:not(h3)]:border-b [&>*:not(h3)]:border-[var(--border-secondary)] [&>*:last-child]:border-b-0">
+          {body}
+        </div>
+      )}
+    </section>
   );
 }
 

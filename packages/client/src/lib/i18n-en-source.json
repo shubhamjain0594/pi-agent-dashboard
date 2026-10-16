@@ -645,6 +645,8 @@
   "editor.closeEditor": "Close editor",
   "tunnel.startATunnel": "Set up the Gateway",
   "session.startingNewSession": "Starting new session…",
+  "session.loadingExtensions": "Pi started — loading extensions… {seconds}s",
+  "session.loadingExtensionsSlow": "Still loading. Many extensions can make startup slower.",
   "git.stashSwitch": "Stash & Switch",
   "common.state": "State",
   "session.steering": "Steering",
@@ -1285,5 +1287,18 @@
   "questions.context.none": "No assistant message came before this question.",
   "questions.context.evicted": "The earlier assistant message is no longer retained.",
   "questions.context.tools": "Recent tool calls",
-  "questions.context.workflow": "Workflow run"
+  "questions.context.workflow": "Workflow run",
+  "review.fileDiffs": "File diffs",
+  "review.openDiffInEditor": "Open diff in editor",
+  "review.changedFilesAria": "Changed files",
+  "review.searchChangedFilesAria": "Search changed files",
+  "review.searchChangedFiles": "Search changed files…",
+  "review.sharedFilesHint": "These files may come from you or another session.",
+  "tasks.sessionTodosAria": "Session todos",
+  "tasks.todos": "Todos",
+  "tasks.noSnapshot": "No todo snapshot received yet.",
+  "tasks.noSnapshotHint": "The agent must use the installed todo tool to publish tasks here.",
+  "tasks.noTasks": "No tasks.",
+  "tasks.subagents": "Subagents",
+  "shell.toggleSidebarHint": "Ctrl / ⌘ B"
 }

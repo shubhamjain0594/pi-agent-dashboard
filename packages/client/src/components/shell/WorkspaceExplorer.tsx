@@ -2,13 +2,15 @@ import type { DashboardSession } from "@blackbelt-technology/pi-dashboard-shared
 import {
   mdiChevronDown,
   mdiChevronRight,
+  mdiClose,
   mdiCodeBraces,
   mdiFolderOutline,
+  mdiLoading,
   mdiMagnify,
   mdiPlus,
   mdiTuneVariant,
 } from "@mdi/js";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import { type ReactNode, useState } from "react";
 import { useI18n } from "../../lib/i18n/i18n.js";
 import { selectBadgeTimestamp } from "../../lib/session/session-card-time.js";
@@ -28,6 +30,7 @@ interface Props {
   onOpenFolder: (cwd: string) => void;
   onAddFolder: () => void;
   onSpawnSession: (cwd: string) => void;
+  onShutdownSession?: (sessionId: string) => void;
 }
 
 /** A navigation-first view; the original operational sidebar remains one click away. */
@@ -41,6 +44,7 @@ export function WorkspaceExplorer({
   onOpenFolder,
   onAddFolder,
   onSpawnSession,
+  onShutdownSession,
 }: Props) {
   const { t } = useI18n();
   const [detailed, setDetailed] = useState(false);
@@ -158,6 +162,7 @@ export function WorkspaceExplorer({
                     session={session}
                     selected={selectedId === session.id}
                     onSelect={onSelect}
+                    onShutdown={onShutdownSession}
                   />
                 );
                 return (
@@ -313,10 +318,12 @@ function ExplorerSessionRow({
   session,
   selected,
   onSelect,
+  onShutdown,
 }: {
   session: DashboardSession;
   selected: boolean;
   onSelect: (id: string) => void;
+  onShutdown?: (sessionId: string) => void;
 }) {
   const { t } = useI18n();
   const label = sessionLabel(session);
@@ -326,24 +333,43 @@ function ExplorerSessionRow({
     Ended: "ended",
     Ready: "ready",
   };
+  const canExit = session.status !== "ended" && Boolean(onShutdown);
   return (
-    <button
-      type="button"
-      className={`workspace-explorer-session ${selected ? "is-selected" : ""}`}
-      onClick={() => onSelect(session.id)}
-      aria-current={selected ? "page" : undefined}
-      title={`${getSessionDisplayName(session)} — ${label}`}
-    >
-      <span
-        className={`workspace-tree-status ${stateClasses[label]}`}
-        aria-hidden="true"
-      />
-      <span>{getSessionDisplayName(session)}</span>
-      <small>
-        {label === "Ready"
-          ? ""
-          : t(`workbench.status.${label}`, undefined, label)}
-      </small>
-    </button>
+    <div className="workspace-explorer-session-row">
+      <button
+        type="button"
+        className={`workspace-explorer-session ${selected ? "is-selected" : ""}`}
+        onClick={() => onSelect(session.id)}
+        aria-current={selected ? "page" : undefined}
+        title={`${getSessionDisplayName(session)} — ${label}`}
+      >
+        <span
+          className={`workspace-tree-status ${stateClasses[label]}`}
+          aria-hidden="true"
+        />
+        <span>{getSessionDisplayName(session)}</span>
+        <small>
+          {label === "Ready"
+            ? ""
+            : t(`workbench.status.${label}`, undefined, label)}
+        </small>
+      </button>
+      {canExit && (
+        <button
+          type="button"
+          className="workspace-explorer-exit"
+          disabled={session.closing}
+          aria-label={`${t("session.exitSession", undefined, "Exit session")} ${getSessionDisplayName(session)}`}
+          title={session.closing ? t("session.closing", undefined, "Closing…") : t("session.exitPiSession", undefined, "Exit pi session")}
+          onClick={() => {
+            if (session.closing || !onShutdown) return;
+            if (session.status === "streaming" && !window.confirm(t("session.exitWhileRunningConfirm", undefined, "Session is currently running. Exit anyway?"))) return;
+            onShutdown(session.id);
+          }}
+        >
+          <Icon path={session.closing ? mdiLoading : mdiClose} size={0.55} className={session.closing ? "animate-spin" : undefined} />
+        </button>
+      )}
+    </div>
   );
 }

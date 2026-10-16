@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { checkPiPinCoherence, piManifests } from "../verify-release-deps.mjs";
 
-const V = "1.1.0";
+const V = "1.3.0";
 const serverPkg = (dep, recommended, minimum = recommended) => ({
   dependencies: { "@earendil-works/pi-coding-agent": dep },
   piCompatibility: { recommended, minimum },
@@ -165,7 +165,7 @@ describe("checkPiPinCoherence — six governed pins", () => {
 describe("repo HEAD — governed pins agree at or above the 1.1.0 floor", () => {
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const read = (rel) => fs.readFileSync(path.join(repoRoot, rel), "utf8");
-  const FLOOR = "1.1.0";
+  const FLOOR = "1.3.0";
 
   const serverPkg = JSON.parse(read("packages/server/package.json"));
   const dockerfileText = read("docker/Dockerfile");

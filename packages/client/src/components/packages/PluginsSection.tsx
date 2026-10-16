@@ -22,7 +22,7 @@
  */
 
 import { mdiCogOutline, mdiPackageVariantClosed, mdiRestart } from "@mdi/js";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import { useLocation } from "wouter";
 import type { PluginList, PluginToggle } from "../../hooks/usePluginToggle.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";

@@ -475,7 +475,7 @@ export class PackageManagerWrapper {
     const cached = this.pmCache.get(effectiveCwd);
     if (cached) return cached as any;
     const inflight = this.pmPending.get(effectiveCwd);
-    if (inflight) return inflight as any;
+    if (inflight !== undefined) return inflight as any;
 
     const promise = (async () => {
       const { DefaultPackageManager, SettingsManager } = await loadPiPackageManager(this.registry);

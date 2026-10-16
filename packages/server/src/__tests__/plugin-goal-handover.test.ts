@@ -29,6 +29,7 @@ vi.mock("../spawn-process/process-manager.js", async (importOriginal) => {
   return { ...mod, spawnPiSession: h.spawnPiSessionMock };
 });
 
+import { CONFIG_DIR, CONFIG_FILE } from "@blackbelt-technology/pi-dashboard-shared/config.js";
 import { createServer, type DashboardServer } from "../server.js";
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -86,6 +87,8 @@ describe("goal-plugin handover on the real server (E26)", () => {
   let goalId: string;
   const sockets: WebSocket[] = [];
   let pidSeq = 100;
+  let prevConfig: string | null = null;
+  let wroteConfig = false;
 
   beforeEach(async () => {
     h.spawnPiSessionMock.mockReset();
@@ -95,6 +98,17 @@ describe("goal-plugin handover on the real server (E26)", () => {
       proc.pid = pidSeq + 1;
       return { success: true, spawnToken: opts.spawnToken, pid: ++pidSeq, process: proc };
     });
+    // Goal is opt-in (`defaultEnabled: false`). Enable it for this host without
+    // dropping whatever else is already in config.json.
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    prevConfig = fs.existsSync(CONFIG_FILE) ? fs.readFileSync(CONFIG_FILE, "utf8") : null;
+    const existing = prevConfig ? JSON.parse(prevConfig) as { plugins?: Record<string, Record<string, unknown>> } : {};
+    const plugins = existing.plugins ?? {};
+    plugins.goal = { ...(plugins.goal ?? {}), enabled: true };
+    existing.plugins = plugins;
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(existing));
+    wroteConfig = true;
+
     server = await createServer({
       port: 0,
       piPort: 0,
@@ -125,6 +139,11 @@ describe("goal-plugin handover on the real server (E26)", () => {
   afterEach(async () => {
     for (const ws of sockets) try { ws.close(); } catch { /* ignore */ }
     await server.stop();
+    if (wroteConfig) {
+      if (prevConfig === null) fs.rmSync(CONFIG_FILE, { force: true });
+      else fs.writeFileSync(CONFIG_FILE, prevConfig);
+      wroteConfig = false;
+    }
     fs.rmSync(cwd, { recursive: true, force: true });
   });
 

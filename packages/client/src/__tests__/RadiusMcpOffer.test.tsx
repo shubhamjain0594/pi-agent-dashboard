@@ -75,7 +75,7 @@ async function signInAndComplete(name: string) {
 const OFFER = { configured: false, name: "radius", path: "/home/u/.pi/agent/mcp.json" };
 
 /**
- * @structural-pin locale parity: zh-CN and hu catalogs must carry every key the offer renders; catalogs are not enumerable at runtime
+ * @structural-pin locale parity: hu catalogs must carry every key the offer renders; catalogs are not enumerable at runtime
  */
 describe("Radius MCP offer — accept (F2 L1 half, F6 L1 half)", () => {
   it("shows after a Radius sign-in naming path + entry; accept sends exactly one POST and reports the count", async () => {
@@ -276,7 +276,6 @@ describe("i18n keys in every locale (E20)", () => {
   const lib = join(__dirname, "../lib");
   const files = [
     ["en", join(lib, "i18n-en-source.json")],
-    ["zh-CN", join(lib, "i18n/i18n-zh-CN.ts")],
     ["hu", join(lib, "i18n/i18n-hu.ts")],
   ] as const;
   const keys = [

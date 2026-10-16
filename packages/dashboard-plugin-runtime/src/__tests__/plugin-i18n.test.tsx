@@ -16,7 +16,6 @@ afterEach(cleanup);
 // i18n runtime's resolution (dict[lang][key] ?? fallback ?? key).
 function makeTranslator(lang: string) {
   const dicts: Record<string, Record<string, string>> = {
-    "zh-CN": { "plugin.flows.launch.title": "启动", "plugin.flows.count": "{n} 个" },
     hu: { "plugin.flows.launch.title": "Indítás" },
   };
   return (key: string, vars?: Record<string, string | number>, fallback?: string) => {
@@ -52,12 +51,6 @@ function renderIn(lang: string | undefined, wired: boolean) {
 }
 
 describe("plugin i18n contract", () => {
-  it("resolves plugin.<id>.<key> in zh-CN via the context translator", () => {
-    const { getByTestId } = renderIn("zh-CN", true);
-    expect(getByTestId("title").textContent).toBe("启动");
-    expect(getByTestId("count").textContent).toBe("3 个");
-    expect(getByTestId("lang").textContent).toBe("zh-CN");
-  });
 
   it("re-resolves plugin strings after a language switch (hu)", () => {
     const { getByTestId } = renderIn("hu", true);
@@ -67,7 +60,7 @@ describe("plugin i18n contract", () => {
   });
 
   it("degrades to the call-site English fallback for an unmapped key", () => {
-    const { getByTestId } = renderIn("zh-CN", true);
+    const { getByTestId } = renderIn("hu", true);
     expect(getByTestId("missing").textContent).toBe("Fallback");
   });
 

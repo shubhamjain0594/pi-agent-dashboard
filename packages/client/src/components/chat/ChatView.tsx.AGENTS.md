@@ -1,5 +1,7 @@
 # ChatView.tsx — index
 
+Full-height native `.conversation-scrollport` contains `.conversation-transcript` and optional sticky `conversation-composer-host`. `ConversationLayout` registers the stable host; composer state survives session switches because only FilePreviewProvider's transcript subtree is session-keyed. ResizeObserver reserves footer minimum + transcript bound, clears navigation overlays, and preserves bottom-follow. Native wheel/touch capture includes portal gestures; native footer focus/input capture attributes browser autosize scrolling before resize delivery. Standalone ChatView needs no host. Styles live in `index.css` and the existing desktop conversation stylesheet.
+
 Desktop conversation classes distinguish user/assistant/live-tail surfaces and message action rows. Desktop passes `compact` to ToolBurstGroup; summaries remain visible while detail bodies default closed. Native row measurement, scroll anchoring and copy handlers are unchanged. Appearance lives in `styles/conversation.css`, scoped under DesktopWorkbench.
 
 `msg.view` rows render as `<PreviewCard target={msg.view}>` (right-aligned, `bubbleMax` width) BEFORE role-based branching — default user/agent bubble suppressed. See change: render-file-previews.

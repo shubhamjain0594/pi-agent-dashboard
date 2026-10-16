@@ -9,11 +9,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../../lib/api/api-context.js", () => ({ getApiBase: () => "" }));
+vi.mock("../MonacoBuffer.js", () => ({ default: () => <div data-testid="monaco-viewer" /> }));
 
 import { MAX_PREVIEW_BYTES } from "@blackbelt-technology/pi-dashboard-shared/file-kind.js";
 import { ThemeProvider } from "../../settings/ThemeProvider.js";
@@ -158,8 +159,11 @@ describe("viewerRegistry — preview/* delegation", () => {
     expect(getByLabelText("Zoom out")).toBeTruthy();
   });
 
-  it("html mounts a sandboxed iframe (scripts disabled)", async () => {
-    const { container } = renderKind("html");
+  it("html opens on Source, and Preview mounts a sandboxed iframe (scripts disabled)", async () => {
+    const { container, findByTestId } = renderKind("html");
+    expect(await findByTestId("html-source-toggle")).toBeTruthy();
+    expect(container.querySelector("iframe")).toBeNull();
+    fireEvent.click(container.querySelector('[data-testid="html-preview-toggle"]')!);
     await waitFor(() => expect(container.querySelector("iframe")).toBeTruthy());
     const iframe = container.querySelector("iframe")!;
     const sandbox = iframe.getAttribute("sandbox") ?? "";

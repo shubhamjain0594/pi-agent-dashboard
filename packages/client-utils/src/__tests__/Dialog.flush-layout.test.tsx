@@ -82,6 +82,23 @@ describe("Dialog flush layout (E1/E2/E4)", () => {
   );
 });
 
+describe("Dialog immersive", () => {
+  it("fills the viewport and drops the floating frame", () => {
+    const { baseElement } = render(
+      <Dialog open onClose={() => {}} size="full" flush immersive testId="d">
+        <p>x</p>
+      </Dialog>,
+    );
+    const cls = panel(baseElement).className;
+    expect(cls).toContain("h-full");
+    expect(cls).toContain("w-full");
+    expect(cls).toContain("flex-col");
+    expect(cls).not.toContain("max-h-[92vh]");
+    expect(cls).not.toContain("rounded-md");
+    expect(cls).not.toContain("border");
+  });
+});
+
 describe("Dialog close-control decision table (E3)", () => {
   it.each([
     [false, false, true],

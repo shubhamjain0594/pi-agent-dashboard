@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { GRANT_OPT_OUT_HEADERS } from "../../lib/access-grants/grant-channel.js";
+import { logRejection } from "../../lib/report-error.js";
 import { MediaDenialNotice } from "./MediaDenialNotice.js";
 import { rawUrl } from "./raw-url.js";
 import { useMediaDenial } from "./use-media-denial.js";
@@ -51,14 +52,18 @@ async function loadViewer(): Promise<typeof import("pdfjs-dist/web/pdf_viewer.mj
 }
 
 type ViewerHandle = {
+  task: import("pdfjs-dist").PDFDocumentLoadingTask;
   doc: import("pdfjs-dist").PDFDocumentProxy;
   viewer: import("pdfjs-dist/web/pdf_viewer.mjs").PDFViewer;
 };
 
-/** Release a viewer handle: detach the document from the viewer, then destroy it. */
+/**
+ * Release a viewer handle: detach the document from the viewer, then destroy the
+ * loading task, which tears down the document (pdfjs 6 removed `PDFDocumentProxy.destroy`).
+ */
 function destroyViewer(handle: ViewerHandle): void {
   handle.viewer.setDocument(null as never);
-  handle.doc.destroy();
+  handle.task.destroy().catch(logRejection("PdfPreview.destroy"));
 }
 
 /** Load the document and construct the pdfjs `PDFViewer` bound to `container`. */
@@ -69,7 +74,8 @@ async function mountViewer(container: HTMLDivElement, url: string): Promise<View
   // ALWAYS opted out of the access-grant dialog, whatever the provenance: pdf.js
   // loads one document with several ranged requests and Allow once admits one
   // (design D2). A refusal is diagnosed and asked about from the notice.
-  const doc = await pdfjs.getDocument({ url, httpHeaders: { ...GRANT_OPT_OUT_HEADERS } }).promise;
+  const task = pdfjs.getDocument({ url, httpHeaders: { ...GRANT_OPT_OUT_HEADERS } });
+  const doc = await task.promise;
   const eventBus = new EventBus();
   const linkService = new PDFLinkService({ eventBus });
   // Enable the text layer (textLayerMode 2) → text selection + ctrl-F find.
@@ -77,7 +83,7 @@ async function mountViewer(container: HTMLDivElement, url: string): Promise<View
   linkService.setViewer(viewer);
   viewer.setDocument(doc);
   linkService.setDocument(doc, null);
-  return { doc, viewer };
+  return { task, doc, viewer };
 }
 
 function PdfPreview({ target, srcUrl }: Props) {

@@ -29,7 +29,6 @@ import {
 } from "../../lib/layout/editor-pane-state.js";
 import { type SplitMode, type SplitOrientation, type SplitState, useSplitState } from "../../lib/layout/split-state.js";
 import { type TerminalPaneTabs, useTerminalPaneTabs } from "../../lib/layout/use-terminal-pane-tabs.js";
-import { saveTreeVisible } from "../../lib/util/tree-visible.js";
 import type { SessionTodoSnapshot } from "../../lib/session/session-todos.js";
 import { isPseudoTabViewer } from "../editor-pane/viewer-kinds.js";
 
@@ -42,6 +41,10 @@ export interface SplitWorkspaceContextValue {
   workPanel?: "editor" | "changes" | "tasks";
   setWorkPanel?: (panel: "editor" | "changes" | "tasks") => void;
   todoSnapshot?: SessionTodoSnapshot | null;
+  /** False when the rpiv-todo package is not installed: hides the Tasks tab. */
+  tasksEnabled?: boolean;
+  /** Replace the session view with a pi-subagents run (or child) inspector. */
+  openSubagent?: (runId: string, childId?: string) => void;
   openTasks?: () => void;
   sessionId: string;
   cwd: string;
@@ -83,10 +86,8 @@ export interface SplitWorkspaceContextValue {
   openPluginTab: (path: string) => boolean;
   /** Open a file's diff as a `diff:<relPath>` viewer tab (coexists with its monaco tab). */
   openDiffTab: (relPath: string) => void;
-  /** Open the split and reveal the Changes section in the pane rail. */
+  /** Open the dedicated, full-width Changes review workspace. */
   openChanges: () => void;
-  /** Bumps whenever `openChanges()` fires so the rail section expands + scrolls into view. */
-  changesRevealSignal: number;
   /** Pending scroll target for the pane, or `null`. */
   pendingScroll: PendingScroll | null;
   /** Clear the pending scroll once the pane has honoured it. */
@@ -125,6 +126,8 @@ const EMPTY_TERMINALS: TerminalSession[] = [];
 
 interface ProviderProps {
   todoSnapshot?: SessionTodoSnapshot | null;
+  tasksEnabled?: boolean;
+  openSubagent?: (runId: string, childId?: string) => void;
   sessionId: string;
   cwd: string;
   /** Responsive orientation (`h` desktop / `v` stacked); mirrored into persisted state. */
@@ -165,6 +168,8 @@ export function SplitWorkspaceProvider({
   sessionId,
   cwd,
   todoSnapshot = null,
+  tasksEnabled = true,
+  openSubagent,
   orientation,
   fileResults = null,
   onFilenameSearch,
@@ -310,19 +315,10 @@ export function SplitWorkspaceProvider({
     [dispatch, ensureRevealed, setWorkPanel],
   );
 
-  const [changesRevealSignal, setChangesRevealSignal] = useState(0);
   const openChanges = useCallback(() => {
     setWorkPanel("changes");
-    // Persist tree visibility BEFORE the split opens so a freshly-mounted
-    // EditorPane reads it visible (the rail defaults collapsed — change:
-    // collapse-files-panel-by-default — and the pane mounts AFTER this bump, so
-    // an in-pane reveal effect alone would miss the first open). An
-    // already-mounted pane is handled by its changesRevealSignal effect. See
-    // change: detect-tool-created-files.
-    saveTreeVisible(sessionId, true);
-    ensureRevealed();
-    setChangesRevealSignal((n) => n + 1);
-  }, [sessionId, ensureRevealed, setWorkPanel]);
+    updateSplit({ mode: "full" });
+  }, [updateSplit, setWorkPanel]);
 
   const openTasks = useCallback(() => { setWorkPanel("tasks"); ensureRevealed(); }, [setWorkPanel, ensureRevealed]);
 
@@ -365,7 +361,9 @@ export function SplitWorkspaceProvider({
       workPanel,
       setWorkPanel,
       todoSnapshot,
+      tasksEnabled,
       openTasks,
+      openSubagent,
       sessionId,
       cwd,
       split,
@@ -380,7 +378,6 @@ export function SplitWorkspaceProvider({
       openPluginTab,
       openDiffTab,
       openChanges,
-      changesRevealSignal,
       pendingScroll,
       consumePendingScroll,
       fileResults,
@@ -390,7 +387,7 @@ export function SplitWorkspaceProvider({
       terminal,
       terminalActivated,
     }),
-    [sessionId, cwd, split, updateSplit, setMode, paneState, dispatch, ensureRevealed, openInSplit, openLiveTarget, openUrlTarget, openPluginTab, openDiffTab, openChanges, changesRevealSignal, pendingScroll, consumePendingScroll, fileResults, filenameSearch, changedFiles, clearChanged, terminal, terminalActivated, workPanel, setWorkPanel, todoSnapshot, openTasks],
+    [sessionId, cwd, split, updateSplit, setMode, paneState, dispatch, ensureRevealed, openInSplit, openLiveTarget, openUrlTarget, openPluginTab, openDiffTab, openChanges, pendingScroll, consumePendingScroll, fileResults, filenameSearch, changedFiles, clearChanged, terminal, terminalActivated, workPanel, setWorkPanel, todoSnapshot, tasksEnabled, openTasks, openSubagent],
   );
 
   return <SplitWorkspaceContext.Provider value={value}>{children}</SplitWorkspaceContext.Provider>;

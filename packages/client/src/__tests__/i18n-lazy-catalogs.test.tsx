@@ -16,7 +16,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.doUnmock("../lib/i18n/i18n-hu.js");
-  vi.doUnmock("../lib/i18n/i18n-zh-CN.js");
+  vi.doUnmock("../lib/i18n/i18n-hu.js");
   vi.restoreAllMocks();
   // setLanguage persists to the localStorage file shared by every worker.
   localStorage.removeItem(STORAGE_KEY);
@@ -31,7 +31,7 @@ describe("loadCatalog", () => {
     expect(loadCatalog("hu")).toBe(a);
     await a;
     expect(loadCatalog("hu")).toBe(a);
-    expect(loadCatalog("zh-CN")).not.toBe(a);
+    expect(loadCatalog("en")).not.toBe(a);
   });
 
   it("is a no-op for en", async () => {
@@ -41,14 +41,12 @@ describe("loadCatalog", () => {
 
   it("does not request any catalog module until asked (English user)", async () => {
     const huFactory = vi.fn(() => ({ huCatalog: {} }));
-    const zhFactory = vi.fn(() => ({ zhCNCatalog: {} }));
     vi.doMock("../lib/i18n/i18n-hu.js", huFactory);
-    vi.doMock("../lib/i18n/i18n-zh-CN.js", zhFactory);
     const { t, loadCatalog } = await fresh();
     await loadCatalog("en");
     expect(t("common.save", undefined, "Save")).toBe("Save");
     expect(huFactory).not.toHaveBeenCalled();
-    expect(zhFactory).not.toHaveBeenCalled();
+    expect(huFactory).not.toHaveBeenCalled();
   });
 
   it("falls back to English and does not throw when the catalog fails to load", async () => {
@@ -101,9 +99,9 @@ describe("plugin catalogs and late-loaded core catalogs", () => {
 
   it("loading a core catalog does not drop earlier plugin keys, nor core keys", async () => {
     const { registerPluginCatalog, loadCatalog, I18nProvider, useI18n } = await fresh();
-    registerPluginCatalog("demo", { "zh-CN": { hello: "你好" } });
-    await loadCatalog("zh-CN");
-    localStorage.setItem(STORAGE_KEY, "zh-CN");
+    registerPluginCatalog("demo", { "hu": { hello: "Helló" } });
+    await loadCatalog("hu");
+    localStorage.setItem(STORAGE_KEY, "hu");
     const Probe = () => {
       const { t } = useI18n();
       return (
@@ -117,7 +115,7 @@ describe("plugin catalogs and late-loaded core catalogs", () => {
         <Probe />
       </I18nProvider>,
     );
-    expect(getByTestId("x").textContent).toBe("你好|常规");
+    expect(getByTestId("x").textContent).toBe("Helló|Általános");
   });
 });
 
@@ -175,7 +173,7 @@ describe("I18nProvider.setLanguage", () => {
       return (
         <div>
           <button type="button" data-testid="hu" onClick={() => setLanguage("hu")} />
-          <button type="button" data-testid="zh" onClick={() => setLanguage("zh-CN")} />
+          <button type="button" data-testid="en-pick" onClick={() => setLanguage("en")} />
           <span data-testid="lang">{language}</span>
         </div>
       );
@@ -186,20 +184,13 @@ describe("I18nProvider.setLanguage", () => {
       </I18nProvider>,
     );
     act(() => getByTestId("hu").click());
-    act(() => getByTestId("zh").click());
-    await waitFor(() => expect(getByTestId("lang").textContent).toBe("zh-CN"));
+    act(() => getByTestId("en-pick").click());
+    await waitFor(() => expect(getByTestId("lang").textContent).toBe("en"));
     await act(async () => {
       releaseHu();
       await huGate;
     });
-    expect(getByTestId("lang").textContent).toBe("zh-CN");
+    expect(getByTestId("lang").textContent).toBe("en");
   });
 });
 
-describe("translationsOf (static reserved-label table)", () => {
-  it("returns zh-CN and hu values without any catalog loaded", async () => {
-    const { translationsOf } = await fresh();
-    expect(translationsOf("settings.providers")).toEqual(["提供商", "Szolgáltatók"]);
-    expect(translationsOf("not.a.reserved.key")).toEqual([]);
-  });
-});

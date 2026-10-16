@@ -29,7 +29,7 @@ describe("CardSectionsSection", () => {
   it("shows the number of folders overriding each section", () => {
     renderSection({ folders: { "/a": { flows: false }, "/b": { flows: true } } });
     expect(screen.getByTestId("card-sections-global-count-flows").textContent).toMatch(/2 folder/);
-    expect(screen.getByTestId("card-sections-global-count-git").textContent).toBe("No folder overrides");
+    expect(screen.queryByTestId("card-sections-global-count-git")).toBeNull();
   });
 
   it("switch reflects the global value; off sends false, on sends inherit", () => {

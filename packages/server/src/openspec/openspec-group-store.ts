@@ -233,7 +233,7 @@ export function createOpenSpecGroupStore(
 
     // Short-circuit a concurrent in-flight read.
     const existing = cache.get(cwd);
-    if (existing?.inFlight) return existing.inFlight;
+    if (existing?.inFlight !== undefined) return existing.inFlight;
 
     const inFlight = (async (): Promise<OpenSpecGroupsFile> => {
       const stat = await tryStat(filePath);

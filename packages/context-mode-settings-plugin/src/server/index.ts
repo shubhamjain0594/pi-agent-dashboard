@@ -13,7 +13,7 @@
 
 import type { ServerPluginContext } from "@blackbelt-technology/dashboard-plugin-runtime/server";
 import rateLimit from "@fastify/rate-limit";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { PROJECTED_MARKER_ENV, projectEnv, RUNTIME_ENV_NAMES, validateSettings } from "../shared/settings-descriptors.js";
 import { readEffectiveSettings, readSettingsFile, resolveSettingsPath, writeSettingsFile } from "./settings-io.js";
 
@@ -32,7 +32,7 @@ export async function registerContextModeRoutes(
   const { logger } = deps;
   const pathOf = deps.filePath ?? (() => resolveSettingsPath());
   // Scoped rate limit (loopback allow-listed): the PUT touches the filesystem.
-  await fastify.register(async (scope) => {
+  const scoped: FastifyPluginAsync = async (scope) => {
     await scope.register(rateLimit, { global: true, max: 100_000, timeWindow: "1 minute", allowList: ["127.0.0.1", "::1"] });
 
     scope.get(ROUTE, async () => {
@@ -61,7 +61,8 @@ export async function registerContextModeRoutes(
       logger.info(`context-mode-settings wrote fields=${Object.keys(body as Record<string, unknown>).length}`);
       return readEffectiveSettings(filePath);
     });
-  });
+  };
+  await fastify.register(scoped);
 }
 
 /**

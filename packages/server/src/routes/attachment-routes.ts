@@ -106,7 +106,7 @@ export function registerAttachmentRoutes(
     if (resident !== undefined) return Promise.resolve(resident ? { status: 200, image: resident } : { status: 404 });
     const key = JSON.stringify([sessionId, attachmentId]);
     const running = displayJobs.get(key);
-    if (running) return running;
+    if (running !== undefined) return running;
     if (displayJobs.size >= maxDisplayJobs) return Promise.resolve({ status: 503 });
     const job = Promise.resolve().then(() => resolveDisplay(sessionId, sessionFile, attachmentId, deps))
       .finally(() => displayJobs.delete(key));

@@ -28,7 +28,7 @@ function load(cwd: string): Promise<FolderCommandsResult> {
   const hit = cache.get(cwd);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return Promise.resolve(hit.value);
   const pending = inflight.get(cwd);
-  if (pending) return pending;
+  if (pending !== undefined) return pending;
   const p = fetchFolderCommands(cwd)
     .then((value) => {
       cache.set(cwd, { at: Date.now(), value });

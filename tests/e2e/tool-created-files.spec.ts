@@ -48,26 +48,27 @@ test.describe("detect tool-created files", () => {
       await btn.click().catch(() => {});
     }
 
-    // Open the Files panel (chip → rail).
+    // Open the dedicated review workspace.
     const chip = page.getByTestId("changed-files-chip");
     await expect(chip).toBeVisible({ timeout: 20_000 });
     await chip.click();
-    const rail = page.getByTestId("changes-rail-section");
+    const rail = page.getByTestId("session-changes-panel");
     await expect(rail).toBeVisible({ timeout: 10_000 });
 
-    // U1 — the tool-created file row carries an origin badge + "created by".
-    await expect(rail.getByText("tool-artifact.md").first()).toBeVisible({ timeout: 10_000 });
-    await expect(rail.getByTestId("origin-badge").first()).toBeVisible();
-    await expect(rail.getByText(/created by/i).first()).toBeVisible();
+    await expect(rail.locator('.review-file-toggle[title="tool-artifact.md"]')).toBeVisible({ timeout: 10_000 });
+    const sessionId = new URL(page.url()).pathname.split("/")[2];
+    const response = await page.request.get(`/api/session-diff?sessionId=${encodeURIComponent(sessionId)}`);
+    const snapshot = await response.json();
+    const toolFile = snapshot.data.files.find((file: { path: string }) => file.path === "tool-artifact.md");
+    expect(toolFile.origin).toBe("tool");
+    expect(toolFile.producedBy).toBeTruthy();
 
-    // U3 — the other-changes group renders collapsed by default (its file rows
-    // are hidden until expanded) with a "this session only" toggle.
-    const group = rail.getByTestId("other-changes-group");
-    await expect(group).toBeVisible();
-    await expect(group.getByText("README.md")).toHaveCount(0);
-
-    // Toggling "this session only" hides the group entirely.
-    await rail.getByTestId("session-only-toggle").locator("input").check();
-    await expect(rail.getByTestId("other-changes-group")).toHaveCount(0);
+    const scope = rail.getByRole("checkbox", { name: "This session only" });
+    await expect(scope).toBeChecked();
+    await expect(rail.locator('.review-file-toggle[title="README.md"]')).toHaveCount(0);
+    await scope.uncheck();
+    await expect(rail.locator('.review-file-toggle[title="README.md"]')).toBeVisible();
+    await scope.check();
+    await expect(rail.locator('.review-file-toggle[title="README.md"]')).toHaveCount(0);
   });
 });

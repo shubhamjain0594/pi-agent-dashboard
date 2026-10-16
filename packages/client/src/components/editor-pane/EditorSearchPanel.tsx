@@ -3,7 +3,7 @@
  * and **Contents** (grep via `GET /api/grep`). Type-ahead with a substring or
  * regexp matcher, a min-length guard + debounce, and keyboard navigation
  * (`↑↓` move, `↵` open, `Esc` close). Opening a result funnels through
- * `onOpen` (the pane's `openInSplit`); content matches carry their line so the
+ * `onOpen` (the pane's full-width file opener); content matches carry their line so the
  * viewer scrolls to it.
  *
  * Pure/injected: filename + content searches are provided by the caller so the
@@ -65,7 +65,7 @@ export function EditorSearchPanel({
   }, [query]);
 
   const belowMin = debounced.length > 0 && debounced.length < minLen;
-  const canSearch = debounced.length >= minLen;
+  const canSearch = debounced.length >= minLen && debounced === query.trim();
 
   // Fire the active mode's search when the debounced query is long enough.
   useEffect(() => {
@@ -73,7 +73,6 @@ export function EditorSearchPanel({
       setContentResults([]);
       return;
     }
-    setActiveIndex(0); // reset selection whenever a new search fires
     if (mode === "file") {
       onFilenameSearch(debounced, regex);
       return;
@@ -122,7 +121,7 @@ export function EditorSearchPanel({
     <button
       type="button"
       data-testid={testId}
-      onClick={() => setMode(m)}
+      onClick={() => { setMode(m); setActiveIndex(0); }}
       className={`px-2 py-0.5 text-xs rounded ${
         mode === m
           ? "bg-[var(--bg-surface)] text-[var(--text-primary)]"
@@ -146,7 +145,7 @@ export function EditorSearchPanel({
             ref={inputRef}
             data-testid="editor-search-input"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
             onKeyDown={onKeyDown}
             placeholder={t("editor.searchPlaceholder", { min: minLen }, "Regexp or type-ahead… (min {min} chars)")}
             className="w-full rounded border border-[var(--border-secondary)] bg-[var(--bg-primary)] py-1 pl-7 pr-2 text-sm outline-none focus:border-blue-500/50"
@@ -156,7 +155,7 @@ export function EditorSearchPanel({
           type="button"
           data-testid="regex-toggle"
           aria-pressed={regex}
-          onClick={() => setRegex((r) => !r)}
+          onClick={() => { setRegex((r) => !r); setActiveIndex(0); }}
           className={`rounded p-1 ${regex ? "text-blue-400 bg-blue-500/10" : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"}`}
           title={t("editor.regularExpression", undefined, "Regular expression")}
         >

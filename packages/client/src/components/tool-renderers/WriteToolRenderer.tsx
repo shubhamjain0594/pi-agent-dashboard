@@ -1,5 +1,5 @@
 import React from "react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { LazySyntaxHighlighter as SyntaxHighlighter } from "../primitives/LazySyntaxHighlighter.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
 import { getSyntaxTheme } from "../../lib/theme/syntax-theme.js";
 import { useThemeContext } from "../settings/ThemeProvider.js";

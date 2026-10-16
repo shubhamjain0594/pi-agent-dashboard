@@ -11,7 +11,7 @@
 
 import { RECOMMENDED_EXTENSIONS } from "@blackbelt-technology/pi-dashboard-shared/recommended-extensions.js";
 import { mdiAlert, mdiCheck, mdiContentCopy } from "@mdi/js";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { usePackageOperations } from "../../hooks/usePackageOperations.js";

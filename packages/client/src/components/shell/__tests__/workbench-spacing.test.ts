@@ -4,7 +4,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const css = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../../styles/workbench.css"), "utf8");
-const rule = (selector: string) => css.slice(css.indexOf(`${selector} {`)).split("}")[0];
+// Match a selector only where a rule starts (line start), so `.a > .b {` does not
+// satisfy a lookup for `.b`.
+const rule = (selector: string) => {
+  const start = css.search(new RegExp(`(^|\\n)${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \\{`));
+  return css.slice(start).split("}")[0];
+};
 
 describe("workbench spacing", () => {
   it("uses a shared inset for sidebar headings, search, and project navigation", () => {

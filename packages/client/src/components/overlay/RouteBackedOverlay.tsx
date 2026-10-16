@@ -48,6 +48,8 @@ interface Props {
   title?: string;
   ariaLabel?: string;
   testId?: string;
+  /** Pass through to `Dialog`: the surface fills the viewport with no frame. */
+  immersive?: boolean;
 }
 
 export function RouteBackedOverlay({
@@ -58,6 +60,7 @@ export function RouteBackedOverlay({
   title,
   ariaLabel,
   testId,
+  immersive,
 }: Props) {
   // Rebuild only when the frozen location actually changes. An in-overlay
   // navigation must NOT churn this, or the underlay would remount (losing its
@@ -120,6 +123,7 @@ export function RouteBackedOverlay({
         ariaLabel={ariaLabel}
         size="full"
         flush
+        immersive={immersive}
         testId={testId}
       >
         <OverlayDismissGuardContext.Provider value={guardApi}>

@@ -37,7 +37,7 @@ import {
   trackInspectorMounted,
 } from "../../lib/state/subagent-inspector-telemetry.js";
 import { randomUuid } from "../../lib/util/random-uuid.js";
-import { MarkdownContent } from "../preview/MarkdownContent.js";
+import { MarkdownContent } from "../preview/MarkdownContentLazy.js";
 import { AgentCardShell } from "../session/AgentCardShell.js";
 import { formatDuration } from "../session/agent-card-utils.js";
 import { ElapsedBadge } from "../session/ElapsedBadge.js";

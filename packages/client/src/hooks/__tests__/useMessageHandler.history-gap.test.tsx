@@ -77,6 +77,7 @@ function mount(): { get: () => Harness; fire: (m: ServerToBrowserMessage) => voi
     const deps: any = {
       send: vi.fn(),
       navigate: vi.fn(),
+      setSpawnLoadingSince: () => {},
       clearSpawningCwd: vi.fn(),
       spawningCwdsRef: useRef(new Set<string>()),
       subscribedRef: useRef(new Set<string>()),
@@ -860,6 +861,7 @@ function mountSessions(seed: Map<string, { id: string; status: string }>) {
     const deps: any = {
       send: vi.fn(),
       navigate: vi.fn(),
+      setSpawnLoadingSince: () => {},
       clearSpawningCwd: vi.fn(),
       spawningCwdsRef: useRef(new Set<string>()),
       subscribedRef: useRef(new Set<string>()),

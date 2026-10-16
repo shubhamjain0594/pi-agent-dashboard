@@ -89,60 +89,62 @@ export default defineConfig({
     // Split the main bundle so no single chunk exceeds ~500 KB. This avoids
     // zrok / free-tunnel aborts on large static assets and improves caching
     // (only changed chunks invalidate).
+    // Vite 8 / rolldown ignores `manualChunks` once `codeSplitting` is set.
+    // Groups are the split that keeps the rich diff viewer off the cold landing.
+    modulePreload: {
+      resolveDependencies(_filename, deps, { hostType }) {
+        if (hostType !== "html") return deps;
+        // Dynamic-import chunks must not be linked from index.html. The
+        // runtime still preloads them when the import actually runs.
+        return deps.filter((dep) => !/(?:^|\/)(?:diff|xterm)-/.test(dep));
+      },
+    },
     rollupOptions: {
       output: {
-        manualChunks(id: string) {
-          const chunks: Record<string, string[]> = {
-            "react-vendor": ["react", "react-dom"],
-            // react-syntax-highlighter is folded into `markdown` (not a
-            // standalone chunk) because MarkdownContent.tsx statically imports
-            // both — a separate `syntax` chunk only re-created a
-            // `syntax → markdown → syntax` circular-chunk warning.
-            "markdown": ["react-markdown", "remark-gfm", "rehype-raw", "dompurify", "react-syntax-highlighter"],
-            // D1 (change: add-lazy-terminal-diff-bootstrap): the npm `diff`
-            // package is split OUT of the `diff` chunk. `lineDelta.ts` and the
-            // mobile HomegrownDiff path import it on the always-hot chat path,
-            // so keeping it beside `@git-diff-view/*` pinned the whole rich
-            // viewer family into the entry graph and no lazy boundary could
-            // pay off. `jsdiff` is a cheap standalone chunk; the chunk key must
-            // NOT start with `diff` (the build guard matches /^diff-/).
-            "diff": [
-              "@git-diff-view/core",
-              "@git-diff-view/file",
-              "@git-diff-view/lowlight",
-              "@git-diff-view/react",
-            ],
-            "jsdiff": ["diff"],
-            "xterm": [
-              "@xterm/xterm",
-              "@xterm/addon-attach",
-              "@xterm/addon-fit",
-            ],
-            "dnd": [
-              "@dnd-kit/core",
-              "@dnd-kit/sortable",
-              "@dnd-kit/utilities",
-            ],
-            // Lazy math engine (lib/preview/math-engine.ts). Its own chunk so
-            // Rollup cannot fold it into `markdown` (modulepreloaded) or `index`.
-            // See change: shrink-client-entry-lazy-islands.
-            "katex": ["katex", "rehype-katex"],
-            "util": ["fuse.js", "qrcode", "wouter", "ansi-to-react"],
-            // Monaco is heavy + only referenced by the lazily-imported
-            // MonacoBuffer, so this chunk is fetched on first text-file open.
-            // See change: add-internal-monaco-editor-pane.
-            "monaco": ["monaco-editor", "@monaco-editor/react"],
-            // No `@mdi/js` entry on purpose: named icon imports tree-shake
-            // into `index`, and the full set loads lazily via
-            // `@mdi/js/commonjs/mdi.js` (client-utils `mdi-by-key`). A matcher
-            // here would pull that lazy module back into an eager chunk.
-            // See change: harden-ios-safari-memory-and-ws-diagnostics.
-          };
-          for (const [chunk, deps] of Object.entries(chunks)) {
-            if (deps.some((dep) => id.includes(`/node_modules/${dep}/`))) {
-              return chunk;
-            }
-          }
+        codeSplitting: {
+          // Do not pull a group's dependencies into the chunk. Otherwise a
+          // shared module lands in `diff` and the entry imports that chunk.
+          includeDependenciesRecursively: false,
+          groups: [
+            // D1: npm `diff` (including a copy nested under @git-diff-view)
+            // is its own chunk. The name must not start with `diff-` — the
+            // landing-page guard matches /^diff-/. Higher priority than the
+            // rich-viewer group so the nested copy is not swallowed.
+            { name: "jsdiff", test: (id: string) => id.includes("/node_modules/diff/"), priority: 30 },
+            {
+              name: "diff",
+              test: (id: string) => id.includes("/node_modules/@git-diff-view/") && !id.includes("/node_modules/diff/"),
+              priority: 20,
+            },
+            { name: "react-vendor", test: /\/node_modules\/react(?:-dom)?\//, priority: 10 },
+            // react-syntax-highlighter stays with markdown: a separate syntax
+            // chunk recreated a syntax → markdown → syntax cycle.
+            // Prism theme objects (`/styles/`) stay out. The entry imports
+            // them for tool cards; folding them in made the entry import this
+            // chunk, which imports the entry back, and module init threw
+            // before React mounted.
+            // Language grammars are their own chunk so they are not folded
+            // into markdown (size cap) or into RichDiff.
+            {
+              name: "hljs",
+              test: /\/node_modules\/(?:highlight\.js|lowlight|refractor)\//,
+              priority: 15,
+            },
+            {
+              name: "markdown",
+              test: (id: string) =>
+                !id.includes("/styles/") &&
+                /\/node_modules\/(?:react-markdown|remark-gfm|rehype-raw|dompurify|react-syntax-highlighter)\//.test(id),
+              priority: 10,
+            },
+            { name: "xterm", test: /\/node_modules\/@xterm\//, priority: 10 },
+            { name: "dnd", test: /\/node_modules\/@dnd-kit\//, priority: 10 },
+            { name: "util", test: /\/node_modules\/(?:fuse\.js|qrcode|wouter|ansi-to-react)\//, priority: 10 },
+            { name: "monaco", test: /\/node_modules\/(?:monaco-editor|@monaco-editor)\//, priority: 10 },
+            // No katex group: it pulled hast helpers (and katex) into the
+            // landing graph. No @mdi/js group: named icons tree-shake into
+            // the entry, and the full set loads lazily.
+          ],
         },
       },
     },

@@ -11,6 +11,7 @@ import { CanvasDriver } from "./components/canvas/CanvasDriver.js";
 import { ChatView, type ChatViewHandle } from "./components/chat/ChatView.js";
 import { ChatViewMenu } from "./components/chat/ChatViewMenu.js";
 import { CommandInput } from "./components/chat/CommandInput.js";
+import { ConversationLayout } from "./components/chat/ConversationLayout.js";
 import { ConnectionStatusBanner } from "./components/connectivity/ConnectionStatusBanner.js";
 import { ServerSelector } from "./components/connectivity/ServerSelector.js";
 import { DirectorySettings, type DirectorySettingsPage } from "./components/DirectorySettings/DirectorySettings.js";
@@ -51,7 +52,10 @@ import { LandingPage } from "./components/shell/LandingPage.js";
 import { DesktopWorkbench } from "./components/shell/DesktopWorkbench.js";
 import { WorkspaceOverview } from "./components/shell/WorkspaceOverview.js";
 import { WorkspaceExplorer } from "./components/shell/WorkspaceExplorer.js";
-import { selectSessionTodos } from "./lib/session/session-todos.js";
+import { RPIV_TODO_PACKAGE, selectSessionTodos } from "./lib/session/session-todos.js";
+import { hasInstalledPiPackage } from "./lib/package/package-classifier.js";
+import { useInspectReplies } from "@blackbelt-technology/pi-dashboard-subagents-plugin/client/useSubagentData";
+const SubagentInspectView = lazy(() => import("@blackbelt-technology/pi-dashboard-subagents-plugin/client/SubagentInspectView").then((m) => ({ default: m.SubagentInspectView })));
 import { HamburgerButton, MobileOverlay } from "./components/shell/MobileOverlay.js";
 import { MobileShell } from "./components/shell/MobileShell.js";
 import { ResizableSidebar } from "./components/shell/ResizableSidebar.js";
@@ -67,6 +71,7 @@ import { WorktreeSpawnDialog } from "./components/worktree/WorktreeSpawnDialog.j
 import { useAppHidden } from "./hooks/useAppHidden.js";
 import { useContentViews } from "./hooks/useContentViews.js";
 import { useDocumentTitle } from "./hooks/useDocumentTitle.js";
+import { useInstalledPackages } from "./hooks/useInstalledPackages.js";
 import { useHistoryLoadState } from "./hooks/useHistoryLoadState.js";
 import { useIdleFx } from "./hooks/useIdleFx.js";
 import { selectInflightBashTools } from "./hooks/useInflightBashTools.js";
@@ -761,6 +766,9 @@ export default function App() {
     defaultThinkingLevel: "",
   });
   const [spawningCwds, setSpawningCwds] = useState<Set<string>>(new Set());
+  // Per placeholder cwd: epoch ms its Pi process started (successful spawn_result).
+  // Drives the placeholder's loading-extensions timer. See spawn-loading-extensions.
+  const [spawnLoadingSince, setSpawnLoadingSince] = useState<Map<string, number>>(() => new Map());
   const spawningCwdsRef = useRef<Set<string>>(spawningCwds);
   spawningCwdsRef.current = spawningCwds;
   const spawnTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
@@ -1041,6 +1049,12 @@ export default function App() {
       next.delete(cwd);
       return next;
     });
+    setSpawnLoadingSince((prev) => {
+      if (!prev.has(cwd)) return prev;
+      const next = new Map(prev);
+      next.delete(cwd);
+      return next;
+    });
     const timer = spawnTimeoutsRef.current.get(cwd);
     if (timer) {
       clearTimeout(timer);
@@ -1163,7 +1177,7 @@ export default function App() {
 
   const handleMessage = useMessageHandler(
     { setSessions, setSessionStates, setSessionCommands, setFileResults, setChangedOnDisk, setOpenspecMap, setFolderGitMap, setOpenspecGroupsMap, setModelsMap, setModelRefreshErrorsMap, setRolesMap, setSpawnResult, setSessionOrderMap, setPinnedDirectories, setCollapsedFolders, setExpandedFolders, setCardSections, setGroupByPrefs, setFavoriteModels, setWorkspaces, setTerminals, setDiscoveredServers, setSpawnErrors, setResumeErrors, setDisplayPrefs, setLoadingHistory, setReplayInFlight, setCanvasMap, setHistoryGaps, setHistorySpliceRev, setEndedTotalsMap, setArchivedCountMap, setPagedCount, setPageReplyGen, setPageExhausted, setSnapshotGeneration },
-    { send, navigate, clearSpawningCwd, spawningCwdsRef, subscribedRef, pendingTerminalCwdRef, lastCreatedTerminalIdRef, maxSeqMapRef, selectedSessionIdRef, pendingSpawnsRef, onSpawnFailed, cwdVisibilityInputsRef, loadingHistoryTimersRef, replayInFlightTimersRef, replayPersister: replayPersisterRef.current, showToast, sessionsRef, openspecGetInflightRef, endedTotalsMap, markHistoryLoadFailed, clearHistoryLoadFailed },
+    { send, navigate, clearSpawningCwd, spawningCwdsRef, subscribedRef, pendingTerminalCwdRef, lastCreatedTerminalIdRef, maxSeqMapRef, selectedSessionIdRef, pendingSpawnsRef, setSpawnLoadingSince, onSpawnFailed, cwdVisibilityInputsRef, loadingHistoryTimersRef, replayInFlightTimersRef, replayPersister: replayPersisterRef.current, showToast, sessionsRef, openspecGetInflightRef, endedTotalsMap, markHistoryLoadFailed, clearHistoryLoadFailed },
   );
 
   // D7: rendered cwds the OpenSpec reconciliation may pull for — non-ended
@@ -1587,7 +1601,17 @@ export default function App() {
     () => extractUserPromptHistory(selectedState.messages),
     [selectedState.messages],
   );
-  const sessionTodos = useMemo(() => selectSessionTodos(selectedState.messages), [selectedState.messages]);
+  // Tasks tab + count exist only while pi's rpiv-todo package is installed.
+  // See change: gate-rpiv-todo-on-install.
+  const { packages: installedGlobal } = useInstalledPackages("global");
+  const tasksEnabled = hasInstalledPiPackage(installedGlobal, RPIV_TODO_PACKAGE);
+  // A pi-subagents run/child inspector replaces the session view while set. See change: rewrite-subagent-inspector-for-pi-subagents.
+  const [subagentFocus, setSubagentFocus] = useState<{ sessionId: string; runId: string; childId?: string } | null>(null);
+  const inspectReplies = useInspectReplies(selectedId ?? "");
+  const sessionTodos = useMemo(
+    () => (tasksEnabled ? selectSessionTodos(selectedState.messages) : null),
+    [tasksEnabled, selectedState.messages],
+  );
   // Terminal edit/write/bash count for the selected session — drives the
   // shared session-diff refetch (change: add-change-summary-table). Bash is
   // included so tool-created files (converter/image/script output detected via
@@ -2104,6 +2128,7 @@ export default function App() {
       archivedCountMap={archivedCountMap}
       onSpawnSession={handleSpawnSession}
       spawningCwds={spawningCwds}
+      spawnLoadingSince={spawnLoadingSince}
       addSpawningCwd={addSpawningCwd}
       clearSpawningCwd={clearSpawningCwd}
       spawnResult={spawnResult}
@@ -2370,6 +2395,7 @@ export default function App() {
         onOpenDiffView={() => navigate(buildSessionDiffUrl(selectedId))}
         onOpenExtensionModulePicker={() => setExtensionModulePickerOpen(true)}
         onRefresh={() => handleRefreshChat(selectedId)}
+        onShutdown={!readOnly ? () => handleShutdownSession(selectedId) : undefined}
         usage={!isMobile && (() => {
           const showStats = selectedSession?.displayPrefsOverride?.tokenStatsBar ?? displayPrefs?.tokenStatsBar ?? true;
           const showContextBar = selectedSession?.displayPrefsOverride?.contextUsageBar ?? displayPrefs?.contextUsageBar ?? true;
@@ -2517,18 +2543,8 @@ export default function App() {
               <ContentHeaderStickySlot session={selectedSession} />
             </div>
           )}
-          <ErrorBoundary fallback={
-            <div className="flex-1 flex items-center justify-center p-8">
-              <div className="text-center space-y-2">
-                <div className="text-red-400 text-sm">{t("shell.chatError", undefined, "Chat view encountered an error")}</div>
-                <button onClick={() => window.location.reload()} className="text-xs text-blue-400 hover:underline">{t("shell.reloadPage", undefined, "Reload page")}</button>
-              </div>
-            </div>
-          }>
-            <SessionAssetsProvider assets={selectedSession?.assets}>
-            <ChatView ref={chatViewRef} sessionId={selectedId} state={selectedState} toolContext={toolContext} onRespondToUi={handleRespondToUi} onPromptResync={requestPromptResync} onAbort={handleAbort} onForceKill={handleForceKill} onForkFromMessage={selectedId ? handleForkFromMessage : undefined} onRetryPendingPrompt={selectedId ? handleRetryPendingPrompt : undefined} onForkPendingPrompt={selectedId ? handleForkPendingPrompt : undefined} onCloseInlineTerminal={selectedId ? handleCloseInlineTerminalForSelected : undefined} pendingSteering={selectedSession?.pendingQueues?.steering ?? EMPTY_STEERING} loadingHistory={selectedId ? loadingHistory.get(selectedId) ?? false : false} retainedTranscript={selectedSession?.retainedTranscript} replayInFlight={selectedId ? replayInFlight.get(selectedId) ?? false : false} historyGap={selectedId ? historyGaps.get(selectedId) : undefined} onLoadEarlier={selectedId ? handleLoadEarlier : undefined} historySpliceRev={historySpliceRev} onCollapseStreamingThinking={selectedId ? handleCollapseStreamingThinking : undefined} historyPhase={selectedHistoryPhase?.phase ?? "idle"} historyStartedAt={selectedHistoryPhase?.startedAt} onRetryHistory={selectedId ? handleRetryHistory : undefined} />
-            </SessionAssetsProvider>
-          </ErrorBoundary>
+          <ConversationLayout footer={
+            <>
           {/* Single-card error-lifecycle surface. Sticky above the command
               input: ONE card showing the error string plus a live retry
               sub-line (bare attempt + countdown from pi's own retry settings).
@@ -2730,6 +2746,31 @@ export default function App() {
               <ContentInlineFooterSlot session={selectedSession} />
             </div>
           )}
+            </>
+          }>
+          <ErrorBoundary fallback={
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="text-center space-y-2">
+                <div className="text-red-400 text-sm">{t("shell.chatError", undefined, "Chat view encountered an error")}</div>
+                <button onClick={() => window.location.reload()} className="text-xs text-blue-400 hover:underline">{t("shell.reloadPage", undefined, "Reload page")}</button>
+              </div>
+            </div>
+          }>
+            <SessionAssetsProvider assets={selectedSession?.assets}>
+            {subagentFocus && subagentFocus.sessionId === selectedId ? (
+              <Suspense fallback={null}>
+                <SubagentInspectView
+                  asyncId={subagentFocus.runId}
+                  childId={subagentFocus.childId}
+                  replies={inspectReplies}
+                  onSend={(text) => { if (!selectedId) return false; handleSendPromptToSession(selectedId, text); return true; }}
+                  onBack={() => setSubagentFocus(null)}
+                />
+              </Suspense>
+            ) : (<ChatView ref={chatViewRef} sessionId={selectedId} state={selectedState} toolContext={toolContext} onRespondToUi={handleRespondToUi} onPromptResync={requestPromptResync} onAbort={handleAbort} onForceKill={handleForceKill} onForkFromMessage={selectedId ? handleForkFromMessage : undefined} onRetryPendingPrompt={selectedId ? handleRetryPendingPrompt : undefined} onForkPendingPrompt={selectedId ? handleForkPendingPrompt : undefined} onCloseInlineTerminal={selectedId ? handleCloseInlineTerminalForSelected : undefined} pendingSteering={selectedSession?.pendingQueues?.steering ?? EMPTY_STEERING} loadingHistory={selectedId ? loadingHistory.get(selectedId) ?? false : false} retainedTranscript={selectedSession?.retainedTranscript} replayInFlight={selectedId ? replayInFlight.get(selectedId) ?? false : false} historyGap={selectedId ? historyGaps.get(selectedId) : undefined} onLoadEarlier={selectedId ? handleLoadEarlier : undefined} historySpliceRev={historySpliceRev} onCollapseStreamingThinking={selectedId ? handleCollapseStreamingThinking : undefined} historyPhase={selectedHistoryPhase?.phase ?? "idle"} historyStartedAt={selectedHistoryPhase?.startedAt} onRetryHistory={selectedId ? handleRetryHistory : undefined} />)}
+            </SessionAssetsProvider>
+          </ErrorBoundary>
+          </ConversationLayout>
           {/* Extension UI System (Phase 1): module picker + generic modal. */}
           {/* See change: add-extension-ui-modal. */}
           {extensionModulePickerOpen && selectedId && (() => {
@@ -3097,6 +3138,8 @@ export default function App() {
           <SplitWorkspaceProvider
             sessionId={selectedId ?? ""}
             todoSnapshot={sessionTodos}
+            tasksEnabled={tasksEnabled}
+            openSubagent={(runId, childId) => { if (selectedId) setSubagentFocus({ sessionId: selectedId, runId, childId }); }}
             cwd={selectedSession?.cwd ?? ""}
             orientation={isMobile ? "v" : "h"}
             fileResults={fileResults}
@@ -3275,6 +3318,7 @@ export default function App() {
             onOpenFolder={(cwd) => navigate(`/folder/${encodeFolderPath(cwd)}`)}
             onAddFolder={() => setPinDialogOpen(true)}
             onSpawnSession={handleSpawnSession}
+            onShutdownSession={handleShutdownSession}
           >
           {sessionList}
           </WorkspaceExplorer>
@@ -3507,7 +3551,12 @@ export default function App() {
             onDismiss={dismissOverlay}
             ariaLabel="Settings"
             testId="settings-overlay"
+            immersive
           >
+            {/* The immersive dialog is a definite-height viewport fill, so
+                this child can take that height. A content-sized child still
+                collapses to a thin banner while settings is loading. */}
+            <div className="flex h-full min-h-0 flex-col">
             <SettingsPanel availableModels={(() => {
           const seen = new Set<string>();
           // Whole rows, not a 3-field projection: Settings merges these with the
@@ -3523,6 +3572,7 @@ export default function App() {
           }
           return models;
         })()} onMessage={onMessage} onBack={dismissOverlay} selectedCwd={selectedCwd} groupByPrefs={groupByPrefs} onSetDefaultGroupBy={(mode) => send({ type: "set_default_group_by", mode })} />
+            </div>
           </RouteBackedOverlay>
         )}
         {/* Tunnel setup REPLACES settings rather than stacking on it (D5): at

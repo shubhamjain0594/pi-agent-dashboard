@@ -150,7 +150,10 @@ export async function buildTestIndex({ root, withGraph = true, concurrency = 16 
   const globalInputs = new Set();
 
   for (const { phase, options } of configs) {
-    const vitest = await createVitest("test", { watch: false, run: false, reporters: [], root, ...options });
+    // The real-process config pins its own root: its `include` globs are package-relative,
+    // so overriding `root` with the repo root collects zero of its files.
+    const rootOpt = options.config ? {} : { root };
+    const vitest = await createVitest("test", { watch: false, run: false, reporters: [], ...rootOpt, ...options });
     try {
       const specs = await vitest.globTestSpecifications();
       await collectGlobalInputs(vitest, local, globalInputs);

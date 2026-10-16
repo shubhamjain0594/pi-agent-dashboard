@@ -1478,7 +1478,7 @@ Automation plugin = `packages/automation-plugin/`. Schedule-triggered background
 - `resolve()` matches canonical-OR-lexical (fail-toward-applying).
 - See change: add-plugin-spawn-scope.
 
-### Plugin Session Lifecycle Declarations (`hide-chat-gateway-sessions`)
+### Plugin Session Lifecycle Declarations
 
 `ServerPluginContext.spawnSession` accepts `PluginSpawnOptions.lifecycle: PluginSessionLifecycle` (`packages/dashboard-plugin-runtime/src/server/server-context.ts`). Owning plugin declares per-session lifecycle decisions; core reads the flags, never the plugin name.
 
@@ -1486,7 +1486,7 @@ Automation plugin = `packages/automation-plugin/`. Schedule-triggered background
 - `finalizeOnSocketClose?: boolean` — `true` finalizes owned session on socket close, no reconnect grace. In-memory only; read at pi-gateway socket-close finalize branch.
 - `hidden?: boolean` — `true` hides owned session from board on FIRST register. Same `hidden` flag as headless auto-hide (`packages/server/src/session/memory-session-manager.ts`); revealed by "show hidden" toggle. Persisted to `.meta.json`, broadcast via `broadcastSessionUpdated`. Applied on fresh spawn-token resolution only (`packages/server/src/event-wiring.ts`); reattach never re-applies, so a later operator unhide survives. Persists the INTENT as `pluginHidden: true` on the session + `.meta.json` (`session-to-meta.ts`, restored by `sessionFromMeta` in `session-scanner.ts`) so a post-restart respawn re-register (`registerReason: "spawn"`, no token) keeps hidden. `register` order: reattach → `existing.hidden`; `visibilityIntent`; `existing.pluginHidden === true` → hidden; else headless heuristic. Explicit `visibilityIntent: "visible"` still wins. Pre-fix hidden sessions carry no `pluginHidden` → not migrated. See change: fix-plugin-hidden-across-restart.
 - `pending-plugin-ref-registry.ts` (`packages/server/src/pending/`) files a lifecycle record when ANY of `recover`/`finalizeOnSocketClose`/`hidden`/`archiveOnEnd`/`close` set.
-- Sibling hook `ServerPluginContext.shutdownSession(sessionId): Promise<boolean>` ends a session like the dashboard **Shutdown**. Trusted plugins only (manifest `priority <= 100`); untrusted or unknown session → `false`. Reuses `browserGateway.shutdownSession` — same body as `POST /api/session/:id/shutdown`, never a parallel `{type:"shutdown"}` path (#449/#452). First consumer: chat-gateway `!close`. See change: chat-gateway-close-command.
+- Sibling hook `ServerPluginContext.shutdownSession(sessionId): Promise<boolean>` ends a session like the dashboard **Shutdown**. Trusted plugins only (manifest `priority <= 100`); untrusted or unknown session → `false`. Reuses `browserGateway.shutdownSession` — same body as `POST /api/session/:id/shutdown`, never a parallel `{type:"shutdown"}` path (#449/#452).
 - `close?: { idle?: { afterMs: number }; mode?: "sleep" | "archive" }` — opt-in close policy. Trusted plugins only (`spawnSession` already `priority <= 100` gated). Validated at `pendingPluginRefRegistry.file` by `normalizeCloseDeclaration` (`packages/server/src/pending/pending-plugin-ref-registry.ts`): `afterMs` finite integer >= `MIN_CLOSE_IDLE_MS` (1000); mode default `sleep`; invalid block dropped + warning naming plugin id + spawn token. `closePolicy` is a core-reserved ref key; pluginRef body cannot forge it.
 - Applied at first register in `packages/server/src/event-wiring.ts` as `DashboardSession.closePolicy = { owner, idleAfterMs?, mode }` (`SessionClosePolicy`, `packages/shared/src/types.ts`). Persisted to `.meta.json` (`session-to-meta.ts` / `session-scanner.ts` / `memory-session-manager.ts` reattach carry-over). `owner` = declaring plugin id; routes its closer + authorizes its close requests; never a pluginRef read.
 - Governed = `closePolicy.idleAfterMs` present. Idle reaper (`packages/server/src/embed-lifecycle/idle-reaper.ts`) governs it regardless of `embedLifecycle.enabled` + `lifecyclePolicy`, with its own threshold. All quiescence vetoes + 3 gears apply (`decideReap`, `quiescence.ts`). Feature off + nothing declared ⇒ no-work sweep (unchanged).
@@ -1499,8 +1499,7 @@ Automation plugin = `packages/automation-plugin/`. Schedule-triggered background
 - First close-policy consumer: team plugin — declares `close { idle.afterMs = idleMinutes·60000, mode sleep }` (none when idleMinutes 0); closer keeps session while its conversation ensure is in flight.
 - Team `sweepIdle` kept as legacy fallback (5-min interval, `conversations.ts`). Skips any session carrying `closePolicy`; ends only sessions without one (live from before upgrade, or host without close-policy support).
 - Sessions with `closePolicy` → idle ending by core quiescence reaper only.
-- First consumer: chat-gateway spawn/resume (`sessionVisibility: "hidden"` default). See [`chat-gateway.md`](chat-gateway.md).
-- See change: hide-chat-gateway-sessions, fix-plugin-hidden-across-restart, add-session-close-plugin-hook.
+- See change: fix-plugin-hidden-across-restart, add-session-close-plugin-hook.
 
 ### Hermes Memory Settings Plugin (`add-hermes-memory-settings-plugin`)
 

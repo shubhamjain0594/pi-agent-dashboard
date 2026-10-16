@@ -37,6 +37,8 @@ interface EditorFileTreeProps {
   onOpenDiff?: (relPath: string) => void;
   /** Show only session-attributed files and their ancestors, including deleted files. */
   sessionOnly?: boolean;
+  /** Explicit changed-file list for filtered review trees; defaults to session context. */
+  changedFiles?: FileDiffEntry[];
 }
 
 /** Session-owned changed files, indexed for O(1) row lookup (D1). */
@@ -322,15 +324,26 @@ function TreeNode({
   }, [entries, activePath]);
 
   if (entries === null) {
-    return <div className="px-2 py-1 text-xs text-[var(--text-tertiary)]" style={{ paddingLeft: depth * 12 + 8 }}>{t("common.loading2", undefined, "Loading…")}</div>;
+    return <div className="px-2 py-1 text-xs text-[var(--text-tertiary)]" style={{ paddingLeft: Math.min(depth, 6) * 10 + 8 }}>{t("common.loading2", undefined, "Loading…")}</div>;
   }
 
   return (
     <>
       {entries.map((entry) => {
-        const rel = joinRel(relDir, entry.name);
+        let rel = joinRel(relDir, entry.name);
+        let name = entry.name;
+        // Only virtual trees have all descendants available without disk reads.
+        // Keep the deepest real path as the identity, even while collapsed.
+        if (sessionOnly && entry.isDir) {
+          let children = diffIndex.children.get(rel);
+          while (children?.length === 1 && children[0].isDir) {
+            rel = joinRel(rel, children[0].name);
+            name += ` / ${children[0].name}`;
+            children = diffIndex.children.get(rel);
+          }
+        }
         const open = treeOpenRoots.includes(rel);
-        const pad = depth * 12 + 8;
+        const pad = Math.min(depth, 6) * 10 + 8;
         if (entry.isDir) {
           return (
             <div key={rel}>
@@ -340,13 +353,15 @@ function TreeNode({
               >
                 <button
                   type="button"
+                  aria-expanded={open}
+                  title={absOf(cwd, rel)}
                   onClick={() => onToggleRoot(rel)}
-                  className="flex min-w-0 flex-1 items-center gap-1 py-1 text-left text-xs"
+                  className="flex h-[27px] min-w-0 flex-1 items-center gap-1 text-left text-[12px]"
                   style={{ paddingLeft: pad }}
                 >
-                  <Icon path={open ? mdiChevronDown : mdiChevronRight} size={0.5} />
+                  <Icon path={open ? mdiChevronDown : mdiChevronRight} size={0.5} className="shrink-0" />
                   <Icon path={mdiFolderOutline} size={0.55} className="shrink-0" />
-                  <span className="truncate">{entry.name}</span>
+                  <span className="truncate">{name}</span>
                 </button>
                 <RowCopyAffordance cwd={cwd} rel={rel} />
               </div>
@@ -420,7 +435,7 @@ function FileRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const icon = fileIcon(name);
-  const pad = depth * 12 + 8;
+  const pad = Math.min(depth, 6) * 10 + 8;
   const events = file?.changes ?? [];
   const hasHistory = events.length > 1;
 
@@ -448,9 +463,10 @@ function FileRow({
         <button
           type="button"
           ref={activeRef}
+          title={absOf(cwd, rel)}
           onClick={onOpenFile}
           className={[
-            "flex min-w-0 flex-1 items-center gap-1 py-1 text-left text-xs",
+            "flex h-[27px] min-w-0 flex-1 items-center gap-1 text-left text-[12px]",
             isActive ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]",
           ].join(" ")}
           style={{ paddingLeft: hasHistory ? 4 : pad + 10 }}
@@ -544,7 +560,7 @@ function OtherChangesGroup({
 export function EditorFileTree(props: EditorFileTreeProps) {
   const { t } = useI18n();
   const diff = useOptionalSessionDiff();
-  const files = diff?.data?.files;
+  const files = props.changedFiles ?? diff?.data?.files;
   const diffIndex = useMemo(() => buildDiffIndex(files ?? []), [files]);
   const otherChanges = diff?.data?.otherChanges ?? [];
   // Session-only expansion must never overwrite the persisted full-tree roots.
@@ -565,6 +581,13 @@ export function EditorFileTree(props: EditorFileTreeProps) {
       data-file-rail=""
       className="h-full overflow-auto border-r border-[var(--border-primary)] bg-[var(--bg-secondary)]"
     >
+      <div
+        title={props.cwd}
+        className="flex h-[27px] items-center gap-1 px-2 text-[12px] text-[var(--text-secondary)]"
+      >
+        <Icon path={mdiFolderOutline} size={0.55} className="shrink-0" />
+        <span className="truncate">{baseName(props.cwd) || props.cwd}</span>
+      </div>
       {props.sessionOnly && diffIndex.files.size === 0 ? (
         <div className="px-2 py-1 text-xs text-[var(--text-tertiary)]">
           {t("diff.noSessionChanges", undefined, "No changes in this session")}

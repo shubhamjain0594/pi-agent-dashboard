@@ -3,7 +3,7 @@ import { gotoDashboard } from "./helpers/index.js";
 
 /**
  * L3 browser behaviour for the lazy islands (change:
- * shrink-client-entry-lazy-islands): katex, the hu/zh-CN catalogs and the
+ * shrink-client-entry-lazy-islands): katex, the hu catalog and the
  * Settings panel are separate chunks fetched only on first use.
  *
  * Asserts on the REAL network — the unit/build guards prove the chunks exist
@@ -16,7 +16,6 @@ import { gotoDashboard } from "./helpers/index.js";
 const CHUNK = {
   katex: /\/assets\/katex-[^/]+\.(js|css)(\?|$)/,
   hu: /\/assets\/i18n-hu-[^/]+\.js(\?|$)/,
-  zh: /\/assets\/i18n-zh-CN-[^/]+\.js(\?|$)/,
   settings: /\/assets\/SettingsPanel-[^/]+\.js(\?|$)/,
 };
 
@@ -37,7 +36,7 @@ test.describe("lazy islands", () => {
     await expect(page.getByTestId("settings-nav-rail")).toBeVisible({ timeout: 20_000 });
     expect(urls.filter((u) => CHUNK.settings.test(u)).length).toBeGreaterThan(0);
     // English + Settings still pulls neither a catalog nor KaTeX.
-    for (const name of ["katex", "hu", "zh"] as const) {
+    for (const name of ["katex", "hu"] as const) {
       expect(urls.filter((u) => CHUNK[name].test(u)), `${name} requested without need`).toEqual([]);
     }
   });

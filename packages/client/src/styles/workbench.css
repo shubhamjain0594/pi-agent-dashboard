@@ -1,5 +1,6 @@
 @import "./conversation.css";
 @import "./editor.css";
+@import "./review.css";
 
 /* Bundled WOFF2 faces; no third-party requests at runtime.
    Licenses ship in public/font-licenses/. Swap keeps text visible during load. */
@@ -74,10 +75,14 @@
   src: url("/fonts/iosevka/term-bold-italic.woff2") format("woff2");
 }
 
-/* Desktop workbench: all surfaces follow the user's selected theme. */
-.desktop-workbench {
+/* On :root so a dialog portaled to document.body (settings, and the other
+   full-size overlays) inherits the same faces as the workbench. */
+:root {
   --workbench-font-sans: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --workbench-font-mono: "Iosevka Extended", "SFMono-Regular", Consolas, monospace;
+}
+/* Desktop workbench: all surfaces follow the user's selected theme. */
+.desktop-workbench {
   --workbench-sidebar-inset: 12px;
   display: flex;
   flex-direction: column;
@@ -92,6 +97,46 @@
   letter-spacing: -0.011em;
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
+}
+/* Portals are siblings of .desktop-workbench, so they do not inherit its
+   font. While the desktop shell is mounted, the page (and every portal)
+   uses the same face, size, and tracking. */
+body:has(.desktop-workbench) {
+  font-family: var(--workbench-font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -0.011em;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  --font-mono: var(--workbench-font-mono);
+}
+/* Settings type ramp. The page title is the h1 above this region.
+   h2 names a card. h3 names a cluster inside a card, quieter than a row title. */
+[data-testid="settings-content"] h2 {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.011em;
+  color: var(--text-primary);
+  border-bottom: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+[data-testid="settings-content"] h3 {
+  margin: 0;
+  border: 0;
+  padding-top: 2px;
+  padding-bottom: 0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-secondary);
+}
+[data-testid="settings-content"] :not(h3) + h3 {
+  padding-top: 14px;
+}
+[data-testid="settings-content"] code {
+  font-family: var(--workbench-font-mono);
 }
 .desktop-workbench button { cursor: pointer; }
 .desktop-workbench button:focus-visible, .desktop-workbench input:focus-visible {
@@ -134,6 +179,10 @@
 .workbench-connection.offline i, .workbench-connection.auth_required i { background: var(--status-error); }
 .workbench-status-context { display: inline-flex; align-items: center; gap: 4px; max-width: 25%; overflow: hidden; white-space: nowrap; }
 .workbench-status-title { margin-left: auto; max-width: 30%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workbench-theme-controls { display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.workbench-theme-controls [data-testid="theme-picker-trigger"],
+.workbench-theme-controls [data-testid="theme-toggle"] button { min-width: 22px; min-height: 22px; }
+.workbench-theme-controls [data-testid="theme-picker-dropdown"] { z-index: 30; }
 
 /* Quiet the existing session rail without removing any actions or information. */
 .desktop-workbench .workbench-sidebar { background: var(--bg-secondary); }
@@ -177,6 +226,14 @@
 .workspace-explorer-collapse:hover { background: var(--bg-hover); }
 .workspace-explorer-new { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 4px; }
 .workspace-explorer-new:hover, .workspace-explorer-label > button:hover { background: var(--bg-surface); color: var(--text-primary); }
+.workspace-explorer-session-row { display: flex; align-items: center; min-width: 0; }
+.workspace-explorer-session-row > .workspace-explorer-session { flex: 1; min-width: 0; }
+/* Author `display` on these rows beats the user-agent `details:not([open]) > :not(summary) { display: none }`,
+   so a closed Ended group still lays out its sessions and a click hits the row underneath. */
+.workspace-explorer-ended:not([open]) > :not(summary) { display: none; }
+.workspace-explorer-exit { display: grid; place-items: center; flex-shrink: 0; width: 24px; height: 24px; border-radius: 4px; color: var(--text-tertiary); }
+.workspace-explorer-exit:hover { background: var(--tint-red-bg); color: var(--tint-red-fg); }
+.workspace-explorer-exit:disabled { opacity: 0.5; cursor: default; }
 .workspace-explorer-session { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 6px 8px 6px 48px; border-radius: 5px; text-align: left; font-size: 12px; color: var(--text-secondary); }
 .workspace-explorer-session:hover { background: var(--bg-hover); }
 .workspace-explorer-session.is-selected { background: var(--bg-selected); color: var(--text-primary); box-shadow: inset 2px 0 var(--accent-primary); }
@@ -308,4 +365,53 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .desktop-workbench [data-testid="session-card-desktop"] { transition: none; }
+}
+
+/* Installed desktop window: drop the separate OS title bar and let the
+   existing chrome sit beside the caption buttons. A browser tab does not
+   match this display mode, so env() insets stay unused there. */
+@media (display-mode: window-controls-overlay) {
+  .desktop-workbench {
+    --wco-left: env(titlebar-area-x, 0px);
+    --wco-height: env(titlebar-area-height, 0px);
+    --wco-right: max(0px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw)));
+  }
+  .desktop-workbench .workbench-titlebar,
+  .desktop-workbench .workbench-rail,
+  .desktop-workbench .conversation-session-header,
+  .desktop-workbench .session-work-tabs {
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  .desktop-workbench .workbench-titlebar :is(button, a, input),
+  .desktop-workbench .workbench-rail button,
+  .desktop-workbench .conversation-session-header :is(button, a, input, summary, details, label, [role="radio"]),
+  .desktop-workbench .conversation-session-name,
+  .desktop-workbench .session-work-tabs :is(button, a, input) {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+  .desktop-workbench .workbench-titlebar {
+    padding-left: max(16px, var(--wco-left));
+    padding-right: max(16px, var(--wco-right));
+    min-height: max(36px, var(--wco-height));
+  }
+  /* Traffic lights sit on the left. A zero left inset (Windows/Linux) keeps
+     the rail's normal top padding. */
+  .desktop-workbench .workbench-rail {
+    padding-top: max(8px, min(var(--wco-left), var(--wco-height)));
+  }
+  .desktop-workbench .conversation-session-header,
+  .desktop-workbench .session-work-tabs {
+    min-height: max(36px, var(--wco-height));
+  }
+  .desktop-workbench .session-work-tabs {
+    padding-right: max(8px, var(--wco-right));
+  }
+  /* Chat-only: the session row reaches the window edge, so it clears the
+     caption buttons. With the inspector open, that inset belongs to the
+     inspector row instead. */
+  .desktop-workbench .workbench-surfaces:not(:has([data-testid="split-editor-pane"])) .conversation-session-header {
+    padding-right: max(12px, var(--wco-right));
+  }
 }

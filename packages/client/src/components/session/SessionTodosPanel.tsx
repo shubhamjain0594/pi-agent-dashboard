@@ -1,3 +1,4 @@
+import { useI18n } from "../../lib/i18n/i18n.js";
 import type { SessionTodoSnapshot, SessionTodoTask } from "../../lib/session/session-todos.js";
 
 interface Props {
@@ -6,6 +7,7 @@ interface Props {
 
 /** Display only: the installed Pi todo tool owns all task mutations. */
 export function SessionTodosPanel({ snapshot }: Props) {
+  const { t } = useI18n();
   const tasks = snapshot?.tasks.filter((task) => task.status !== "deleted") ?? [];
   const byId = new Map(snapshot?.tasks.map((task) => [task.id, task]));
   const active = tasks.filter((task) => task.status === "in_progress");
@@ -39,20 +41,20 @@ export function SessionTodosPanel({ snapshot }: Props) {
   }
 
   return (
-    <section aria-label="Session todos" className="min-w-0 border-t border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3 text-xs text-[var(--text-primary)]">
+    <section aria-label={t("tasks.sessionTodosAria", undefined, "Session todos")} className="min-w-0 border-t border-[var(--border-primary)] bg-[var(--bg-secondary)] p-3 text-xs text-[var(--text-primary)]">
       <header className="mb-2 flex items-center justify-between gap-2">
-        <h2 className="font-medium">Todos</h2>
+        <h2 className="font-medium">{t("tasks.todos", undefined, "Todos")}</h2>
         <span className="rounded bg-[var(--bg-tertiary)] px-1.5 py-0.5 text-[var(--text-secondary)]">Read-only</span>
       </header>
       {snapshot === null ? (
         <div className="space-y-1 text-[var(--text-secondary)]">
-          <p>No todo snapshot received yet.</p>
-          <p>The agent must use the installed todo tool to publish tasks here.</p>
+          <p>{t("tasks.noSnapshot", undefined, "No todo snapshot received yet.")}</p>
+          <p>{t("tasks.noSnapshotHint", undefined, "The agent must use the installed todo tool to publish tasks here.")}</p>
         </div>
       ) : (
         <div className="space-y-3">
           <p className="text-[var(--text-secondary)]">{active.length} in progress · {pending.length} pending · {completed.length} completed</p>
-          {tasks.length === 0 && <p className="text-[var(--text-secondary)]">No tasks.</p>}
+          {tasks.length === 0 && <p className="text-[var(--text-secondary)]">{t("tasks.noTasks", undefined, "No tasks.")}</p>}
           {active.length > 0 && <div><h3 className="mb-1 font-medium">In progress ({active.length})</h3>{taskList(active)}</div>}
           {pending.length > 0 && <div><h3 className="mb-1 font-medium">Pending ({pending.length})</h3>{taskList(pending)}</div>}
           {completed.length > 0 && <details><summary className="cursor-pointer text-[var(--text-secondary)]">Completed ({completed.length})</summary><div className="mt-2">{taskList(completed)}</div></details>}

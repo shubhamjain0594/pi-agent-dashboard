@@ -88,8 +88,11 @@ describe("plugin runtime deps (task 2.6)", () => {
     const deps = pluginRuntimeDeps(REPO_ROOT);
     expect(Object.keys(deps).length).toBeGreaterThan(0);
     expect(Object.keys(deps).some((d) => d.startsWith(`${SCOPE}/`))).toBe(false);
-    // gmail-plugin's oauth4webapi is the observed failure this exists to close.
-    expect(deps).toHaveProperty("oauth4webapi");
+    // Non-vacuity: a third-party dep that arrives only via a bundled plugin
+    // must survive the union. yaml is that witness (gmail's oauth4webapi left
+    // with the plugin).
+    expect(deps).toHaveProperty("yaml");
+    expect(deps).toHaveProperty("debug");
   });
 
   it("unions plugin deps, skips first-party, peer and dev deps", () => {

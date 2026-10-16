@@ -1,38 +1,9 @@
 /**
  * Team plugin i18n catalog — UNPREFIXED leaf keys (the shell merges them under
- * `plugin.team.*`; component code resolves via the scoped `useT()`). zh-CN and
- * hu keep identical key sets; English is the call-site fallback.
+ * `plugin.team.*`; component code resolves via the scoped `useT()`). hu is the only non-English catalog; English is the call-site fallback.
  * See change: add-team-plugin.
  */
 export const catalog = {
-  "zh-CN": {
-    rowLabel: "团队",
-    rowCount: "{agents} 个智能体 · {active} 个活跃",
-    rowTitle: "打开此文件夹的 AI 团队",
-    openTeam: "团队",
-    teamSettings: "团队设置…",
-    disableTeam: "关闭团队",
-    enableTeam: "为此文件夹开启团队",
-    dlgEnableTitle: "开启团队：{name}",
-    dlgSettingsTitle: "团队设置：{name}",
-    projName: "项目名称",
-    projNameHint: "用户在项目选择器中看到此名称。",
-    who: "谁可以使用",
-    everyone: "所有已登录用户",
-    selected: "选定的用户",
-    usersHint: "这里只列出已打开过团队应用的用户。",
-    ctxFiles: "同时向智能体提供此文件夹的 AGENTS.md 和 CLAUDE.md",
-    ctxHint: "每个文件最大 64 KiB，按不受信任的输入处理。",
-    ok: "开启",
-    save: "保存",
-    cancel: "取消",
-    errName: "请填写项目名称。",
-    errUsers: "请至少选择一位用户，或允许所有人。",
-    errSave: "无法保存。请重试。",
-    disTitle: "关闭团队：{name}？",
-    disBody: "对话和文件会保留；重新开启后会恢复。",
-    disOk: "关闭",
-  },
   hu: {
     rowLabel: "Csapat",
     rowCount: "{agents} ügynök · {active} aktív",

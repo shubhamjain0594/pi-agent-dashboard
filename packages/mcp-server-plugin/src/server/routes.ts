@@ -10,7 +10,7 @@
  * keeps E1-E4 honest in both modes.
  */
 import rateLimit from "@fastify/rate-limit";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest, FastifyPluginAsync } from "fastify";
 import { minTier, type Tier } from "@blackbelt-technology/pi-dashboard-shared/tiers.js";
 import { type AuthDeps, authenticate, credentialFingerprint } from "./auth.js";
 import {
@@ -104,7 +104,7 @@ export async function mountMcpRoutes(
   fastify: FastifyInstance,
   deps: McpRouteDeps,
 ): Promise<void> {
-  await fastify.register(async (scope) => {
+  const scoped: FastifyPluginAsync = async (scope) => {
     // Rate limiter for this scope (recognized by CodeQL
     // js/missing-rate-limiting, which otherwise flags the authenticated /mcp
     // handlers). Loopback allow-listed so same-host callers are not throttled;
@@ -117,7 +117,8 @@ export async function mountMcpRoutes(
       allowList: ["127.0.0.1", "::1"],
     });
     mountMcpRoutesInScope(scope, deps);
-  });
+  };
+  await fastify.register(scoped);
 }
 
 /**

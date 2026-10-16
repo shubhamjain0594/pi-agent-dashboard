@@ -6,119 +6,13 @@
  * merges it under `plugin.blackhole.*`. Component code resolves keys via the
  * scoped `useT()` hook, which auto-prefixes `plugin.blackhole.`.
  *
- * `zh-CN` and `hu` MUST keep parity (identical key sets — scripts/i18n-parity).
+ * `hu` is the only non-English catalog.
  * English lives at the call sites as the `t(key, vars, fallback)` fallback.
  * Field labels/help are presentation DATA (field-groups.ts), not i18n keys.
  *
  * See change: add-blackhole-plugin.
  */
 export const catalog = {
-  "zh-CN": {
-    noModelAssigned: "未分配模型",
-    roleRefThinking: "思考",
-    roleStatus_detached: "已分离",
-    roleStatus_dangling: "角色未分配，保留上一个模型",
-    levelDropped: "思考级别 {level} 不受 {model} 支持，因此已丢弃该级别。",
-    roleDetachedHelp: "此槽位已在仪表板之外被编辑，因此不再跟随 {role}。",
-    reattachRoleTo: "重新关联到 {role}",
-    loadError: "加载配置失败：{error}",
-    loading: "加载中…",
-    notInstalledTitle: "尚未安装 pi-blackhole",
-    notInstalledBody:
-      "此页面用于配置 pi-blackhole 扩展 —— 统一的算法压缩与观察式记忆。请在任意 pi 会话中安装后重新加载。",
-    parseErrorTitle: "配置文件无法解析 —— 编辑已停用",
-    parseErrorBody:
-      "Blackhole 的全部设置都在这一个文件中。由于无法读取，本页没有可显示的值 —— 显示默认值会错误地表述你的会话实际运行的配置。",
-    recheck: "重新检查文件",
-    saveBlocked: "保存",
-    intro: "以下为",
-    introTail: "扩展的压缩与观察式记忆设置。",
-    file: "文件：",
-    notCreated: "尚未创建",
-    nUnmanaged: "已保留 {count} 个未管理的键",
-    applyNote:
-      "pi-blackhole 在每次写入后都会重新读取该文件，因此已保存的更改会自行到达运行中的会话。本页不管理的键（包括 _comment 注释）会原样保留。",
-    fields: "个字段",
-    workerModels: "工作模型",
-    chains: "条链",
-    chainsHelp:
-      "每个工作器自上而下依次尝试其模型。返回可重试错误的模型会在其冷却窗口内被跳过，随后运行下一个。",
-    primary: "主模型",
-    inherit: "（继承）",
-    overrideThinking: "覆盖思考等级",
-    addModelToChain: "添加模型到 {worker} 链",
-    modelForEntryGroup: "{worker} 第 {index} 项模型",
-    modelLabel: "模型",
-    levelDropNotice: "思考等级覆盖 “{level}” 已丢弃：所选模型不支持推理。",
-    chainEmpty: "工作器当前仅解析到基础/会话末尾。",
-    registryUnavailable: "模型注册表不可用（{reason}）。",
-    registryEmpty: "注册表中没有已配置凭据的模型。",
-    retryRegistry: "重试",
-    baseModelLabel: "基础模型",
-    baseModelHelp: "所有工作器在会话模型之前的共享回退。",
-    clearBaseModel: "清除",
-    selectBaseModelPlaceholder: "选择基础模型…",
-    cancelAddingModel: "取消添加模型",
-    selectModelToAddPlaceholder: "选择要添加的模型…",
-    recommendedDefaultsLabel: "使用推荐默认设置",
-    recommendedDefaultsHelp:
-      "推荐默认设置会为 observer、reflector 和 dropper 暂存具有弹性的 flash 级别链（跨不同提供方最多 3 个模型），并启用调试日志。",
-    recommendedDefaultsDisabledUnavailable: "注册表不可用。暂存默认设置已禁用。",
-    recommendedDefaultsNoCandidate: "注册表中未找到 flash、haiku 或 mini 模型。",
-    recommendedDefaultsFewerThan3: "已从可用候选模型中暂存 3 个推荐模型中的 {count} 个。",
-    confirmReplaceChainsTitle: "替换现有链？",
-    confirmReplaceChainsBody:
-      "应用推荐默认设置将用来自已配置凭据注册表的最多 3 个 flash/haiku/mini 模型覆盖 observer、reflector 和 dropper 当前的回退链。",
-    confirmReplaceApply: "应用默认设置",
-    notListedNotice: "模型未列出？请在 设置 > 提供商 中配置 API 密钥。",
-    mThinking: "思考等级",
-    mCooldown: "冷却（小时）",
-    mContextWindow: "上下文窗口",
-    workersOff: "记忆工作器已关闭 —— 压缩仍然运行。",
-    noActivity: "尚无记忆活动。",
-    stateRecorded: "已记录",
-    stateNotDue: "未到期",
-    stateEmpty: "空",
-    stateSkipped: "已跳过",
-    stateInitial: "初始",
-    stateError: "错误",
-    stateOther: "其他状态",
-    stateUnknown: "无游标",
-    workerStateA11y: "{worker}: {state}",
-    workerCoolingA11y: "{worker}：使用回退模型 {model}，冷却约 {minutes} 分钟",
-    lagLabel: "滞后",
-    lagA11y: "游标滞后 {lag} 条",
-    lagStale: "游标超前于历史",
-    lagStaleA11y: "游标超前于已记录的历史",
-    proximityLabel: "压缩临近度 ≈",
-    proximityA11y: "压缩临近度（近似值）",
-    proximityExplain:
-      "近似值：blackhole 统计的是不同的量。此估算使用仪表盘自身的 token 统计 —— 两者不可互相换算。",
-    pendingAdvisory: "{count} 个批次待处理 —— 使用 /blackhole 冲刷。",
-    cooldownAdvisory: "{model} 冷却中 —— 约 {minutes} 分钟后恢复。",
-    detailButton: "详情",
-    backToChat: "← 返回对话",
-    detailTitle: "记忆管线详情",
-    workerColumn: "工作器",
-    cursorColumn: "游标",
-    resolvedColumn: "解析后的模型",
-    cursorsSource: "工作器游标 —— 来源：pi-blackhole/<会话 id>-pending.json",
-    cooldownReason: "已冷却：{reason}",
-    cooldownSource:
-      "冷却回退与原因 —— 来源：pi-blackhole/pi-blackhole-cooldown.json（主模型来自配置）",
-    proximitySource:
-      "由仪表盘自身的 token 统计对 compactAfterTokens 估算。blackhole 的计数器统计不同的量且不持久化 —— 两者不可换算。",
-    transcriptNote:
-      "观察与反思的计数仅在会话运行时存在 —— 观察与反思出现在会话转录中。",
-    pipelineLoadError: "无法加载管线状态。",
-    omLabelRecorded: "已记录观察",
-    omLabelReflections: "已记录反思",
-    omLabelDropped: "已丢弃观察",
-    omExpand: "展开条目",
-    omCollapse: "折叠条目",
-    omLoading: "加载中…",
-    omNoRecords: "无记录",
-  },
   hu: {
     noModelAssigned: "Nincs modell hozzárendelve",
     roleRefThinking: "gondolkodás",

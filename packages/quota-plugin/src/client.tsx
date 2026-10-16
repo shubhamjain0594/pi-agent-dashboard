@@ -62,7 +62,7 @@ export function providerLabel(id: string): string {
 
 /**
  * Localized pace-state formatter. `paceLabel` (pure, in pace.ts) supplies the
- * English fallback; the shell translator localizes it for zh-CN/hu.
+ * English fallback; the shell translator localizes it for hu.
  */
 function usePaceText(): (pace: Pace) => string {
   const t = useT();

@@ -46,7 +46,7 @@ describe("useMessageHandler — live-event coalescing (render-count probe)", () 
         get: (target, prop) => (prop === "setSessionStates" ? setSessionStates : vi.fn()),
       }) as unknown as MessageHandlerSetters;
       const deps: any = {
-        send: vi.fn(), navigate: vi.fn(), clearSpawningCwd: vi.fn(),
+        send: vi.fn(), navigate: vi.fn(), setSpawnLoadingSince: () => {}, clearSpawningCwd: vi.fn(),
         spawningCwdsRef: useRef(new Set<string>()), subscribedRef: useRef(new Set<string>()),
         pendingTerminalCwdRef: useRef(null), lastCreatedTerminalIdRef: useRef(null),
         maxSeqMapRef: useRef(new Map<string, number>()), selectedSessionIdRef: useRef(undefined),
@@ -170,6 +170,7 @@ function makeStatefulHandler(initial: {
     const deps: MessageHandlerDeps = {
       send: vi.fn(),
       navigate: vi.fn(),
+      setSpawnLoadingSince: () => {},
       clearSpawningCwd: vi.fn(),
       spawningCwdsRef: useRef(new Set<string>()),
       subscribedRef: useRef(new Set<string>()),

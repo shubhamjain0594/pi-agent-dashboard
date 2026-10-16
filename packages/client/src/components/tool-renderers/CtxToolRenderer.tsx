@@ -2,7 +2,7 @@ import { mdiChevronDown, mdiChevronRight, mdiOpenInNew } from "@mdi/js";
 import { Icon } from "@mdi/react";
 import type React from "react";
 import { useState } from "react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { LazySyntaxHighlighter as SyntaxHighlighter } from "../primitives/LazySyntaxHighlighter.js";
 import { truncateOutputForDisplay } from "../../lib/chat/event-reducer.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
 import { getSyntaxTheme } from "../../lib/theme/syntax-theme.js";

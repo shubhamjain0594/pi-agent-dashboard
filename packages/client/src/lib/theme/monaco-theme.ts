@@ -91,6 +91,13 @@ export function buildMonacoTheme(themeName: string, resolved: ResolvedTheme): Bu
     { token: "tag", foreground: accent("--accent-red", "#ef4444") },
     { token: "attribute.name", foreground: accent("--accent-orange", "#f97316") },
     { token: "attribute.value", foreground: accent("--accent-green", "#22c55e") },
+    // Python: decorators are not HTML tags; quotes use string.escape; hex
+    // literals use number.hex. Without these, inherit pulls the vs defaults.
+    { token: "decorator", foreground: accent("--accent-orange", "#f97316") },
+    { token: "variable.predefined", foreground: accent("--text-secondary", "#b0b0b0"), fontStyle: "italic" },
+    { token: "string.escape", foreground: accent("--accent-green", "#22c55e") },
+    { token: "number.hex", foreground: accent("--accent-orange", "#f97316") },
+    { token: "number.float", foreground: accent("--accent-orange", "#f97316") },
   ];
 
   return {

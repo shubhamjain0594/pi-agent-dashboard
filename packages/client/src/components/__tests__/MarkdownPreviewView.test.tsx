@@ -3,8 +3,8 @@ import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import React from "react";
 import { MarkdownPreviewView } from "../preview/MarkdownPreviewView.js";
 
-// Mock MarkdownContent to avoid full markdown rendering in tests
-vi.mock("../preview/MarkdownContent.js", () => ({
+// Mock MarkdownContent to avoid full markdown rendering in tests (the lazy wrapper is what the view imports)
+vi.mock("../preview/MarkdownContentLazy.js", () => ({
   MarkdownContent: ({ content }: { content: string }) => (
     <div data-testid="mock-markdown">{content}</div>
   ),

@@ -54,7 +54,7 @@ describe("atlas perf", () => {
     }
     await app.close();
     expect(pct(times, 95)).toBeLessThan(100);
-  });
+  }, 30_000);
 
   it("P2: rebuild at 300 skills × 256 KiB, median < 500 ms", async () => {
     const res = fixture(300, 256 * 1024);

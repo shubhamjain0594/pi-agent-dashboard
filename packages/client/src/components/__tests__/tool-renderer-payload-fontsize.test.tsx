@@ -11,7 +11,7 @@
  * is defined once in `packages/client/src/index.css` (`@utility text-code`).
  */
 
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, waitFor } from "@testing-library/react";
 import type React from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -71,7 +71,7 @@ function hasUnifiedFontSize(el: Element | null): boolean {
 }
 
 describe("tool renderer code/diff payload — unified 12 px", () => {
-  it("ReadToolRenderer: SyntaxHighlighter wrapper carries fontSize: 12px", () => {
+  it("ReadToolRenderer: SyntaxHighlighter wrapper carries fontSize: 12px", async () => {
     const { container } = render(
       <ReadToolRenderer
         toolName="read"
@@ -82,11 +82,12 @@ describe("tool renderer code/diff payload — unified 12 px", () => {
       />,
     );
     // SyntaxHighlighter applies customStyle inline on the outermost <pre>/<div>.
-    const styledNode = container.querySelector('[style*="font-size: 12px"]');
-    expect(styledNode).not.toBeNull();
+    await waitFor(() => {
+      expect(container.querySelector('[style*="font-size: 12px"]')).not.toBeNull();
+    });
   });
 
-  it("WriteToolRenderer: SyntaxHighlighter wrapper carries fontSize: 12px", () => {
+  it("WriteToolRenderer: SyntaxHighlighter wrapper carries fontSize: 12px", async () => {
     const { container } = render(
       <WriteToolRenderer
         toolName="write"
@@ -95,8 +96,9 @@ describe("tool renderer code/diff payload — unified 12 px", () => {
         context={ctx}
       />,
     );
-    const styledNode = container.querySelector('[style*="font-size: 12px"]');
-    expect(styledNode).not.toBeNull();
+    await waitFor(() => {
+      expect(container.querySelector('[style*="font-size: 12px"]')).not.toBeNull();
+    });
   });
 
   it("EditToolRenderer desktop (RichDiff path): wrapper has text-code + inline fontSize fallback", async () => {
@@ -113,7 +115,7 @@ describe("tool renderer code/diff payload — unified 12 px", () => {
     expect(hasUnifiedFontSize(wrapper)).toBe(true);
   });
 
-  it("EditToolRenderer mobile fallback (HomegrownDiff): root carries text-code", () => {
+  it("EditToolRenderer mobile fallback (HomegrownDiff): root carries text-code", async () => {
     mockIsMobile = true;
     const { container } = render(
       <EditToolRenderer
@@ -123,8 +125,10 @@ describe("tool renderer code/diff payload — unified 12 px", () => {
         context={ctx}
       />,
     );
+    await waitFor(() => {
+      expect(container.querySelector("div.font-mono")).not.toBeNull();
+    });
     const root = container.querySelector("div.font-mono");
-    expect(root).not.toBeNull();
     expect(hasUnifiedFontSize(root)).toBe(true);
   });
 

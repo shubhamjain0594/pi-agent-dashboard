@@ -44,6 +44,7 @@ export default function PiSettingsJsonEditor({ value, onChange }: PiSettingsJson
       loading={<div className="p-4 text-sm text-[var(--text-tertiary)]">Loading editor…</div>}
       options={{
         minimap: { enabled: false },
+        scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
         wordWrap: "on",
         scrollBeyondLastLine: false,
         fontSize: 13,

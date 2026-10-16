@@ -1477,7 +1477,7 @@ export function createDirectoryService(
     // cwd ride one spawn (E26); the entry is deleted on settle — success OR
     // rejection — so a failed poll never poisons later requests (X1).
     const inFlight = openspecGetInFlight.get(cwd);
-    if (inFlight) return { hit: placeholder, poll: inFlight };
+    if (inFlight !== undefined) return { hit: placeholder, poll: inFlight };
     const poll = pollAndBroadcastIfChanged(cwd).finally(() => openspecGetInFlight.delete(cwd));
     openspecGetInFlight.set(cwd, poll);
     return { hit: placeholder, poll };
@@ -1580,7 +1580,7 @@ export function createDirectoryService(
 
   function refreshPiResourcesInternal(cwd: string): Promise<PiResourcesResult> {
     const inFlight = piResourcesInFlight.get(cwd);
-    if (inFlight) return inFlight;
+    if (inFlight !== undefined) return inFlight;
     // Attach BEFORE scanning so an edit during the scan is not missed.
     touchPiResources(cwd);
     const startVersion = piResourcesVersion.get(cwd) ?? 0;

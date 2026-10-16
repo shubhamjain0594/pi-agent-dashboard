@@ -2,7 +2,7 @@ import { mdiArrowLeft, mdiLoading } from "@mdi/js";
 import { Icon } from "@mdi/react";
 import React, { useRef } from "react";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
-import { MarkdownContent } from "./MarkdownContent.js";
+import { MarkdownContent } from "./MarkdownContentLazy.js";
 import { MarkdownSearch } from "./MarkdownSearch.js";
 
 export interface PreviewTab {

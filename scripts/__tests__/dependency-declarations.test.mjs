@@ -141,9 +141,10 @@ describe('range selection (E19, E20, E21)', () => {
     for (const { name, manifest } of nonPrivate()) {
       for (const field of DEP_FIELDS) {
         for (const [dep, range] of Object.entries(manifest[field] ?? {})) {
-          // Non-semver specifiers: workspace/file/link, and an https URL tarball (server `xlsx`
-          // from the official SheetJS CDN — its version is pinned by office-preview E71 instead).
-          if (/^(workspace|file|link|https):/.test(range)) continue;
+          // Non-semver specifiers: workspace/file/link, an https URL tarball (server `xlsx`
+          // from the official SheetJS CDN — its version is pinned by office-preview E71 instead),
+          // and an npm alias (`npm:typescript@7.0.2` — an exact pin under the alias name).
+          if (/^(workspace|file|link|https|npm):/.test(range)) continue;
           const resolving = resolvedVersion(dep, name);
           if (!resolving) continue; // absent => unverifiable, covered by X3
           if (!rangeIsSatisfiable(range, resolving)) violations.push(`${name} ${field}.${dep}`);

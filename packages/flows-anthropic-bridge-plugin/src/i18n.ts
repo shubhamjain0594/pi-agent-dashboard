@@ -7,29 +7,12 @@
  * resolves keys via the scoped `useT()` hook, which auto-prefixes
  * `plugin.flows-anthropic-bridge.`.
  *
- * zh-CN and hu MUST keep parity (identical key sets). {var} placeholders are
+ * hu is the only non-English catalog. {var} placeholders are
  * preserved verbatim so `t(key, vars)` can interpolate.
  *
  * See change: make-all-ui-text-i18n.
  */
 export const catalog = {
-  "zh-CN": {
-    heading: "pi-flows · Anthropic 消息桥接",
-    descForwards: "转发",
-    descHooks: "钩子到每个 pi-flows 代理子进程。仅当两个对等组件（",
-    descAnd: "和",
-    descResolve: "）在 pi 进程中解析时才激活。",
-    bannerNoSessions: "尚无 pi 会话报告。启动一个 pi 会话以查看状态。",
-    bannerActive: "桥接在所有 pi 会话中处于活动状态。",
-    bannerDegraded: "一个或多个对等组件不可用。请参见下方的每会话详情。",
-    refresh: "刷新",
-    colStatus: "状态",
-    peerMissing: "缺失",
-    gateOverrides: "闸门覆盖",
-    forceLabel: "强制打开闸门（任何 anthropic-messages 模型 — 设置",
-    disableLabel: "完全禁用桥接（设置",
-    save: "保存",
-  },
   hu: {
     heading: "pi-flows · Anthropic üzenet-híd",
     descForwards: "Továbbítja a",

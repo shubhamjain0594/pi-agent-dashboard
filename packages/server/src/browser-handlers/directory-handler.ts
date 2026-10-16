@@ -7,6 +7,7 @@ import { isValidSectionId } from "@blackbelt-technology/pi-dashboard-shared/card
 import { archiveCompleted as openspecArchiveCompleted } from "@blackbelt-technology/pi-dashboard-shared/platform/openspec.js";
 import { normalizePath } from "@blackbelt-technology/pi-dashboard-shared/platform/paths.js";
 import { isGroupByMode } from "@blackbelt-technology/pi-dashboard-shared/session-group-by.js";
+import { writeEnabledModelToggle } from "../pi-agent-settings.js";
 import { safeRealpathSync } from "../resolve-path.js";
 import type { BrowserHandlerContext } from "./handler-context.js";
 
@@ -94,6 +95,21 @@ export function handleUnpinDirectory(
   }
 }
 
+/** Star click writes Pi's `enabledModels` too, then sessions re-read the file. */
+function mirrorFavoriteToPiScope(label: string, enabled: boolean, ctx: BrowserHandlerContext): void {
+  writeEnabledModelToggle(label, enabled).then((result) => {
+    if (!result.ok) {
+      console.warn(`[pi-settings] enabledModels toggle ${result.error}`);
+      return;
+    }
+    for (const id of ctx.piGateway.getConnectedSessionIds()) {
+      ctx.piGateway.sendToSession(id, { type: "request_models", sessionId: id });
+    }
+  }).catch((err: unknown) => {
+    console.warn("[pi-settings] enabledModels toggle failed:", err instanceof Error ? err.message : err);
+  });
+}
+
 export function handleFavoriteModel(
   msg: Extract<BrowserToServerMessage, { type: "favorite_model" }>,
   ctx: BrowserHandlerContext,
@@ -101,6 +117,7 @@ export function handleFavoriteModel(
   if (!ctx.preferencesStore) return;
   ctx.preferencesStore.addFavoriteModel(msg.label);
   ctx.broadcast({ type: "favorite_models_updated", labels: ctx.preferencesStore.getFavoriteModels() });
+  mirrorFavoriteToPiScope(msg.label, true, ctx);
 }
 
 export function handleUnfavoriteModel(
@@ -110,6 +127,7 @@ export function handleUnfavoriteModel(
   if (!ctx.preferencesStore) return;
   ctx.preferencesStore.removeFavoriteModel(msg.label);
   ctx.broadcast({ type: "favorite_models_updated", labels: ctx.preferencesStore.getFavoriteModels() });
+  mirrorFavoriteToPiScope(msg.label, false, ctx);
 }
 
 export function handleReorderPinnedDirs(

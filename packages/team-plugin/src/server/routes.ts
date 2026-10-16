@@ -3,7 +3,7 @@
  * the shared rate limiter. See change: add-team-plugin.
  */
 import rateLimit from "@fastify/rate-limit";
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest, FastifyPluginAsync } from "fastify";
 import type { Access } from "./access.js";
 import type { ConversationService } from "./conversations.js";
 import { isTargetId } from "./paths.js";
@@ -51,7 +51,7 @@ function matchFolders(d: RouteDeps, c: Caller, cwds: string[]) {
 }
 
 export async function mountTeamRoutes(fastify: FastifyInstance, d: RouteDeps): Promise<void> {
-  await fastify.register(async (scope) => {
+  const scoped: FastifyPluginAsync = async (scope) => {
     await scope.register(rateLimit, {
       global: true,
       max: 100_000,
@@ -274,5 +274,6 @@ export async function mountTeamRoutes(fastify: FastifyInstance, d: RouteDeps): P
         return { ok: true };
       }),
     );
-  });
+  };
+  await fastify.register(scoped);
 }

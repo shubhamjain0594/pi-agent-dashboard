@@ -61,6 +61,17 @@ function mountGate(shouldRender: () => boolean, onRender?: () => void) {
   return { get: () => latest! };
 }
 
+/** Local stand-in for Promise.withResolvers (not in this package's ES2023 lib). */
+function withResolvers<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (reason?: unknown) => void } {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 describe("slot-claims invalidation store", () => {
   it("starts at version 0 and bumps monotonically", () => {
     __resetSlotClaimsVersionForTests();
@@ -200,7 +211,7 @@ describe("folder project cache + predicates", () => {
 
   // test-plan #F7
   it("a response landing after clearFolderProjects is discarded and the folder refetched", async () => {
-    const first = Promise.withResolvers<Response>();
+    const first = withResolvers<Response>();
     fetchMock.mockReturnValueOnce(first.promise);
     fetchMock.mockResolvedValue(ok({ id: null, types: ["fresh"], source: "detected" }));
     const gate = folderHasProjectType("stale");
@@ -217,8 +228,8 @@ describe("folder project cache + predicates", () => {
 
   // test-plan #F8
   it("invalidating one folder leaves the other's in-flight response intact", async () => {
-    const a = Promise.withResolvers<Response>();
-    const b = Promise.withResolvers<Response>();
+    const a = withResolvers<Response>();
+    const b = withResolvers<Response>();
     fetchMock.mockImplementation((url: string) => {
       const cwd = decodeURIComponent(url.split("cwd=")[1]);
       if (fetched().filter((c) => c === cwd).length > 1) return Promise.resolve(ok({ id: "b2", types: [], source: "none" }));

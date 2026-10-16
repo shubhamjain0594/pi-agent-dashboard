@@ -9,12 +9,9 @@ import { catalog } from "../../i18n.js";
 
 describe("browser catalog", () => {
 	it("has a non-empty key set in every locale", () => {
-		for (const locale of ["zh-CN", "hu"] as const) {
+		for (const locale of ["hu"] as const) {
 			expect(Object.keys(catalog[locale]).length).toBeGreaterThan(0);
 		}
 	});
 
-	it("zh-CN and hu keep key parity", () => {
-		expect(Object.keys(catalog.hu).sort()).toEqual(Object.keys(catalog["zh-CN"]).sort());
-	});
 });

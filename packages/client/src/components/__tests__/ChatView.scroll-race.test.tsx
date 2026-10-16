@@ -3,6 +3,7 @@ import React from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createInitialState } from "../../lib/chat/event-reducer.js";
 import { ChatView } from "../chat/ChatView.js";
+import { ConversationLayout } from "../chat/ConversationLayout.js";
 import { ThemeProvider } from "../settings/ThemeProvider.js";
 import type { ToolContext } from "../tool-renderers/index.js";
 
@@ -24,11 +25,10 @@ beforeAll(() => {
 });
 
 /**
- * Model the container's scroll geometry GLOBALLY (on `HTMLElement.prototype`),
- * not as own properties of one element: `<ChatView>` remounts its scroll
- * container when `sessionId` changes (the `FilePreviewProvider key={sessionId}`
- * boundary), so a per-element accessor would be lost on exactly the
- * session-switch paths that need it.
+ * Model the container's scroll geometry GLOBALLY (on `HTMLElement.prototype`)
+ * so independent fixtures and real unmount/remount paths share the same browser
+ * clamping model. Session switches now retain the native scrollport/footer
+ * host; only preview/transcript content crosses the session-keyed boundary.
  *
  * `scrollTop` is a CLAMPING accessor because the browser clamps every write to
  * [0, scrollHeight − clientHeight] — and that clamp is load-bearing for the
@@ -101,6 +101,50 @@ async function flushRaf() {
 }
 
 describe("ChatView sticky scroll", () => {
+  it("a wheel gesture over the portaled composer cancels an animated descent", async () => {
+    const view = (n: number) => <ThemeProvider>
+      <ConversationLayout footer={<textarea aria-label="Draft" />}>
+        <ChatView state={stateWith(n)} toolContext={defaultToolContext} />
+      </ConversationLayout>
+    </ThemeProvider>;
+    const { container, getByRole, rerender } = render(view(20));
+    const el = getScrollContainer(container);
+    // fixed-tick-waits: opt-out — lets the sticky-scroll effect attach before the test drives scrollTop
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    setScrollPosition(el, 300, 1500, 400);
+    fireEvent.scroll(el);
+    fireEvent.click(scrollBottomButton(container)!);
+    fireEvent.wheel(getByRole("textbox"), { deltaY: -100 });
+    setScrollPosition(el, 200, 1500, 400);
+    fireEvent.scroll(el);
+    rerender(view(21));
+    await flushRaf();
+    expect(el.scrollTop).toBe(200);
+    expect(scrollBottomButton(container)).not.toBeNull();
+  });
+
+  it("preserves follow when composer input grows before its resize notification", async () => {
+    const view = (n: number) => <ThemeProvider>
+      <ConversationLayout footer={<textarea aria-label="Draft" />}>
+        <ChatView state={stateWith(n)} toolContext={defaultToolContext} />
+      </ConversationLayout>
+    </ThemeProvider>;
+    const { container, getByRole, rerender } = render(view(20));
+    const el = getScrollContainer(container);
+    // fixed-tick-waits: opt-out — lets the sticky-scroll effect attach before the test drives scrollTop
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    setScrollPosition(el, 600, 1000, 400);
+    fireEvent.scroll(el);
+    fireEvent.input(getByRole("textbox"), { target: { value: "expanded draft" } });
+    // Focus first grows the footer by 25px, then textarea autosize adds 82px
+    // before ResizeObserver runs. The intermediate scroll is not user intent.
+    setScrollPosition(el, 625, 1107, 400);
+    fireEvent.scroll(el);
+    rerender(view(21));
+    await flushRaf();
+    expect(el.scrollTop).toBe(707);
+  });
+
   it("keeps the scroll-to-bottom button hidden after programmatic auto-scroll", async () => {
     const { container, rerender } = render(
       <ThemeProvider>

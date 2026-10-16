@@ -902,9 +902,29 @@ export function ModelSelector({ current, models, onSelect, onRefresh, refreshErr
   });
 
   const { favSet, toggle: effectiveToggle, favoritesEnabled } = useFavoritesSource(favorites, onToggleFavorite);
+  // Pi's enabledModels scope is a favorite for display. A star click toggles
+  // the dashboard favorite; the server also writes that label into Pi's scope.
+  // `scopeOverrides` flips the star before the refreshed catalogue arrives.
+  const [scopeOverrides, setScopeOverrides] = useState<ReadonlyMap<string, boolean>>(() => new Map());
+  useEffect(() => {
+    setScopeOverrides((prev) => (prev.size === 0 ? prev : new Map()));
+  }, [models]);
+  const scopedLabels = useMemo(
+    () => new Set((models ?? []).filter((m) => m.scoped).map(labelOf)),
+    [models],
+  );
+  const displayFavSet = useMemo(() => {
+    const next = new Set(favSet);
+    for (const label of scopedLabels) next.add(label);
+    for (const [label, want] of scopeOverrides) {
+      if (want) next.add(label);
+      else next.delete(label);
+    }
+    return next;
+  }, [favSet, scopedLabels, scopeOverrides]);
 
   const { filter, setFilter, providerFilter, setProviderFilter, favOnly, setFavOnly, hasModels, uniqueProviders, providerGroups, flat } =
-    useCatalogueView(models, favoritesEnabled, favSet);
+    useCatalogueView(models, favoritesEnabled, displayFavSet);
 
   // Opening is the ONLY refresh trigger; the hook also reports the awaiting
   // window that gates the empty-state recovery link.
@@ -957,6 +977,18 @@ export function ModelSelector({ current, models, onSelect, onRefresh, refreshErr
     [onSelect],
   );
 
+  const toggleDisplayedFavorite = useCallback(
+    (label: string, makeFav: boolean) => {
+      setScopeOverrides((prev) => {
+        const next = new Map(prev);
+        next.set(label, makeFav);
+        return next;
+      });
+      effectiveToggle?.(label, makeFav);
+    },
+    [effectiveToggle],
+  );
+
   const handleKeyDown = useGridKeyboard({
     flat,
     selectedIndex,
@@ -964,8 +996,8 @@ export function ModelSelector({ current, models, onSelect, onRefresh, refreshErr
     activeCell,
     setActiveCell,
     favoritesEnabled,
-    favSet,
-    toggleFavorite: effectiveToggle,
+    favSet: displayFavSet,
+    toggleFavorite: toggleDisplayedFavorite,
     onPick: handleSelect,
   });
 
@@ -989,12 +1021,12 @@ export function ModelSelector({ current, models, onSelect, onRefresh, refreshErr
         rowId={`${listId}-row-${flatIdx}`}
         starId={`${listId}-star-${flatIdx}`}
         isCurrent={label === current}
-        isFav={favSet.has(label)}
+        isFav={displayFavSet.has(label)}
         isActive={flatIdx === selectedIndex}
         activeCell={activeCell}
         favoritesEnabled={favoritesEnabled}
         onSelect={() => handleSelect(m)}
-        onToggleFavorite={(makeFav) => effectiveToggle?.(label, makeFav)}
+        onToggleFavorite={(makeFav) => toggleDisplayedFavorite(label, makeFav)}
       />
     );
   };

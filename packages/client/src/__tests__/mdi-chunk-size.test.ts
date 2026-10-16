@@ -23,7 +23,7 @@ import { describe, expect, it } from "vitest";
 const MDI_MARKER = "mdiZodiacAquarius";
 // History: raised 900 → 910 → 920 → 930 → 940 KB as features landed; develop CI sat
 // at 944,327 B (an inflated, lazy-loadable entry) with every PR ~1.8 KB from red.
-// shrink-client-entry-lazy-islands (2026-10-14) moved katex, the hu/zh-CN
+// shrink-client-entry-lazy-islands (2026-10-14) moved katex, the hu
 // catalogs and the Settings panel off the cold landing. Measured, same base
 // (local build; CI measures ~0.4% higher, e.g. 944,327 vs 940,548):
 //   entry `index-*.js` gz: 950,470 B → 694,038 B (−256,432 B; 689,543 B before
@@ -143,11 +143,6 @@ const LAZY_SUBSYSTEMS: ReadonlyArray<{
     name: "hu catalog",
     marker: "a visszajátszási ablak dönti el, mennyit kap a böngésző előre",
     owners: ["lib/i18n/i18n-hu.ts"],
-  },
-  {
-    name: "zh-CN catalog",
-    marker: "最大回放事件数与每会话最大事件数共同起作用",
-    owners: ["lib/i18n/i18n-zh-CN.ts"],
   },
   {
     name: "settings panel",

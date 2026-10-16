@@ -11,7 +11,7 @@
 import { sendPluginAction } from "@blackbelt-technology/dashboard-plugin-runtime";
 // Icon is an MDI key string, resolved lazily via useMdiIconByKey.
 import type { UiActionListProps } from "@blackbelt-technology/pi-dashboard-shared/dashboard-plugin/ui-primitives.js";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import { useMdiIconByKey } from "./mdi-by-key.js";
 
 /**

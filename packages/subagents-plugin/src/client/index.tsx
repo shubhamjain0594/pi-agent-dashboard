@@ -25,3 +25,10 @@ export type { SubagentPopoutClaimProps } from "./SubagentPopoutClaim.js";
 export type { SubagentPopoutPageProps } from "./SubagentPopoutPage.js";
 export { SubagentPopoutPage } from "./SubagentPopoutPage.js";
 export type { SubagentLiveBlock, SubagentLiveTail, SubagentState, SubagentTimelineEntry } from "./types.js";
+
+export { SubagentInspectView, buildInspectCommand } from "./SubagentInspectView.js";
+export type { SubagentInspectViewProps } from "./SubagentInspectView.js";
+export { SubagentsPanel } from "./SubagentsPanel.js";
+export type { SubagentsPanelProps } from "./SubagentsPanel.js";
+export { SubagentTree } from "./SubagentTree.js";
+export { useInspectReplies, useSubagentSnapshot } from "./useSubagentData.js";

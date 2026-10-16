@@ -12,7 +12,7 @@
 import { useT } from "@blackbelt-technology/dashboard-plugin-runtime";
 import type { GrammarErrorCode } from "@blackbelt-technology/pi-dashboard-shared/grammar-types.js";
 import { mdiCheck, mdiClose, mdiSpellcheck } from "@mdi/js";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import {
   ACCENT_BUTTON_BG,
   errorMessage,

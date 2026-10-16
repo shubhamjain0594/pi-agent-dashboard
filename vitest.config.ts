@@ -115,12 +115,6 @@ export default defineConfig({
       "packages/blackhole-plugin",
       // web-access-plugin (change: render-unclaimed-custom-entries): pi-web-access card + parser.
       "packages/web-access-plugin",
-      "packages/gmail-plugin",
-      // chat-gateway (change: add-chat-gateway): the inbound chat control plane.
-      // A package absent here never runs its tests — its L1 suites (allowedRoots
-      // containment, binding precedence, auth decision table, edit throttle,
-      // prompt mapping, adapter payload codec) gate real spawn boundaries.
-      "packages/chat-gateway",
       "packages/mcp-server-plugin",
       // team-plugin (change: add-team-plugin): personas, project teams, conversations and the
       // isolation guard. Its suites gate owner isolation and path confinement.

@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures.js";
 import { spawnFreshGitSession } from "./helpers/index.js";
 
-test("editor session-only filter hides unrelated folders and preserves readable diffs", async ({ page }) => {
+test("review scope stays separate from the full-width file viewer", async ({ page }) => {
   await page.route("**/api/preferences/display", (route) => route.fulfill({ json: {
     displayPrefs: { tokenStatsBar: true, contextUsageBar: true },
   } }));
@@ -28,21 +28,27 @@ test("editor session-only filter hides unrelated folders and preserves readable 
   await card.click();
   await page.getByTestId("layout-mode-split").click();
   await page.getByTestId("inspector-changes").click();
-  await page.getByTestId("session-review-file").first().click();
-  const treeToggle = page.getByTestId("tree-toggle");
-  if (await treeToggle.getAttribute("aria-pressed") !== "true") await treeToggle.click();
-  const tree = page.locator("[data-file-rail]");
-  await expect(tree.locator('[data-row=".github"]')).toBeVisible();
-
-  const sessionOnly = page.getByTestId("session-only-toggle").getByRole("checkbox");
-  await sessionOnly.check();
+  const review = page.getByTestId("session-changes-panel");
+  const tree = review.locator(".review-sidebar [data-file-rail]");
+  const sessionOnly = review.getByRole("checkbox", { name: "This session only" });
+  await expect(sessionOnly).toBeChecked();
   await expect(tree.locator('[data-row="src/navigation.ts"]')).toBeVisible();
   await expect(tree.locator('[data-row=".github"]')).toHaveCount(0);
   await expect(tree.locator('[data-row="unrelated.txt"]')).toHaveCount(0);
   await sessionOnly.uncheck();
-  await expect(tree.locator('[data-row=".github"]')).toBeVisible();
+  await expect(tree.locator('[data-row="unrelated.txt"]')).toBeVisible();
+  await sessionOnly.check();
+  await expect(tree.locator('[data-row="unrelated.txt"]')).toHaveCount(0);
+  const search = review.getByRole("searchbox", { name: "Search changed files" });
+  await search.fill("no-match");
+  await expect(review.getByTestId("session-review-file")).toHaveCount(0);
+  await search.fill("");
+  await review.getByTestId("session-review-open-diff").first().click();
+  await expect(page.getByTestId("layout-mode-full")).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByTestId("tree-toggle")).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".editor-workspace [data-file-rail]")).toHaveCount(0);
 
-  const diff = page.locator(".code-diff-panel");
+  const diff = page.locator(".editor-workspace .code-diff-panel");
   // Desktop session chrome uses one session row and one inspector toolbar.
   await expect(page.locator(".workbench-titlebar")).toHaveCount(0);
   await expect(page.locator(".editor-workspace-header")).toHaveCount(0);

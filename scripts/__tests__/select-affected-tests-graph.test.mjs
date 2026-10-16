@@ -46,13 +46,17 @@ const SETTINGS_TEST = "packages/client/src/components/__tests__/SettingsPanel.te
 const MONACO = "packages/client/src/components/editor-pane/monaco-setup.ts";
 
 describe("graph builder on the current tree", () => {
-  it("P1: builds both configs and the literal index in under 60 s", () => {
-    expect(wallMs).toBeLessThan(60_000);
+  // Budget raised 60 s → 120 s: the real-process phase is now walked too, and the
+  // builder measured ~62 s standalone (2793 tests) on the 384-core dev box.
+  it("P1: builds both configs and the literal index in under 120 s", () => {
+    expect(wallMs).toBeLessThan(120_000);
     expect(Object.keys(index.tests).length).toBeGreaterThan(1500);
   });
 
-  it("X1: a module that fails to transform is a recorded leaf, not an aborted walk", () => {
-    expect(index.leafErrors.map(([f]) => f)).toContain(MONACO);
+  // monaco-setup.ts used to fail to transform on the real tree (a `?worker` specifier
+  // the resolver could not follow). Monaco 0.57 resolves it, so the walk no longer
+  // records a leaf here; leaf recording for a failing module is covered by the CLI fixture test.
+  it("X1: the walk reaches monaco-setup through SettingsPanel without aborting", () => {
     const deps = index.tests[SETTINGS_TEST].deps;
     expect(deps).toContain("packages/client/src/components/settings/SettingsPanel.tsx");
     expect(deps).toContain(MONACO);

@@ -38,10 +38,10 @@
     "semver": "^7.7.1"
   },
   "devDependencies": {
-    "jose": "^6.0.0",
-    "memfs": "^4.57.2",
-    "react": "^19.0.0",
-    "@types/semver": "^7.7.0"
+    "@types/semver": "^7.7.0",
+    "jose": "^6.2.12",
+    "memfs": "^4.80.0",
+    "react": "^19.3.1"
   },
   "peerDependencies": {
     "react": ">=18.0.0"

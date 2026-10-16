@@ -838,7 +838,9 @@ export function addWorktree(opts: AddWorktreeOptions): AddWorktreeSuccess | AddW
       // Enrich with the holding-worktree path when git exposes it, so the
       // UI can render a clear inline error pointing at the conflict.
       // See change: worktree-checkout-existing-branch.
-      const held = stderr.match(/already used by worktree at '([^']+)'/i)?.[1];
+      const held =
+        stderr.match(/already used by worktree at '([^']+)'/i)?.[1] ??
+        stderr.match(/is already checked out at '([^']+)'/i)?.[1];
       const message = held
         ? `branch is already checked out in another worktree at '${held}'`
         : "branch is already checked out in another worktree";

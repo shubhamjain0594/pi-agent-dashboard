@@ -388,7 +388,8 @@ export function createPostStack(
       };
     },
     smaa: () => {
-      const pass = new SMAAPass(size.x, size.y);
+      const pass = new SMAAPass();
+      pass.setSize(size.x, size.y);
       return { id: "smaa", names: ["SMAAPass"], passes: [pass], enabled: false, params: {}, apply: () => {}, dispose: () => pass.dispose() };
     },
     sao: () => {

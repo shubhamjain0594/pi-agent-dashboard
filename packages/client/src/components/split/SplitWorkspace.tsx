@@ -2,17 +2,17 @@
  * Content-area layout surface. Co-mounts the chat column and the editor pane and
  * arranges them per `mode`:
  *   - `closed` — chat fills the column; a right-edge EDITOR restore tab reopens `split`.
- *   - `split`  — chat | draggable resize-only `SplitDivider` | editor,
- *                horizontal on desktop / stacked on mobile.
+ *   - `split`  — chat | draggable `SplitDivider` | editor,
+ *                horizontal on desktop / stacked on mobile. The divider's seam
+ *                knob (same chrome as the session rail) closes the editor.
  *   - `full`   — editor fills the column; the chat pane is **kept mounted but
  *                hidden** (so composer draft + scroll survive a `split→full→split`
  *                round-trip) and a leading-edge CHAT restore tab restores `split`.
  *
- * Collapse is driven solely by the header `Chat│Split│Editor` switch; the
- * divider only resizes. On desktop (`orientation "h"`) the chat pane wears an
- * always-visible CHAT caption and the collapsed panes restore via in-flow
- * rotated tabs (push, never overlay — kills the narrow-pane overlap bug). The
- * stacked mobile split (`orientation "v"`) keeps its existing edge-grabber peek.
+ * The header `Chat│Split│Editor` switch still sets every mode. The seam knob
+ * only closes the editor (`closed`). Collapsed panes restore via in-flow
+ * rotated tabs on desktop (push, never overlay — kills the narrow-pane overlap
+ * bug). The stacked mobile split (`orientation "v"`) keeps its edge-grabber peek.
  *
  * The chat + editor wrappers carry stable `key`s so a mode change never remounts
  * `ChatView` (the `full` invariant) — only the divider/tabs mount and unmount.
@@ -20,15 +20,15 @@
  * See change: redesign-split-layout-controls (was: editor-layout-modes).
  */
 
-import { mdiChevronRight, mdiViewSplitVertical } from "@mdi/js";
+import { mdiChevronDown, mdiChevronRight, mdiViewSplitVertical } from "@mdi/js";
 import { Icon } from "@mdi/react";
 import { useRef } from "react";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
-import { PopoverBoundaryProvider } from "../../lib/state/PopoverBoundaryContext.js";
 import type { SplitMode, SplitOrientation } from "../../lib/layout/split-state.js";
 import { useSplitRatio } from "../../lib/layout/useSplitRatio.js";
-import { SplitDivider } from "./SplitDivider.js";
+import { PopoverBoundaryProvider } from "../../lib/state/PopoverBoundaryContext.js";
 import { RestoreTab } from "./RestoreTab.js";
+import { SplitDivider } from "./SplitDivider.js";
 
 interface SplitWorkspaceProps {
   mode: SplitMode;
@@ -36,7 +36,7 @@ interface SplitWorkspaceProps {
   ratio: number;
   orientation: SplitOrientation;
   onRatioChange: (ratio: number) => void;
-  /** Set the layout mode (restore tabs only re-open; collapse is header-driven). */
+  /** Set the layout mode. The seam knob closes; restore tabs only re-open. */
   onModeChange: (mode: SplitMode) => void;
   chat: React.ReactNode;
   editor: React.ReactNode;
@@ -112,7 +112,7 @@ export function SplitWorkspace({
         <PopoverBoundaryProvider value={chatPaneRef}>{chat}</PopoverBoundaryProvider>
       </div>
 
-      {/* Resize-only divider — `split` only, no collapse control. */}
+      {/* Divider — `split` only. Drag resizes; the seam knob closes the editor. */}
       {isSplit && (
         <SplitDivider
           key="divider"
@@ -120,6 +120,12 @@ export function SplitWorkspace({
           onResize={applyRatio}
           data-testid="split-divider"
           title={i18nT("common.dragToResize", undefined, "Drag to resize")}
+          collapse={{
+            icon: isDesktop ? mdiChevronRight : mdiChevronDown,
+            title: i18nT("editor.closeEditor", undefined, "Close editor"),
+            testId: "split-collapse-editor",
+            onClick: () => onModeChange("closed"),
+          }}
         />
       )}
 

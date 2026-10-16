@@ -20,7 +20,7 @@ import { getApiBase } from "../../lib/api/api-context.js";
 import { useI18n } from "../../lib/i18n/i18n.js";
 import { DenialNotice } from "../preview/DenialNotice.js";
 import { type DenialFailure, denialFetch } from "../preview/denial-fetch.js";
-import { MarkdownContent } from "../preview/MarkdownContent.js";
+import { MarkdownContent } from "../preview/MarkdownContentLazy.js";
 import { dirname } from "../preview/resolve-local-image-src.js";
 import { ChangedOnDiskBanner } from "./ChangedOnDiskBanner.js";
 import type { ViewerProps } from "./types.js";

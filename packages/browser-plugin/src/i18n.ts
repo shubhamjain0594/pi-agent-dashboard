@@ -6,66 +6,12 @@
  * shell merges it under `plugin.browser.*`. Component code resolves keys via
  * the scoped `useT()` hook, which auto-prefixes `plugin.browser.`.
  *
- * zh-CN and hu MUST keep parity (identical key sets). {var} placeholders are
+ * hu is the only non-English catalog. {var} placeholders are
  * preserved verbatim so `t(key, vars)` can interpolate.
  *
  * See change: add-browser-relay (task 4.4).
  */
 export const catalog = {
-  "zh-CN": {
-    loading: "加载中…",
-    settingsError: "浏览器中继设置不可用。",
-    settingsIntro: "通过 Playwright 扩展将已登录的 Chrome 中继到 pi 会话。",
-    enabledLabel: "已启用",
-    cannotOpenChrome: "此主机无法自动打开 Chrome。请自行以中继扩展启动 Chrome，然后连接。",
-    profilesWarning: "无法读取 Chrome 配置文件（{path}）；显示默认配置文件。",
-    noProfiles: "未找到 Chrome 配置文件。",
-    installed: "扩展已安装",
-    notInstalled: "扩展未安装",
-    tokenSet: "令牌已设置",
-    tokenMissing: "无令牌",
-    notConnected: "未连接",
-    connectedTabs: "已连接 · {n} 个标签页",
-    connect: "连接",
-    disconnect: "断开",
-    relayDisabled: "浏览器中继已禁用",
-    installExtension: "安装 Playwright 扩展",
-    tokenPlaceholder: "粘贴配对令牌",
-    saveToken: "保存令牌",
-    zeroDialogLabel: "零对话框（跳过 Chrome 的允许提示）",
-    zeroDialogHelp: "需要有效令牌。令牌不匹配、拒绝或未响应都会表现为 60 秒超时。",
-    allowedDomainsLabel: "允许的域名",
-    allowedDomainsHelp: "仅限制 Page.navigate 与 Target.createTarget — 不影响其他网络流量。",
-    auditTitle: "审计记录",
-    auditEmpty: "暂无审计记录。",
-    instanceTabs: "{n} 个标签页",
-    close: "关闭",
-    waitingFrame: "等待画面…",
-    noFramesOverlay: "无重绘 — 标签页可能空闲或在后台",
-    bringToFront: "置于前台",
-    devtoolsOverlay: "此标签页打开了 DevTools — 关闭它以恢复",
-    relayBadge: "{n} 个浏览器标签页",
-    noSessionOverlay: "标签页尚不可查看 — 代理尚未附加到它（扩展页面无法查看）",
-    untitledTab: "未命名标签页",
-    frameAlt: "实时浏览器画面",
-    paneTabGone: "此浏览器标签页已不可用",
-    paneUrl: "页面地址",
-    inputOn: "输入：开",
-    inputOff: "输入：关",
-    fit: "适应",
-    oneToOne: "1:1",
-    done: "完成 ✓",
-    textBridge: "输入到页面",
-    clientScreencast: "代理正在捕获此标签页 — 无实时视图",
-    tabFallback: "浏览器标签页",
-    stateLive: "实时",
-    stateIdle: "空闲",
-    stateDetached: "已分离",
-    stateAgent: "代理正在捕获",
-    badgeMenu: "在窗格中打开浏览器标签页",
-    openInPane: "在窗格中打开",
-    openAllInPane: "全部在窗格中打开",
-  },
   hu: {
     loading: "Betöltés…",
     settingsError: "A böngésző-közvetítő beállításai nem érhetők el.",

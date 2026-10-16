@@ -847,15 +847,16 @@ describe.skipIf(process.platform === "win32")("keeper-log rotation (real keeper)
     expect(size).toBeLessThan(2 * 65_536);
     // The writer emits only 'a' bytes (no newlines). Any keeper-originated
     // line after the child's first byte would introduce a timestamp bracket.
-    // After the rotation the fresh log holds nothing until the writer's next
-    // chunk lands — a one-shot read raced that gap under fork contention
-    // (`indexOf("a") === -1`), so poll (bounded) for the child to re-populate
-    // the post-rotation file, THEN assert purity.
+    // The writer stops after MOCK_PI_WRITE_TOTAL (no marker is set here), so the
+    // post-rotation file can legitimately be empty by the time the size settles.
+    // Polling for an 'a' that may never come timed out (E5 flake). Purity is what
+    // matters: whatever the file holds, after its first child byte there must be
+    // nothing but child bytes. Rotation itself is proven by the size bound above.
     // See change: make-test-suite-deterministic.
-    await waitFor(() => readFileSync(keeperLogIn(home, sessionId), "utf8").includes("a"), 60_000);
     const content = readFileSync(keeperLogIn(home, sessionId), "utf8");
     const firstChildByte = content.indexOf("a");
-    expect(content.slice(firstChildByte)).toMatch(/^a+$/); // pure child bytes, no keeper lines
+    // No child byte yet → the whole file must be empty (any keeper line would fail here).
+    expect(firstChildByte === -1 ? content : content.slice(firstChildByte)).toMatch(/^a*$/); // pure child bytes, no keeper lines
     await killAndAwait(k);
     // 60 s per poll step, 3 steps: the mock-pi boot + 1 MiB of child writes +
     // the rotation timer all stretch under fork contention, and the old 30 s

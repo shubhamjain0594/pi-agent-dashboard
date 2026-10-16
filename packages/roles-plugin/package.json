@@ -45,9 +45,9 @@
     "@mdi/react": "^1.6.1"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "fastify": "^5.0.0",
-    "react": "^19.0.0"
+    "@types/react": "^19.3.0",
+    "fastify": "^5.12.7",
+    "react": "^19.3.1"
   },
   "pi-dashboard-plugin": {
     "id": "roles",
@@ -69,6 +69,7 @@
         }
       }
     ],
-    "bridge": "./src/bridge/index.ts"
+    "bridge": "./src/bridge/index.ts",
+    "defaultEnabled": false
   }
 }

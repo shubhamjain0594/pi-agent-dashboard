@@ -45,14 +45,14 @@
     "@blackbelt-technology/pi-dashboard-shared": "^0.9.0",
     "@mdi/js": "^7.4.47",
     "@mdi/react": "^1.6.1",
-    "diff": "^8.0.3"
+    "diff": "^9.0.0"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",
-    "@types/react": "^19.0.0",
-    "fastify": "^5.0.0",
-    "react": "^19.0.0",
-    "vitest": "^4.0.0"
+    "@types/react": "^19.3.0",
+    "fastify": "^5.12.7",
+    "react": "^19.3.1",
+    "vitest": "^5.0.4"
   },
   "pi-dashboard-plugin": {
     "id": "grammar",
@@ -73,6 +73,7 @@
         "component": "GrammarComposerPanel"
       }
     ],
-    "configSchema": "./configSchema.json"
+    "configSchema": "./configSchema.json",
+    "defaultEnabled": false
   }
 }

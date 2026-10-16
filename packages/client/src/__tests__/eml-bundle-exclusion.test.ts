@@ -88,6 +88,30 @@ describe("manualChunks topology after fix-vite-build-warnings", () => {
     expect(markdownChunks.length, "expected a markdown-*.js chunk (highlighter folded in)").toBeGreaterThan(0);
   });
 
+  // The entry used to statically import the markdown chunk, and that chunk
+  // imported the entry back. Module init then called an uninitialized
+  // export (`ke is not a function`) and #root stayed empty.
+  it("entry does not statically import the markdown chunk, and markdown does not import the entry", () => {
+    if (!existsSync(assetsDir)) return;
+    const entry = entryChunkPath();
+    if (!entry || !existsSync(entry)) return;
+    const entryBase = path.basename(entry);
+    const entrySrc = readFileSync(entry, "utf8");
+    const entryImports = [...entrySrc.matchAll(/from"\.\/([^"]+)"/g)].map((m) => m[1]);
+    expect(entryImports.filter((dep) => dep.startsWith("markdown-"))).toEqual([]);
+
+    const markdownChunks = readdirSync(assetsDir).filter((f) => /^markdown-.*\.js$/.test(f));
+    expect(markdownChunks.length).toBeGreaterThan(0);
+    const bad: string[] = [];
+    for (const file of markdownChunks) {
+      const src = readFileSync(path.join(assetsDir, file), "utf8");
+      for (const match of src.matchAll(/from"\.\/([^"]+)"/g)) {
+        if (match[1] === entryBase) bad.push(`${file} -> ${match[1]}`);
+      }
+    }
+    expect(bad, `markdown chunk imports the entry:\n${bad.join("\n")}`).toEqual([]);
+  });
+
   it("keeps PdfPreview out of the main entry chunk (Option B lazy) (test-plan #S3)", () => {
     if (!existsSync(assetsDir)) return;
     const entry = entryChunkPath();

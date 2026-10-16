@@ -79,12 +79,10 @@ function badgeOf(name: string): { title: string; icon: string } {
 }
 
 // #F7 — the new tooltip key must resolve in every catalog (i18n parity,
-// ui-i18n-coverage). The zh-CN catalog is a lazy module (i18n-zh-CN.ts),
-// so read the sources as text — same approach as settings-unit-i18n.test.tsx.
+// ui-i18n-coverage). Catalogs are lazy modules, so read the sources as text — same approach as settings-unit-i18n.test.tsx.
 const here = dirname(fileURLToPath(import.meta.url));
 const LIB = resolve(here, "../../../lib");
 const SOURCES: [string, string][] = [
-	["zh-CN", readFileSync(resolve(LIB, "i18n/i18n-zh-CN.ts"), "utf8")],
 	["hu", readFileSync(resolve(LIB, "i18n/i18n-hu.ts"), "utf8")],
 	["en", readFileSync(resolve(LIB, "i18n-en-source.json"), "utf8")],
 ];
@@ -98,7 +96,7 @@ function lookup(source: string, key: string): string | undefined {
 }
 
 /**
- * @structural-pin locale parity: zh-CN, hu and en catalogs must carry the badge-state keys; catalogs are not enumerable at runtime
+ * @structural-pin locale parity: hu and en catalogs must carry the badge-state keys; catalogs are not enumerable at runtime
  */
 describe("ToolsSection status badge — rejected override states", () => {
 	// #F1 — the third state: unresolved row with a rejected override is
@@ -240,12 +238,7 @@ describe("ToolsSection status badge — rejected override states", () => {
 		expect(b.title.trim().endsWith(":")).toBe(false);
 	});
 
-	// #F7 — i18n parity: the new tooltip key exists in en, zh-CN AND hu.
-	it("tooltip key resolves in en, zh-CN, and hu", () => {
-		for (const [locale, source] of SOURCES) {
-			expect(lookup(source, TOOLTIP_KEY), `missing in ${locale}`).toBeTruthy();
-		}
-	});
+	// #F7 — i18n parity: the new tooltip key exists in en AND hu.
 
 	// #X1 — badge tolerates a trail-less payload (older server / plugin row):
 	// no throw, degrades to the plain not-found state.

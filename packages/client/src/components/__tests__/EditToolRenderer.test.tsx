@@ -1,4 +1,4 @@
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, waitFor } from "@testing-library/react";
 import type React from "react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -63,7 +63,7 @@ describe("EditToolRenderer — viewport branching", () => {
   });
 
   // 5.3: mobile + oldText/newText → homegrown diff, no <RichDiff>
-  it("mobile: renders homegrown diff for oldText/newText args", () => {
+  it("mobile: renders homegrown diff for oldText/newText args", async () => {
     mockIsMobile = true;
     const { container, queryAllByTestId } = render(
       <EditToolRenderer
@@ -74,8 +74,10 @@ describe("EditToolRenderer — viewport branching", () => {
       />,
     );
     expect(queryAllByTestId("rich-diff").length).toBe(0);
-    // homegrown diff uses div.font-mono
-    expect(container.querySelectorAll("div.font-mono").length).toBeGreaterThan(0);
+    // HomegrownDiff is a lazy boundary; the font-mono root appears after the chunk loads.
+    await waitFor(() => {
+      expect(container.querySelectorAll("div.font-mono").length).toBeGreaterThan(0);
+    });
   });
 
   // 5.4: desktop + edits[] length 3 → exactly 3 <RichDiff>
@@ -100,7 +102,7 @@ describe("EditToolRenderer — viewport branching", () => {
   });
 
   // 5.5: mobile + edits[] length 3 → exactly 3 homegrown diffs
-  it("mobile: renders exactly 3 homegrown diffs for edits[] of length 3", () => {
+  it("mobile: renders exactly 3 homegrown diffs for edits[] of length 3", async () => {
     mockIsMobile = true;
     const { container, queryAllByTestId } = render(
       <EditToolRenderer
@@ -118,7 +120,9 @@ describe("EditToolRenderer — viewport branching", () => {
       />,
     );
     expect(queryAllByTestId("rich-diff").length).toBe(0);
-    expect(container.querySelectorAll("div.font-mono").length).toBe(3);
+    await waitFor(() => {
+      expect(container.querySelectorAll("div.font-mono").length).toBe(3);
+    });
   });
 
   // 5.6: no oldText/newText, no edits[] → raw JSON <pre> regardless of viewport
@@ -210,7 +214,7 @@ describe("EditToolRenderer — viewport branching", () => {
     expect((await findAllByTestId("rich-diff")).length).toBe(2);
   });
 
-  it("mobile: renders hashline replace_text edits as homegrown diffs", () => {
+  it("mobile: renders hashline replace_text edits as homegrown diffs", async () => {
     mockIsMobile = true;
     const { container, queryAllByTestId } = render(
       <EditToolRenderer
@@ -226,7 +230,9 @@ describe("EditToolRenderer — viewport branching", () => {
       />,
     );
     expect(queryAllByTestId("rich-diff").length).toBe(0);
-    expect(container.querySelectorAll("div.font-mono").length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(container.querySelectorAll("div.font-mono").length).toBeGreaterThan(0);
+    });
   });
 
   // --- NEW: hashline replace/append/prepend summary tests ---

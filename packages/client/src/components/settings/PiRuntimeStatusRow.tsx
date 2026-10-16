@@ -33,16 +33,25 @@ export function PiRuntimeStatusRow({ piRuntime, onChangeRuntime }: {
 	const version = (v: string | null) => v ?? t("piRuntime.unknownVersion", undefined, "version unknown");
 
 	return (
-		<div
-			data-testid="pi-runtime-status-row"
-			className="mb-3 rounded border border-[var(--border-secondary)] bg-[var(--bg-secondary)] px-3 py-2 text-sm"
-		>
-			<div className="font-medium text-[var(--text-primary)]">{t("piRuntime.title", undefined, "Pi runtime")}</div>
-			<div className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs text-[var(--text-secondary)]">
-				<span>{t("piRuntime.laneSpawn", undefined, "New sessions")}</span>
-				<span data-testid="pi-runtime-status-spawn">{version(piRuntime.spawnVersion)}</span>
-				<span>{t("piRuntime.laneImport", undefined, "Server imports")}</span>
-				<span data-testid="pi-runtime-status-import">{version(piRuntime.moduleVersion)}</span>
+		<div data-testid="pi-runtime-status-row" className="rounded-lg bg-[var(--bg-secondary)] px-4 py-3 text-sm">
+			<div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+				<span className="font-medium text-[var(--text-primary)]">{t("piRuntime.title", undefined, "Pi runtime")}</span>
+				<span className="text-xs text-[var(--text-secondary)]">
+					{t("piRuntime.laneSpawn", undefined, "New sessions")}{" "}
+					<span data-testid="pi-runtime-status-spawn" className="text-[var(--text-primary)]">{version(piRuntime.spawnVersion)}</span>
+				</span>
+				<span className="text-xs text-[var(--text-secondary)]">
+					{t("piRuntime.laneImport", undefined, "Server imports")}{" "}
+					<span data-testid="pi-runtime-status-import" className="text-[var(--text-primary)]">{version(piRuntime.moduleVersion)}</span>
+				</span>
+				<button
+					type="button"
+					data-testid="pi-runtime-status-change"
+					onClick={onChangeRuntime}
+					className="ml-auto rounded border border-[var(--border-secondary)] px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
+				>
+					{t("piRuntime.changeRuntime", undefined, "Change…")}
+				</button>
 			</div>
 			{piRuntime.consumerDiverged && piRuntime.consumerMessage != null && (
 				<div
@@ -53,14 +62,6 @@ export function PiRuntimeStatusRow({ piRuntime, onChangeRuntime }: {
 					{piRuntime.consumerMessage}
 				</div>
 			)}
-			<button
-				type="button"
-				data-testid="pi-runtime-status-change"
-				onClick={onChangeRuntime}
-				className="mt-1.5 rounded border border-[var(--border-secondary)] px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
-			>
-				{t("piRuntime.changeRuntime", undefined, "Change…")}
-			</button>
 		</div>
 	);
 }

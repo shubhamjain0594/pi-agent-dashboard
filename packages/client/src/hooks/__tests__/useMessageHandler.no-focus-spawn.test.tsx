@@ -32,6 +32,7 @@ function setup(entries: Record<string, PendingSpawnEntry>, spawningCwds: string[
   const deps: any = {
     send: vi.fn(),
     navigate,
+    setSpawnLoadingSince: () => {},
     clearSpawningCwd,
     spawningCwdsRef: { current: new Set(spawningCwds) },
     subscribedRef: { current: new Set<string>() },

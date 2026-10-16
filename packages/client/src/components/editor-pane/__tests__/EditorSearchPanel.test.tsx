@@ -35,6 +35,33 @@ function setup(overrides: Partial<React.ComponentProps<typeof EditorSearchPanel>
 }
 
 describe("EditorSearchPanel", () => {
+  it("does not let delayed search effects reset keyboard selection for the same query", async () => {
+    const onOpen = vi.fn();
+    const props = {
+      cwd: "/proj", fileResults: { query: "edit", files }, onFilenameSearch: vi.fn(),
+      onContentSearch: vi.fn(async () => contentMatches), onOpen, onClose: vi.fn(),
+    };
+    const { rerender } = render(<EditorSearchPanel {...props} />);
+    const input = screen.getByTestId("editor-search-input");
+    fireEvent.change(input, { target: { value: "edit" } });
+    await screen.findByText("src/editor.ts");
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    rerender(<EditorSearchPanel {...props} onFilenameSearch={vi.fn()} />);
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onOpen).toHaveBeenCalledWith("src/edit-log.ts", undefined);
+  });
+
+  it("hides old query results immediately while a changed query is debouncing", async () => {
+    const { onOpen } = setup();
+    const input = screen.getByTestId("editor-search-input");
+    fireEvent.change(input, { target: { value: "edit" } });
+    await screen.findByText("src/editor.ts");
+    fireEvent.change(input, { target: { value: "another-file" } });
+    expect(screen.queryByText("src/editor.ts")).toBeNull();
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
   it("shows a min-length hint and issues no search below the minimum", async () => {
     const { onFilenameSearch } = setup({ fileResults: null });
     const input = screen.getByTestId("editor-search-input");

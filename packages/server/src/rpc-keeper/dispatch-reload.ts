@@ -295,7 +295,7 @@ export async function dispatchReload(
   // spawn. "A respawn is already running for this session" is the stronger
   // fact and is therefore checked first.
   const inFlight = inFlightRespawns.get(sessionId);
-  if (inFlight) {
+  if (inFlight !== undefined) {
     await inFlight;
     return "respawn";
   }

@@ -11,7 +11,7 @@ import {
   mdiPageLayoutSidebarLeft,
   mdiPlus,
 } from "@mdi/js";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import {
   type ReactNode,
   useCallback,
@@ -24,6 +24,8 @@ import type { ConnectionStatus } from "../../hooks/useWebSocket.js";
 import { useI18n } from "../../lib/i18n/i18n.js";
 import { buildFolderHomeUrl } from "../../lib/nav/route-builders.js";
 import { getSessionDisplayName } from "../../lib/session/session-display-name.js";
+import { ThemePicker } from "../settings/ThemePicker.js";
+import { ThemeToggle } from "../settings/ThemeToggle.js";
 import { folderName } from "./WorkspaceOverview.js";
 import "../../styles/workbench.css";
 
@@ -203,7 +205,7 @@ export function DesktopWorkbench({
             undefined,
             "Toggle session sidebar",
           )}
-          title="Ctrl / ⌘ B"
+          title={t("shell.toggleSidebarHint", undefined, "Ctrl / ⌘ B")}
         >
           <Icon path={mdiPageLayoutSidebarLeft} size={0.75} />
         </button>
@@ -284,6 +286,10 @@ export function DesktopWorkbench({
         <span>
           {liveCount}{" "}
           {t("workbench.sessionsCount", undefined, "active sessions")}
+        </span>
+        <span className="workbench-theme-controls">
+          <ThemePicker showName />
+          <ThemeToggle />
         </span>
         <span className="workbench-status-context">
           {selectedSession?.gitBranch && (

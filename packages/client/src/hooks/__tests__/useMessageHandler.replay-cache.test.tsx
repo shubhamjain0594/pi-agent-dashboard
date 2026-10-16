@@ -38,6 +38,7 @@ describe("useMessageHandler — Strategy A replay-cache invalidation", () => {
       const deps: any = {
         send: vi.fn(),
         navigate: vi.fn(),
+        setSpawnLoadingSince: () => {},
         clearSpawningCwd: vi.fn(),
         spawningCwdsRef: useRef(new Set<string>()),
         subscribedRef: useRef(new Set<string>()),
@@ -96,6 +97,7 @@ describe("useMessageHandler — archived counts (archive-sessions-lazy-load)", (
     const deps: any = {
       send: vi.fn(),
       navigate: vi.fn(),
+      setSpawnLoadingSince: () => {},
       clearSpawningCwd: vi.fn(),
       spawningCwdsRef: { current: new Set() },
       subscribedRef: { current: new Set() },

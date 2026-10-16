@@ -1,14 +1,14 @@
 import React, { lazy, Suspense } from "react";
 import { ErrorBoundary } from "../primitives/ErrorBoundary.js";
-import { createTwoFilesPatch } from "diff";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
 import type { ToolRendererProps } from "./types.js";
 import { OpenFileButton } from "./OpenFileButton.js";
+import { UnifiedDiffView } from "./UnifiedDiffView.js";
 import { useMobile } from "../../hooks/useMobile.js";
 
 // D2/D4-adjacent (change: add-lazy-terminal-diff-bootstrap): the rich diff
 // viewer is a lazy boundary so the @git-diff-view chunk is not reached from the
-// chat transcript's cold graph. The mobile `HomegrownDiff` path stays eager
+// chat transcript's cold graph. The mobile `HomegrownDiff` path is lazy too
 // (npm `diff` only, its own `jsdiff` chunk).
 const RichDiff = lazy(() =>
   import("../diff/RichDiff.js").then((m) => ({ default: m.RichDiff })),
@@ -16,60 +16,23 @@ const RichDiff = lazy(() =>
 
 // --- Mobile-only diff renderer ---
 
-function HomegrownDiff({ oldText, newText, filePath }: { oldText: string; newText: string; filePath: string }) {
-  const patch = createTwoFilesPatch(filePath, filePath, oldText, newText, "before", "after", { context: 3 });
-  const lines = patch.split("\n");
 
+// The mobile diff path builds its patch with npm `diff`. Load it on demand so the
+// `diff` package stays off the chat transcript's cold graph.
+const HomegrownDiffLazy = lazy(() =>
+  import("./HomegrownDiff.js").then((m) => ({ default: m.HomegrownDiff })),
+);
+
+function HomegrownDiff(props: { oldText: string; newText: string; filePath: string }) {
   return (
-    <div className="font-mono text-code leading-relaxed overflow-auto max-h-80">
-      {lines.map((line, i) => {
-        let className = "text-[var(--text-tertiary)] px-2"; // default (header lines)
-        if (line.startsWith("+++") || line.startsWith("---")) {
-          className = "text-[var(--text-tertiary)] px-2 font-bold";
-        } else if (line.startsWith("@@")) {
-          className = "text-[var(--accent-blue)] px-2 bg-[color-mix(in_srgb,var(--accent-blue)_15%,transparent)]";
-        } else if (line.startsWith("+")) {
-          className = "text-[var(--accent-green)] px-2 bg-[color-mix(in_srgb,var(--accent-green)_15%,transparent)]";
-        } else if (line.startsWith("-")) {
-          className = "text-[var(--accent-red)] px-2 bg-[color-mix(in_srgb,var(--accent-red)_15%,transparent)]";
-        }
-        return (
-          <div key={i} className={className}>
-            {line || "\u00A0"}
-          </div>
-        );
-      })}
-    </div>
+    <Suspense fallback={null}>
+      <HomegrownDiffLazy {...props} />
+    </Suspense>
   );
 }
 
 // --- Pre-computed diff renderer (for toolDetails.diff) ---
 
-function UnifiedDiffView({ diff }: { diff: string }) {
-  const lines = diff.split("\n");
-
-  return (
-    <div className="font-mono text-code leading-relaxed overflow-auto max-h-80">
-      {lines.map((line, i) => {
-        let className = "text-[var(--text-tertiary)] px-2";
-        if (line.startsWith("+++") || line.startsWith("---")) {
-          className = "text-[var(--text-tertiary)] px-2 font-bold";
-        } else if (line.startsWith("@@")) {
-          className = "text-[var(--accent-blue)] px-2 bg-[color-mix(in_srgb,var(--accent-blue)_15%,transparent)]";
-        } else if (line.startsWith("+")) {
-          className = "text-[var(--accent-green)] px-2 bg-[color-mix(in_srgb,var(--accent-green)_15%,transparent)]";
-        } else if (line.startsWith("-")) {
-          className = "text-[var(--accent-red)] px-2 bg-[color-mix(in_srgb,var(--accent-red)_15%,transparent)]";
-        }
-        return (
-          <div key={i} className={className}>
-            {line || "\u00A0"}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 // --- Type guards for edits ---
 

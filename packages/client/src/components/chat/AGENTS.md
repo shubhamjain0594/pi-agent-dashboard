@@ -4,6 +4,7 @@ Files in this directory. One row per source file.
 
 | File | Purpose |
 |------|---------|
+| `ConversationLayout.tsx` | Stable composer-host context + portal. Renders shell-owned footer inside ChatView's native scrollport without invalidating its memo boundary on typing; fallback footer stays usable if the chat boundary fails. |
 | `AttachmentRecovery.tsx` | Pending transcript images wait 3s before one original-endpoint img attempt; failed derivatives attempt immediately. Settled ready references load their fitted `displaySource` immediately without original fallback. 10s load deadline, explicit unavailable + manual Retry, identity/unmount/ready cancellation, native zoom button + synchronous row measurement. |
 | `__tests__/ImageAttachments.recovery.test.tsx` | Fake-timer coverage for grace, fitted-ready cancellation, bounded original failure/stall, manual Retry, identity changes, stale-attempt handlers, cached load before passive effects, row measurement and lightbox zoom. |
 | `BashOutputCard.tsx` | Renders `!`/`!!`/slash-exec bash output card (command header, exit badge, output pre). → see `BashOutputCard.tsx.AGENTS.md` |

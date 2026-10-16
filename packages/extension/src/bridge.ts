@@ -66,7 +66,7 @@ import { activate as activateProviderRegister, buildProviderCatalogue, onProvide
 import { httpBaseUrlFor, isRemoteEndpoint } from "./remote-registration-gate.js";
 import { RetryTracker } from "./retry-tracker.js";
 import { activate as activateRoleManager, resolveNamingModel } from "./role-manager.js";
-import { replaySessionEntries as _replaySessionEntries, sendStateSync as _sendStateSync, filterByEnabledModels, isLive } from "./session-sync.js";
+import { replaySessionEntries as _replaySessionEntries, sendStateSync as _sendStateSync, annotateEnabledScope, isLive } from "./session-sync.js";
 import { tryDispatchExtensionCommand } from "./slash-dispatch.js";
 import { UsageDrain, drainUsageAndSend, makeCacheWarmingDecisionHandler, } from "./usage-drain.js";
 import { flushBufferedSubagentFrames, } from "./subagent-forward-sites.js";
@@ -1390,6 +1390,7 @@ function initBridge(pi: ExtensionAPI) {
 
   const commandHandler = createCommandHandler(pi, () => inst.sessionId, {
     getModelRegistry: () => inst.cachedModelRegistry,
+    getScopedModels: () => inst.cachedCtx?.scopedModels,
     // Selector-open re-sync of providers.json: heals a missed credentials_updated.
     // See change: refresh-models-on-provider-change (D1).
     reloadProviders: async () => { await reloadProviders(pi); },
@@ -2163,7 +2164,7 @@ function initBridge(pi: ExtensionAPI) {
     if (!isActive()) return;
     if (inst.cachedModelRegistry && inst.sessionReady) {
       try {
-        const models = filterByEnabledModels(inst.cachedModelRegistry.getAvailable().map(toModelInfo));
+        const models = annotateEnabledScope(inst.cachedModelRegistry.getAvailable().map(toModelInfo));
         inst.connection.send({ type: "models_list", sessionId: inst.sessionId, models });
         // See change: replace-hardcoded-provider-lists.
         inst.connection.send({ type: "providers_list", sessionId: inst.sessionId, providers: buildProviderCatalogue() });

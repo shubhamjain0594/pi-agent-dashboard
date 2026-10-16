@@ -34,6 +34,15 @@ describe("buildMonacoTheme", () => {
     }
   });
 
+  it("colors Python quotes and decorators from the dashboard accents, not the inherited vs defaults", () => {
+    const built = buildMonacoTheme("base", "dark");
+    const fg = (token: string) => built.data.rules.find((r) => r.token === token)?.foreground;
+    expect(fg("string.escape")).toBe(fg("string"));
+    expect(fg("number.hex")).toBe(fg("number"));
+    expect(fg("decorator")).toBe(fg("constant"));
+    expect(fg("variable.predefined")).toBeTruthy();
+  });
+
   it("colors the keyword rule with the theme's --accent-purple (hex sans #)", () => {
     const theme = getTheme("dracula")!;
     const built = buildMonacoTheme("dracula", "dark");

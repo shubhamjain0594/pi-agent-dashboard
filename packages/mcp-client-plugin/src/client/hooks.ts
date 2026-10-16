@@ -81,7 +81,7 @@ export function loadEffective(
     const refused = notTracked.get(key);
     if (refused) return Promise.reject(refused);
     const pending = inflight.get(key);
-    if (pending) return pending;
+    if (pending !== undefined) return pending;
     const hit = cache.get(key);
     if (hit) return Promise.resolve(hit);
   }

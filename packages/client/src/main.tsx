@@ -45,7 +45,7 @@ import { UI_PRIMITIVE_KEYS } from "@blackbelt-technology/pi-dashboard-shared/das
 import { ThinkingBlock } from "./components/chat/ThinkingBlock.js";
 import { ToolCallStep } from "./components/chat/ToolCallStep.js";
 import { LoginGate } from "./components/identity/LoginGate.js";
-import { MarkdownContent } from "./components/preview/MarkdownContent.js";
+import { MarkdownContent } from "./components/preview/MarkdownContentLazy.js";
 import { LogBlock } from "./components/primitives/LogBlock.js";
 import { PathPickerDialog } from "./components/primitives/PathPickerDialog.js";
 import { OAuthFlowView } from "./components/settings/OAuthFlowView.js";

@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createInitialState, type SessionState } from "../../lib/chat/event-reducer.js";
@@ -109,6 +109,11 @@ describe("ChatView streaming-tail selection preservation", () => {
   it("2.1 keeps the committed tail nodes stable across a chunk append (buffer + flush)", async () => {
     const { container } = renderChat(userState(`${PREFIX} streaming answer`));
     await flushRaf();
+    // MarkdownContent suspends on its first paint. Select only after the
+    // real paragraph is mounted, or the later chunk swaps the fallback node.
+    await waitFor(() => {
+      expect(getTail(container)?.querySelector("p")).not.toBeNull();
+    });
 
     const textNode = tailTextNode(container);
     expect(textNode).not.toBeNull();
@@ -141,6 +146,9 @@ describe("ChatView streaming-tail selection preservation", () => {
   it("2.2 preserves a tail selection across turn completion, then reveals the committed twin on collapse", async () => {
     const { container } = renderChat(userState(`${PREFIX} final answer body`));
     await flushRaf();
+    await waitFor(() => {
+      expect(getTail(container)?.querySelector("p")).not.toBeNull();
+    });
 
     const textNode = tailTextNode(container);
     expect(textNode).not.toBeNull();

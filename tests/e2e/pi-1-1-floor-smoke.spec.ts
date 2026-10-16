@@ -15,7 +15,7 @@ import { sendPrompt, spawnFreshGitSession } from "./helpers/index.js";
 // `.pi-test-harness.json#dashboardPort` (see fixtures.ts / global-setup.ts).
 // Scenario args: qa/fixtures/faux-scenarios.ts → toolScenario("read", { path }).
 const READ_PATH = "src/example.ts";
-const FLOOR = "1.1.0";
+const FLOOR = "1.3.0";
 
 test.describe("pi 1.1.0 floor smoke", () => {
   test.beforeEach(async ({ page }) => {

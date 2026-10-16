@@ -29,16 +29,9 @@
   font-size: 12px;
   line-height: 1.5;
   letter-spacing: 0;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-secondary) transparent;
-}
-.desktop-workbench .editor-workspace * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-secondary) transparent;
 }
 .desktop-workbench .editor-workspace [role="tablist"] {
   min-width: 0;
-  scrollbar-width: thin;
 }
 .desktop-workbench .editor-workspace [role="tab"] {
   flex-shrink: 0;
@@ -50,12 +43,6 @@
 }
 .desktop-workbench .editor-workspace [role="tab"][aria-selected="true"] {
   border-top-color: var(--accent-blue);
-}
-.desktop-workbench [data-testid="changes-rail-section"] {
-  flex-wrap: wrap;
-  gap: 4px 6px;
-  padding: 7px 10px;
-  font-size: 11px;
 }
 .desktop-workbench [data-testid="session-only-toggle"] {
   gap: 5px;
@@ -100,10 +87,6 @@
   .desktop-workbench .code-diff-control-label { display: none; }
   .desktop-workbench .code-diff-toolbar button { min-width: 28px; padding-inline: 6px; }
   .desktop-workbench .code-diff-toolbar button svg { margin-right: 0; }
-}
-.desktop-workbench .code-diff-content {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-secondary) transparent;
 }
 /* Higher specificity than the diff library's per-theme rules, including its
    lazy-loaded stylesheet. Do not override syntax-token colors. */

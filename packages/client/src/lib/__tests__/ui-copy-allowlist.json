@@ -17,11 +17,6 @@
       "reason": "log-only: console/server log line, never rendered in the dashboard UI"
     },
     {
-      "file": "packages/chat-gateway/src/server/gateway.ts",
-      "text": "chat-gateway: toolPolicy is set but guardExtension is missing — refusing to spawn an ungated session",
-      "reason": "log-only: console/server log line, never rendered in the dashboard UI"
-    },
-    {
       "file": "packages/document-converter/src/engine.ts",
       "text": "failed to spawn ",
       "reason": "internal: child-process error from the document engine (OS process spawn)"

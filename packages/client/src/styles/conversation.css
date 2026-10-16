@@ -123,7 +123,15 @@
   .desktop-workbench .conversation-header-more-content { position: static; width: 100%; max-height: 35vh; box-shadow: none; }
 }
 
-/* Match the transcript column instead of stretching an input edge-to-edge. */
+/* Match the transcript column instead of stretching an input edge-to-edge.
+   The working-status row sits in that same column, so its rule does not
+   run out to the pane edge past the messages and the composer. */
+.desktop-workbench .conversation-session [data-testid="status-bar"] {
+  margin-inline: max(var(--conversation-gutter), calc((100% - var(--conversation-width)) / 2));
+  padding-left: 2px;
+  padding-right: 2px;
+  width: auto;
+}
 .desktop-workbench .conversation-session [data-testid="composer-root"] { border-top: 0; background: var(--bg-secondary); padding: 6px max(var(--conversation-gutter), calc((100% - var(--conversation-width)) / 2)) 12px; }
 .desktop-workbench .conversation-session [data-testid="composer-card"] { border-color: var(--border-secondary); border-radius: 10px; background: var(--bg-tertiary); padding: 8px 10px 6px; box-shadow: none; }
 .desktop-workbench .conversation-session [data-testid="composer-card"]:focus-within { border-color: var(--text-tertiary); }
@@ -135,6 +143,7 @@
 .desktop-workbench .conversation-session [data-testid="stop-button"],
 .desktop-workbench .conversation-session [data-testid="force-stop-button"],
 .desktop-workbench .conversation-session [data-testid="killing-button"] { width: 32px; min-width: 32px; height: 32px; min-height: 32px; }
+.desktop-workbench .conversation-session [data-testid="stop-after-turn-button"] { height: 32px; min-height: 32px; }
 .desktop-workbench .conversation-session [data-testid="send-button"] { background: var(--text-primary); color: var(--bg-primary); border-radius: 8px; }
 .desktop-workbench .conversation-session [data-testid="composer-footer"] { font-size: 11px; color: var(--text-tertiary); }
 .desktop-workbench .conversation-session [data-testid="scroll-to-top"],
@@ -162,6 +171,7 @@
   .desktop-workbench .conversation-session [data-testid="stop-button"],
   .desktop-workbench .conversation-session [data-testid="force-stop-button"],
   .desktop-workbench .conversation-session [data-testid="killing-button"] { width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
+  .desktop-workbench .conversation-session [data-testid="stop-after-turn-button"] { height: 44px; min-height: 44px; }
 }
 
 /* Live session inspector: shared diff data + extension-owned todo snapshots. */
@@ -172,25 +182,3 @@
 .session-work-tabs button span, .session-tasks-chip span { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-tertiary); }
 .session-work-tabs .session-work-close { margin-left: auto; }
 .session-work-scroll { flex: 1; min-height: 0; overflow-y: auto; }
-.session-work-panel { padding: 16px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
-.session-work-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.session-work-heading h2 { font-size: 14px; color: var(--text-primary); font-weight: 600; margin: 0 0 4px; }
-.session-work-heading p, .session-work-note, .session-work-other p { font-size: 12px; color: var(--text-tertiary); line-height: 1.6; }
-.session-work-heading > button { padding: 6px; flex-shrink: 0; border-radius: 4px; }
-.session-work-heading > button:hover { background: var(--bg-hover); }
-.session-work-heading > button:disabled { opacity: .5; cursor: default; }
-.session-work-error { padding: 12px; border-radius: 6px; color: var(--severity-error-fg); background: var(--severity-error-bg); border: 1px solid var(--severity-error-border); }
-.session-work-empty { padding: 24px 0; }
-.session-work-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-primary); }
-.session-work-files { list-style: none; padding: 0; margin: 0; }
-.session-work-files li > button { display: flex; align-items: center; width: 100%; min-height: 64px; gap: 8px; padding: 12px 4px; text-align: left; border-bottom: 1px solid var(--border-primary); }
-.session-work-files li > button:hover { background: var(--bg-hover); }
-.session-work-files li > button:disabled { cursor: default; opacity: .7; }
-.session-work-file-copy { flex: 1; min-width: 0; }
-.session-work-file-copy strong { display: block; font-size: 13px; color: var(--text-primary); font-weight: 500; }
-.session-work-file-copy small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--text-tertiary); }
-.session-work-file-copy small:first-of-type { font-family: var(--workbench-font-mono, monospace); }
-.session-work-other { margin-top: 16px; font-size: 12px; }
-.session-work-other summary { cursor: pointer; padding: 8px 0; }
-.session-work-other li { overflow-wrap: anywhere; padding: 4px 0; }
-.session-work-note { margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--border-primary); }

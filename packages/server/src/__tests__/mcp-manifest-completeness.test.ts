@@ -8,6 +8,7 @@
  *
  * See change: expand-mcp-tiered-surface (D6).
  */
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -21,6 +22,7 @@ import {
   hasRouteTier,
   ROUTE_TIERS,
 } from "@blackbelt-technology/pi-dashboard-shared/route-tiers.js";
+import { CONFIG_DIR, CONFIG_FILE } from "@blackbelt-technology/pi-dashboard-shared/config.js";
 import ts from "typescript";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createServer, type DashboardServer } from "../server.js";
@@ -34,6 +36,13 @@ let routes: Array<{ method: string | string[]; url: string }> = [];
 
 beforeAll(async () => {
   routes = [];
+  // These plugins are opt-in (`defaultEnabled: false`), so the manifest rows that bind
+  // their routes only resolve once they are enabled in this host's config.
+  fs.mkdirSync(CONFIG_DIR, { recursive: true });
+  const plugins = Object.fromEntries(
+    ["team", "goal", "automation", "roles", "apple-tools"].map((id) => [id, { enabled: true }]),
+  );
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify({ plugins }));
   server = await createServer({
     port: 0,
     piPort: 0,

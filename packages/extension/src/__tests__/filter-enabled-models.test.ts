@@ -30,7 +30,7 @@ vi.mock("node:os", async (importOriginal) => {
 });
 
 // Imported after the mock is registered (vi.mock is hoisted).
-import { filterByEnabledModels } from "../session-sync.js";
+import { annotateEnabledScope, filterByEnabledModels, syncLiveScopedModels } from "../session-sync.js";
 
 type M = { provider: string; id: string };
 
@@ -76,6 +76,23 @@ describe("filterByEnabledModels — no-op cases", () => {
     mkdirSync(join(home(), ".pi", "agent"), { recursive: true });
     writeFileSync(join(home(), ".pi", "agent", "settings.json"), "{ not json", "utf-8");
     expect(filterByEnabledModels(MODELS)).toEqual(MODELS);
+  });
+});
+
+describe("annotateEnabledScope — selector catalogue", () => {
+  it("returns every model and marks only the Pi scope when enabledModels is set", () => {
+    writeSettings({ enabledModels: ["anthropic/*"] });
+    const annotated = annotateEnabledScope(MODELS);
+    expect(ids(annotated)).toEqual(ids(MODELS));
+    expect(annotated.filter((m) => m.scoped).map((m) => `${m.provider}/${m.id}`).sort()).toEqual([
+      "anthropic/claude-opus-4-8",
+      "anthropic/claude-sonnet-4-6",
+    ]);
+    expect(annotated.find((m) => m.id === "gpt-5.5")?.scoped).toBeUndefined();
+  });
+
+  it("leaves the list unmarked when Pi has no scope", () => {
+    expect(annotateEnabledScope(MODELS)).toEqual(MODELS);
   });
 });
 
@@ -172,5 +189,17 @@ describe("late-discovered in-scope models (E13)", () => {
     ];
     const pushed = filterByEnabledModels([...MODELS, ...late]);
     expect(ids(pushed)).toEqual(["myprovider/fast-1", "myprovider/smart-2"]);
+  });
+});
+
+describe("syncLiveScopedModels", () => {
+  it("adds and removes entries in the live scope array", () => {
+    const opus = { provider: "anthropic", id: "claude-opus-4-8" };
+    const live: Array<{ model: M; thinkingLevel?: string }> = [{ model: opus, thinkingLevel: "high" }];
+    syncLiveScopedModels(live, MODELS, ["anthropic/claude-opus-4-8", "openai/gpt-5.5"]);
+    expect(live.map((entry) => entry.model.id)).toEqual(["claude-opus-4-8", "gpt-5.5"]);
+    expect(live[0]?.thinkingLevel).toBe("high");
+    syncLiveScopedModels(live, MODELS, null);
+    expect(live).toEqual([]);
   });
 });

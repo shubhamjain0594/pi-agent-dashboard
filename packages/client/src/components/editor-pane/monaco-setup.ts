@@ -9,23 +9,35 @@
  * `MonacoEnvironment` assignment is idempotent — importing from both modules is
  * safe.
  *
- * NOTE: the TypeScript language worker (`ts.worker`, ~6 MB) is deliberately NOT
- * imported; ts/js fall back to `editor.worker`. See change:
- * add-internal-monaco-editor-pane / directory-settings-page-and-scoped-md-editing.
+ * TypeScript/JavaScript require their own language worker even when diagnostic
+ * output is disabled. Falling back to the generic editor worker makes Monaco
+ * try loading an AMD foreign module into an ESM worker (`require.toUrl` error).
+ * Worker bundles are fetched only when the corresponding language is opened.
  */
 import { loader } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
-import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
-import cssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
-import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
-import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
+import editorWorker from "monaco-editor/editor/editor.worker.js?worker";
+import cssWorker from "monaco-editor/language/css/css.worker.js?worker";
+import htmlWorker from "monaco-editor/language/html/html.worker.js?worker";
+import jsonWorker from "monaco-editor/language/json/json.worker.js?worker";
+import tsWorker from "monaco-editor/language/typescript/ts.worker.js?worker";
 
 (self as unknown as { MonacoEnvironment?: monaco.Environment }).MonacoEnvironment = {
   getWorker(_workerId, label) {
     if (label === "json") return new jsonWorker();
     if (label === "css" || label === "scss" || label === "less") return new cssWorker();
     if (label === "html" || label === "handlebars" || label === "razor") return new htmlWorker();
+    if (label === "typescript" || label === "javascript") return new tsWorker();
     return new editorWorker();
   },
 };
-loader.config({ monaco });
+
+// `loader` lives in the monaco chunk, which imports this module while it is
+// still evaluating. Calling `loader.config` here reads that export before it
+// exists and the editor pane throws. Configure on first render instead.
+let configured = false;
+export function ensureMonacoLoader(): void {
+  if (configured) return;
+  configured = true;
+  loader.config({ monaco });
+}

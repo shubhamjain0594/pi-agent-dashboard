@@ -4,13 +4,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 // Units moved out of the label text into the `unit` chip (design D5). The
-// zh-CN and hu dictionaries embedded the unit in the *translated* string, so
+// hu dictionaries embedded the unit in the *translated* string, so
 // stripping only the English fallback would leave those locales rendering the
 // unit twice — once in the label, once in the chip. C1 resolved this as
-// "update the existing keys in place across en / zh-CN / hu".
+// "update the existing keys in place across en / hu".
 //
-// The zh-CN catalog is a lazy module (i18n-zh-CN.ts), so this reads the
-// dictionary sources as text rather than widening their exports — the same
+// Catalogs are lazy modules, so this reads the dictionary sources as text rather than widening their exports — the same
 // approach themes.test.ts takes against index.css.
 // See change: reorganize-settings-pages-and-descriptions. test-plan #E14.
 
@@ -18,7 +17,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const LIB = resolve(here, "../../../lib");
 
 const SOURCES: [string, string][] = [
-  ["zh-CN", readFileSync(resolve(LIB, "i18n/i18n-zh-CN.ts"), "utf8")],
   ["hu", readFileSync(resolve(LIB, "i18n/i18n-hu.ts"), "utf8")],
   ["en", readFileSync(resolve(LIB, "i18n-en-source.json"), "utf8")],
 ];
@@ -63,7 +61,7 @@ function containsStandaloneToken(value: string, token: string): boolean {
 }
 
 /**
- * @structural-pin locale parity: zh-CN and hu catalogs must define every mode key and SettingsPanel must use them
+ * @structural-pin locale parity: hu catalogs must define every mode key and SettingsPanel must use them
  */
 describe("unit-bearing i18n keys (D5 / C1)", () => {
   it("finds every key in at least one catalog (guards a typo'd key list)", () => {
@@ -103,39 +101,3 @@ describe("unit-bearing i18n keys (D5 / C1)", () => {
  * `settings.replayWindowMode` rendered in the panel is the failure this pins.
  * See change: add-tail-only-replay-window (D10).
  */
-describe("F17: the replay window mode control is localized in en, zh-CN and hu", () => {
-  const MODE_KEYS = [
-    "settings.replayWindowMode",
-    "settings.replayWindowMode.headTail",
-    "settings.replayWindowMode.tailOnly",
-    "settings.hint.replayWindowMode",
-    "settings.hint.replayWindowModeInert",
-  ];
-
-  it.each([["zh-CN"], ["hu"]])("%s defines every mode key", (locale) => {
-    const source = SOURCES.find(([name]) => name === locale)![1];
-    for (const key of MODE_KEYS) {
-      expect(source, `${locale} is missing ${key}`).toContain(`"${key}"`);
-      // Present AND non-empty: `"key": ""` would resolve to a blank control.
-      // Escape EVERY regex metacharacter, not just `.`: a dot-only escape
-      // leaves a backslash in a key to be read as an escape sequence rather
-      // than a literal, which silently changes what this asserts (CodeQL
-      // "incomplete string escaping"). Mirrors the escape used elsewhere in
-      // the repo, e.g. `archiveEntryMatcher` in tests/e2e/helpers.
-      const literal = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      expect(source).toMatch(new RegExp(`"${literal}":\\s*"[^"]+"`));
-    }
-  });
-
-  it("en is the fallback text carried at every call site, never a raw key id", () => {
-    const panel = readFileSync(resolve(here, "../SettingsPanel.tsx"), "utf8");
-    for (const key of MODE_KEYS) {
-      // Every `t()` call for these keys supplies an English default, which is
-      // what a catalog miss resolves to.
-      expect(panel).toContain(`"${key}"`);
-    }
-    // The hint must state the SCOPE — it is a deployment setting, not a
-    // per-user preference, and implying otherwise is the documented risk.
-    expect(panel).toMatch(/Affects every client of this server/);
-  });
-});

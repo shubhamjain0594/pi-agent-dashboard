@@ -129,6 +129,19 @@ describe("GET /api/file — file-kind extension", () => {
     expect(body.data).toMatchObject({ type: "file", kind: "spreadsheet", content: "a,b\n1,2\n" });
   });
 
+  // The html editor tab's Source view is Monaco over this same JSON `content`;
+  // the rendered Preview fetches /api/file/raw instead.
+  it("returns content for an .html file (Source view reads it via Monaco)", async () => {
+    await fsp.writeFile(path.join(tmp, "index.html"), "<!DOCTYPE html>\n<div id=\"root\"></div>\n");
+    const res = await app.inject({ method: "GET", url: fileUrl(tmp, "index.html") });
+    const body = res.json();
+    expect(body.data).toMatchObject({
+      type: "file",
+      kind: "html",
+      content: "<!DOCTYPE html>\n<div id=\"root\"></div>\n",
+    });
+  });
+
   it("E11 / X7 OMITS content for a binary .xlsx (editable:false, no bytes-in-JSON leak)", async () => {
     await fsp.writeFile(path.join(tmp, "book.xlsx"), Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01]));
     const res = await app.inject({ method: "GET", url: fileUrl(tmp, "book.xlsx") });

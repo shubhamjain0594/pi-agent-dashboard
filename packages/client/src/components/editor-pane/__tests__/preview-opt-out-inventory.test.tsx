@@ -20,7 +20,7 @@ import type { ReactElement } from "react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../../lib/api/api-context.js", () => ({ getApiBase: () => "" }));
-vi.mock("../monaco-setup.js", () => ({}));
+vi.mock("../monaco-setup.js", () => ({ ensureMonacoLoader: () => {} }));
 vi.mock("../../../lib/theme/monaco-theme.js", () => ({ buildMonacoTheme: () => ({ name: "t", data: {} }) }));
 vi.mock("@monaco-editor/react", () => ({ __esModule: true, default: () => <div data-testid="monaco" /> }));
 

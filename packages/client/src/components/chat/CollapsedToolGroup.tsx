@@ -11,7 +11,7 @@ import { useDisplayPrefs } from "../../hooks/useDisplayPrefs.js";
 import { useMobile } from "../../hooks/useMobile.js";
 import type { ToolCallGroup } from "../../lib/chat/group-tool-calls.js";
 import { getSummary } from "../../lib/chat/tool-summary.js";
-import { MarkdownContent } from "../preview/MarkdownContent.js";
+import { MarkdownContent } from "../preview/MarkdownContentLazy.js";
 import { CustomEntryRow } from "./CustomEntryRow.js";
 import { ToolCallStep } from "./ToolCallStep.js";
 import type { ToolContext } from "../tool-renderers/index.js";

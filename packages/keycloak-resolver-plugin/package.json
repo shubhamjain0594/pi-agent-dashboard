@@ -34,13 +34,14 @@
     "priority": 100,
     "claims": [],
     "server": "./src/server/index.ts",
-    "configSchema": "./src/configSchema.json"
+    "configSchema": "./src/configSchema.json",
+    "defaultEnabled": false
   },
   "dependencies": {
     "@blackbelt-technology/dashboard-plugin-runtime": "^0.9.0",
     "@blackbelt-technology/pi-dashboard-client-utils": "^0.9.0",
     "@blackbelt-technology/pi-dashboard-shared": "^0.9.0",
-    "jose": "^6.0.0"
+    "jose": "^6.2.12"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

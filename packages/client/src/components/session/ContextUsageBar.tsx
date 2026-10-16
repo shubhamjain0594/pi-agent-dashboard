@@ -1,4 +1,4 @@
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import { mdiArrowCollapseVertical } from "@mdi/js";
 import React from "react";
 import { type CompactionState, deriveCompactionBadge } from "../../lib/chat/event-reducer.js";

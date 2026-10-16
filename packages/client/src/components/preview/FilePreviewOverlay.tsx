@@ -2,13 +2,13 @@ import { useEscapeDismiss } from "@blackbelt-technology/pi-dashboard-client-util
 import { mdiClose, mdiLoading } from "@mdi/js";
 import { Icon } from "@mdi/react";
 import React, { type ComponentType, useEffect, useMemo, useRef, useState } from "react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { eligibleFetch, PreviewProvenance, usePreviewFetch } from "../../lib/access-grants/preview-provenance.js";
 import { getApiBase } from "../../lib/api/api-context.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";
 import { logRejection } from "../../lib/report-error.js";
 import { getSyntaxTheme } from "../../lib/theme/syntax-theme.js";
 import { DialogPortal } from "../primitives/DialogPortal.js";
+import { LazySyntaxHighlighter } from "../primitives/LazySyntaxHighlighter.js";
 import { useThemeContext } from "../settings/ThemeProvider.js";
 import { detectLanguage } from "../tool-renderers/lang-detect.js";
 import { AsciiDocPreview } from "./AsciiDocPreview.js";
@@ -17,7 +17,7 @@ import { DiagramPreview } from "./DiagramPreview.js";
 import { DocxPreview } from "./DocxPreview.js";
 import { classifyResponse, type DenialFailure } from "./denial-fetch.js";
 import { EmlPreview } from "./EmlPreview.js";
-import { MarkdownContent } from "./MarkdownContent.js";
+import { MarkdownContent } from "./MarkdownContentLazy.js";
 import { PptxPreview } from "./PptxPreview.js";
 import { dirname } from "./resolve-local-image-src.js";
 import { SpreadsheetPreview } from "./SpreadsheetPreview.js";
@@ -323,7 +323,7 @@ function FilePreviewOverlayBody({ cwd, path, line, onClose }: Omit<Props, "prove
               />
             )}
             {!error && !isImage && content !== null && !isMd && language && (
-              <SyntaxHighlighter
+              <LazySyntaxHighlighter
                 style={syntaxStyle}
                 language={language}
                 PreTag="div"
@@ -338,7 +338,7 @@ function FilePreviewOverlayBody({ cwd, path, line, onClose }: Omit<Props, "prove
                 data-testid="file-preview-code"
               >
                 {content}
-              </SyntaxHighlighter>
+              </LazySyntaxHighlighter>
             )}
             {!error && !isImage && content !== null && !isMd && !language && (
               <pre className="text-xs font-mono whitespace-pre-wrap text-[var(--text-secondary)]">

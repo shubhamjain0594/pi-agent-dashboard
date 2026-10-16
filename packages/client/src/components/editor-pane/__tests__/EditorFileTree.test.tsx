@@ -459,7 +459,7 @@ describe("EditorFileTree — session-only tree", () => {
     const { container } = render(tree(true));
     await screen.findByText("deleted.ts");
     expect(Array.from(container.querySelectorAll("[data-row]"), (row) => row.getAttribute("data-row")).sort())
-      .toEqual(["root.ts", "src", "src/deep", "src/deep/deleted.ts"]);
+      .toEqual(["root.ts", "src/deep", "src/deep/deleted.ts"]);
     expect(screen.queryByTestId("other-changes-group")).toBeNull();
     expect(globalThis.fetch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText("deleted.ts"));
@@ -480,7 +480,7 @@ describe("EditorFileTree — session-only tree", () => {
     const row = container.querySelector(`[data-row="${path}"]`) as HTMLElement;
     expect(row).toBeTruthy();
     expect(container.querySelector('[data-row=""]')).toBeNull();
-    expect(container.querySelectorAll("[data-row]")).toHaveLength(4);
+    expect(container.querySelectorAll("[data-row]")).toHaveLength(3);
     expect(screen.getByText("inside.ts")).toBeTruthy();
     fireEvent.click(within(row).getByText(path));
     expect(props.onOpenDiff).toHaveBeenCalledWith(path);
@@ -531,6 +531,91 @@ describe("EditorFileTree — session-only tree", () => {
     expect(container.querySelectorAll("[data-row]")).toHaveLength(0);
     expect(screen.queryByTestId("other-changes-group")).toBeNull();
     expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("compacts directory chains, stops at branches/files, and reopens the deepest directory", () => {
+    const prefix = "experiments/rfq/credit";
+    const { props, tree } = setup([
+      changed(`${prefix}/models/deep/a.ts`),
+      changed(`${prefix}/reports/b.ts`),
+      changed(`${prefix}/reports/nested/c.ts`),
+    ]);
+    const { container } = render(tree(true));
+    const chain = screen.getByText("experiments / rfq / credit");
+    expect(chain.closest("[data-row]")?.getAttribute("data-row")).toBe(prefix);
+    expect(screen.getByText("models / deep")).toBeTruthy();
+    expect(screen.getByText("reports")).toBeTruthy();
+    expect(screen.getByText("nested")).toBeTruthy();
+    expect(screen.getByTitle("/proj")).toBeTruthy();
+    fireEvent.click(screen.getByText("a.ts"));
+    expect(props.onOpenFile).toHaveBeenCalledWith(`${prefix}/models/deep/a.ts`, "monaco");
+    const fileRow = screen.getByText("a.ts").closest("[data-row]") as HTMLElement;
+    const fileButton = screen.getByText("a.ts").closest("button") as HTMLElement;
+    expect(fileButton.className).toContain("h-[27px]");
+    expect(fileButton.className).toContain("text-[12px]");
+    expect(fileButton.style.paddingLeft).toBe("38px");
+    expect(fileButton.querySelector("svg")?.classList.contains("shrink-0")).toBe(true);
+    fireEvent.click(within(fileRow).getByTestId("open-diff-chip"));
+    expect(props.onOpenDiff).toHaveBeenCalledWith(`${prefix}/models/deep/a.ts`);
+    fireEvent.click(screen.getByText("models / deep"));
+    fireEvent.click(chain);
+    expect(screen.queryByText("reports")).toBeNull();
+    fireEvent.click(chain);
+    expect(screen.getByText("reports")).toBeTruthy();
+    expect(screen.queryByText("a.ts")).toBeNull();
+    fireEvent.click(screen.getByText("models / deep"));
+    expect(screen.getByText("a.ts")).toBeTruthy();
+    expect(container.querySelector('[data-row="experiments"]')).toBeNull();
+    expect(props.onToggleRoot).not.toHaveBeenCalled();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("uses the changedFiles override, including absolute leaves, and accepts an empty override", () => {
+    const { props } = setup([changed("context-only.ts")]);
+    const absolute = "/tmp/outside/a.ts";
+    const tree = (changedFiles: FileDiffEntry[]) => (
+      <SessionDiffProvider sessionId="s1">
+        <EditorFileTree {...props} sessionOnly changedFiles={changedFiles} />
+      </SessionDiffProvider>
+    );
+    const { rerender } = render(tree([changed("a/b/override.ts"), changed(absolute)]));
+    expect(screen.queryByText("context-only.ts")).toBeNull();
+    expect(screen.getByText("a / b")).toBeTruthy();
+    fireEvent.click(screen.getByText("override.ts"));
+    expect(props.onOpenFile).toHaveBeenCalledWith("a/b/override.ts", "monaco");
+    fireEvent.click(screen.getByText(absolute));
+    expect(props.onOpenDiff).toHaveBeenCalledWith(absolute);
+    rerender(tree([]));
+    expect(screen.getByText("No changes in this session")).toBeTruthy();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("keeps the full filesystem tree lazy and uncompressed with an override", async () => {
+    dirs["."] = [{ name: "a", isDir: true }];
+    dirs.a = [{ name: "b", isDir: true }];
+    dirs["a/b"] = [{ name: "disk.ts", isDir: false }];
+    const { props } = setup([changed("context-only.ts")]);
+    const { rerender } = render(
+      <EditorFileTree {...props} treeOpenRoots={[]} changedFiles={[changed("a/b/disk.ts")]} />,
+    );
+    await screen.findByText("a");
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("a / b")).toBeNull();
+    fireEvent.click(screen.getByText("a"));
+    expect(props.onToggleRoot).toHaveBeenCalledWith("a");
+    rerender(<EditorFileTree {...props} treeOpenRoots={["a"]} changedFiles={[]} />);
+    await screen.findByText("b");
+    expect(screen.queryByText("disk.ts")).toBeNull();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    rerender(
+      <EditorFileTree {...props} treeOpenRoots={["a", "a/b"]} changedFiles={[changed("a/b/disk.ts")]} />,
+    );
+    await screen.findByText("disk.ts");
+    expect(screen.getByTestId("status-modified")).toBeTruthy();
+    rerender(<EditorFileTree {...props} treeOpenRoots={["a", "a/b"]} changedFiles={[]} />);
+    expect(screen.getByText("disk.ts")).toBeTruthy();
+    expect(screen.queryByTestId("status-modified")).toBeNull();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(3);
   });
 });
 

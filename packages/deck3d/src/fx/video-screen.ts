@@ -1,3 +1,4 @@
+import type * as THREE from "three";
 // video-screen — a framed screen in the scene playing a looping clip. Licence: MIT.
 //
 // SPIKE (video layer). Three constraints shaped this:

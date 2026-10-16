@@ -21,7 +21,7 @@ import {
   mdiDrag,
 } from "@mdi/js";
 import { LayerPortal } from "@blackbelt-technology/pi-dashboard-client-utils/LayerPortal";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import React, { useEffect, useRef, useState } from "react";
 import { usePopoverFlip } from "../../hooks/usePopoverFlip.js";
 import { t as i18nT } from "../../lib/i18n/i18n.js";

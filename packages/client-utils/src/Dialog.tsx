@@ -36,6 +36,9 @@ interface DialogProps {
    *  improve-flow-graph-dialog-and-card-interaction,
    *  fix-flush-dialog-scroll-and-close-collision. */
   flush?: boolean;
+  /** Fill the viewport with no frame. A route surface (settings) reads as a
+   *  page of the app instead of a card floating on a dimmed copy of it. */
+  immersive?: boolean;
   /** Restore the built-in ✕ under `flush`. For a flush child that renders no
    *  header (and therefore no dismissal affordance) of its own — notably a
    *  third-party plugin dialog. A flush child with NO focusable element of its
@@ -74,6 +77,7 @@ export function Dialog({
   ariaLabel,
   flush = false,
   showClose = false,
+  immersive = false,
   children,
 }: DialogProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,7 +125,11 @@ export function Dialog({
           aria-label={!title ? ariaLabel : undefined}
           tabIndex={-1}
           data-testid={testId}
-          className={`relative w-full mx-4 ${SIZE_MAX_W[size]} ${SIZE_MAX_H[size]} ${flush ? "overflow-hidden flex flex-col min-h-0" : "overflow-y-auto p-5 space-y-4"} bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg shadow-xl focus:outline-none`}
+          className={`relative bg-[var(--bg-primary)] focus:outline-none ${
+            immersive
+              ? "flex h-full w-full min-h-0 flex-col overflow-hidden"
+              : `w-full mx-4 ${SIZE_MAX_W[size]} ${SIZE_MAX_H[size]} ${flush ? "overflow-hidden flex flex-col min-h-0 rounded-md" : "overflow-y-auto p-5 space-y-4 rounded-lg shadow-xl"} border border-[var(--border-primary)]`
+          }`}
         >
           {/* Standard close affordance on every non-flush dialog (Escape +
               backdrop also close). Absolutely positioned; the headered branch

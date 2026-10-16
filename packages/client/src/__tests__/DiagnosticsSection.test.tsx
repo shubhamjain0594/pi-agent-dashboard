@@ -120,9 +120,12 @@ describe("DiagnosticsSection", () => {
       return m;
     });
     expect(modal.textContent).toMatch(/clipboard access/);
-    // Escape dismisses.
-    fireEvent.keyDown(window, { key: "Escape" });
-    await waitFor(() => expect(queryByTestId("diagnostics-copy-modal")).toBeNull());
+    // Escape dismisses. The listener is attached in an effect, so retry the
+    // key until that effect has run.
+    await waitFor(() => {
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(queryByTestId("diagnostics-copy-modal")).toBeNull();
+    });
   });
 
   it("E9: Copy as Markdown escapes name/message cells (fix-codeql-small-findings)", async () => {

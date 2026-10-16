@@ -45,7 +45,7 @@ import { isRecoveryCandidate, isShutdownWindowCandidate, mergeSessionMeta, type 
 import { rank } from "@blackbelt-technology/pi-dashboard-shared/tiers.js";
 import { getDefaultRegistry, resolveInstallRoot } from "@blackbelt-technology/pi-dashboard-shared/tool-registry/index.js";
 import type { DashboardSession } from "@blackbelt-technology/pi-dashboard-shared/types.js";
-import { LIVE_PREVIEW_TIER, TERMINAL_TIER } from "@blackbelt-technology/pi-dashboard-shared/ws-message-tiers.js";
+import { LIVE_PREVIEW_TIER, LSP_TIER, TERMINAL_TIER } from "@blackbelt-technology/pi-dashboard-shared/ws-message-tiers.js";
 import compress from "@fastify/compress";
 import fastifyCookie from "@fastify/cookie";
 import cors from "@fastify/cors";
@@ -246,6 +246,9 @@ import { registerFileRoutes } from "./routes/file-routes.js";
 import { registerFolderProjectRoutes } from "./routes/folder-project-routes.js";
 import { registerGitRoutes } from "./routes/git-routes.js";
 import { registerGrepRoutes } from "./routes/grep-routes.js";
+import { registerLspRoutes } from "./routes/lsp-routes.js";
+import { createLspBridge } from "./lsp/lsp-bridge.js";
+import { createLspTrustStore } from "./lsp/lsp-trust.js";
 import { registerHostGateRoutes } from "./routes/host-gate-routes.js";
 import { registerKnownServersRoutes } from "./routes/known-servers-routes.js";
 import { registerLiveServerRoutes } from "./routes/live-server-routes.js";
@@ -1264,6 +1267,15 @@ export async function createServer(config: ServerConfig): Promise<DashboardServe
   });
 
   const terminalGateway = createTerminalGateway(terminalManager);
+
+  // Language-server bridge (`/ws/lsp`). Trust is per workspace root; the bridge
+  // only starts a server for a known session cwd the operator has trusted.
+  const lspTrust = createLspTrustStore();
+  const lspBridge = createLspBridge({
+    isKnownSessionCwd: (cwd) => sessionManager.listAll().some((s) => s.cwd === cwd),
+    trust: lspTrust,
+    idleTimeoutMs: 5 * 60_000,
+  });
 
   // Live-server-preview manager (loopback dev-server allowlist + proxy).
   const liveServerManager = createLiveServerManager(preferencesStore);
@@ -2331,6 +2343,7 @@ export async function createServer(config: ServerConfig): Promise<DashboardServe
   });
   registerFileRoutes(fastify, { sessionManager, preferencesStore, networkGuard });
   registerGrepRoutes(fastify, { sessionManager, networkGuard });
+  registerLspRoutes(fastify, { sessionManager, networkGuard, trust: lspTrust });
   // Folder project identity (declared file + plugin marker rules). Rules come
   // only from plugins that are loaded + enabled + fixture-allowed, read per
   // request. See change: add-project-scoped-apps.
@@ -4084,7 +4097,7 @@ export async function createServer(config: ServerConfig): Promise<DashboardServe
         // 18.13: while enforced the terminal + live scopes also require a
         // principal-bearing ticket — they were the legacy loopback / local-token /
         // trusted-network / principal-less-ticket allowances that bypassed it.
-        const requireIdentityTicket = (scope === "browser" || scope === "terminal" || scope === "live") && identityEnforced();
+        const requireIdentityTicket = (scope === "browser" || scope === "terminal" || scope === "live" || scope === "lsp") && identityEnforced();
         const upgradeAuth = authorizeWsUpgrade({
           cookieHeader: request.headers.cookie,
           remoteAddress,
@@ -4106,7 +4119,7 @@ export async function createServer(config: ServerConfig): Promise<DashboardServe
         // See change: add-passkey-user-auth.
         const sessionPayload = upgradeAuth.ok ? upgradeAuth.session : undefined;
         const sessionTierOf = sessionPayload ? () => effectiveSessionTier(sessionPayload, passkeyService) : undefined;
-        const roadTier = scope === "terminal" ? TERMINAL_TIER : scope === "live" ? LIVE_PREVIEW_TIER : undefined;
+        const roadTier = scope === "terminal" ? TERMINAL_TIER : scope === "live" ? LIVE_PREVIEW_TIER : scope === "lsp" ? LSP_TIER : undefined;
         if (sessionTierOf && roadTier) {
           const t = sessionTierOf();
           if (t === null || rank(t) < rank(roadTier)) {
@@ -4230,6 +4243,15 @@ export async function createServer(config: ServerConfig): Promise<DashboardServe
               socket.once("close", cancelExpiry);
               handleLiveServerUpgrade(liveServerManager, request, socket, head);
             });
+            break;
+          }
+          case "lsp": {
+            // Operate-tier like the terminal: a host policy `workspace.read` decision
+            // runs before the upgrade, and the socket closes at the ticket's expiry.
+            const lspCwd = new URL(request.url ?? "/", "http://localhost").searchParams.get("cwd") ?? "";
+            gateRoadUpgrade(HostActions.workspaceRead, hostResource.workspace(lspCwd), () =>
+              lspBridge.handleUpgrade(request, socket, head, upgradeAuth.principalExpiresAt),
+            );
             break;
           }
           default:
@@ -4734,6 +4756,7 @@ export async function createServer(config: ServerConfig): Promise<DashboardServe
       }
       browserGateway.wss.close();
       terminalGateway.close();
+      lspBridge.close();
       // Kill all active terminal PTY processes
       for (const t of terminalManager.list()) {
         try { terminalManager.kill(t.id); } catch {}

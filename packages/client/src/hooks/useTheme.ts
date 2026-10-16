@@ -42,6 +42,14 @@ function applyMode(resolved: ResolvedTheme) {
   }
 }
 
+/** Match installed-app chrome to the same surface as the dashboard header. */
+function applyBrowserChrome(resolved: ResolvedTheme) {
+  const el = document.documentElement;
+  el.style.colorScheme = resolved;
+  const surface = getComputedStyle(el).getPropertyValue("--bg-secondary").trim();
+  if (surface) document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute("content", surface);
+}
+
 /** Apply theme CSS variables. For "base", remove inline overrides so CSS takes over. */
 export function applyThemeVars(themeName: string, resolved: ResolvedTheme) {
   if (typeof document === "undefined") return;
@@ -52,6 +60,7 @@ export function applyThemeVars(themeName: string, resolved: ResolvedTheme) {
     for (const key of CSS_VAR_KEYS) {
       el.style.removeProperty(key);
     }
+    applyBrowserChrome(resolved);
     return;
   }
 
@@ -65,6 +74,7 @@ export function applyThemeVars(themeName: string, resolved: ResolvedTheme) {
       el.style.setProperty(key, value);
     }
   }
+  applyBrowserChrome(resolved);
 }
 
 export interface ThemeState {

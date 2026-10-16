@@ -6,7 +6,7 @@ import {
   mdiPlus,
   mdiSourceBranch,
 } from "@mdi/js";
-import Icon from "@mdi/react";
+import { Icon } from "@mdi/react";
 import { useI18n } from "../../lib/i18n/i18n.js";
 import { getSessionDisplayName } from "../../lib/session/session-display-name.js";
 

@@ -26,7 +26,7 @@ import {
 } from "../pi/pi-version-skew.js";
 
 const REPO_ROOT = path.resolve(__dirname, "../../../..");
-const PINNED_PI = "1.1.0";
+const PINNED_PI = "1.3.0";
 const BELOW_FLOOR_PI = "0.99.2";
 
 /**
@@ -45,7 +45,7 @@ const overridesYaml = (version: string) =>
   `  "@earendil-works/pi-ai": ${version}\n` +
   `  "@earendil-works/pi-tui": ${version}\n`;
 
-describe("pi pin block \u2014 1.1.0", () => {
+describe("pi pin block \u2014 1.3.0", () => {
   const serverPkg = JSON.parse(
     fs.readFileSync(path.join(REPO_ROOT, "packages/server/package.json"), "utf-8"),
   );
@@ -80,7 +80,7 @@ describe("pi pin block \u2014 1.1.0", () => {
   const runCheck = (f: PinFixture) =>
     checkPiPinCoherence(f.serverPkg, f.dockerfile, f.workspaceYaml, f.checkerMinVersion);
 
-  it("E1: piCompatibility declares recommended AND minimum 1.1.0 (lockstep)", () => {
+  it("E1: piCompatibility declares recommended AND minimum 1.3.0 (lockstep)", () => {
     expect(serverPkg.piCompatibility).toEqual({
       minimum: PINNED_PI,
       recommended: PINNED_PI,
@@ -88,7 +88,7 @@ describe("pi pin block \u2014 1.1.0", () => {
     });
   });
 
-  it("E1: the server dependency is pinned to ^1.1.0", () => {
+  it("E1: the server dependency is pinned to ^1.3.0", () => {
     expect(serverPkg.dependencies["@earendil-works/pi-coding-agent"]).toBe(`^${PINNED_PI}`);
   });
 
@@ -164,7 +164,7 @@ describe("pi pin block \u2014 1.1.0", () => {
     expect(String(drift)).toContain("0.78.0");
   });
 
-  it("E3: all governed pin surfaces report 1.1.0 and the gate passes", () => {
+  it("E3: all governed pin surfaces report 1.3.0 and the gate passes", () => {
     expect(serverPkg.dependencies["@earendil-works/pi-coding-agent"]).toContain(PINNED_PI);
     expect(serverPkg.piCompatibility.recommended).toBe(PINNED_PI);
     expect(serverPkg.piCompatibility.minimum).toBe(PINNED_PI);
@@ -226,15 +226,15 @@ describe("pi pin block \u2014 1.1.0", () => {
 
   it("E5: below-floor versions are hard-blocked, naming running + required", () => {
     const range = { minimum: PINNED_PI, recommended: PINNED_PI, maximum: null };
-    // test-plan #E1 boundaries: 0.99.2 / 1.0.4 (just below) blocked; 1.1.0 / 1.1.1 not.
+    // test-plan #E1 boundaries: 0.99.2 / 1.0.4 (just below) blocked; 1.3.0 / 1.3.1 not.
     for (const v of ["0.86.1", BELOW_FLOOR_PI, "0.99.9", "1.0.4"]) {
       const out = computeCompatibility(range, v);
       expect(out.error, `${v} must be blocked`).toBeTruthy();
       expect(out.error).toContain(v);
       expect(out.error).toContain(PINNED_PI);
     }
-    // `1.1.1` is ABOVE the pinned floor (maximum is null), so it must be allowed.
-    for (const v of [PINNED_PI, "1.1.1"]) {
+    // `1.3.1` is ABOVE the pinned floor (maximum is null), so it must be allowed.
+    for (const v of [PINNED_PI, "1.3.1"]) {
       const out = computeCompatibility(range, v);
       expect(out.error, `${v} must not be blocked`).toBeUndefined();
       expect(out.upgradeRecommended).toBeFalsy();
@@ -277,7 +277,7 @@ describe("pi pin block \u2014 1.1.0", () => {
     expect(synthetic.upgradeRecommended).toBe(true);
   });
 
-  it("E2: publishable peer ranges follow the 1.1.0 floor (optional, no upper bound)", () => {
+  it("E2: publishable peer ranges follow the 1.3.0 floor (optional, no upper bound)", () => {
     const pkgRoot = path.join(REPO_ROOT, "packages");
     const peers: Array<{ name: string; range: string }> = [];
     for (const dir of fs.readdirSync(pkgRoot)) {

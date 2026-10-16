@@ -37,7 +37,7 @@ import { registerRoleModelTools } from "../role-model-tools.js";
 import { autoStartServer } from "../server-auto-start.js";
 import { launchServer } from "../server-launcher.js";
 import { loadServerPins, notePinEndpoint, serverPinsPath } from "../server-pin-store.js";
-import { handleSessionChange as _handleSessionChange, consumeSpawnToken, filterByEnabledModels, isLive } from "../session-sync.js";
+import { handleSessionChange as _handleSessionChange, consumeSpawnToken, annotateEnabledScope, isLive } from "../session-sync.js";
 import { detectSessionSource } from "../source-detector.js";
 import { consumePendingReloadOnSessionStart, releaseBridgeOwnerOnShutdown, reloadCompletedFeedback } from "../terminal-reload.js";
 import { refreshUiModules, subscribeUiInvalidate } from "../ui-modules.js";
@@ -48,6 +48,7 @@ import { buildVisibilityRegisterFields } from "../visibility-intent.js";
 import { formatHostPort } from "@blackbelt-technology/pi-dashboard-shared/host-port.js";
 import type { BridgeInstance } from "./instance.js";
 import { patchUiForPromptBus } from "./ui-prompt-patch.js";
+import { isRpcLaunch, wrapSubagentWidgetForward } from "./subagent-widget-forward.js";
 
 const HEARTBEAT_INTERVAL = 15_000;
 const GIT_POLL_INTERVAL = 30_000;
@@ -368,6 +369,14 @@ export function registerSessionStart(inst: BridgeInstance): void {
 
     patchUiForPromptBus(inst, ctx, inst.promptBus);
 
+    // Forward pi-subagents' live widget lines to the server (RPC sessions only).
+    // RPC is read from the launch argv: pi reports hasUI=true in RPC mode.
+    // See change: rewrite-subagent-inspector-for-pi-subagents.
+    wrapSubagentWidgetForward(ctx.ui, {
+      isRpc: () => isRpcLaunch(process.argv),
+      emit: (channel, payload) => pi.events?.emit(channel, payload),
+    });
+
     // Flip ctx.hasUI=true now that ctx.ui.* has been patched to route
     // through PromptBus → dashboard. `cachedHasUI` (captured earlier at
     // line ~1287) retains the pi-supplied original value, so
@@ -654,7 +663,7 @@ export function registerSessionStart(inst: BridgeInstance): void {
     inst.cachedModelRegistry = (ctx as any).modelRegistry;
     if (inst.cachedModelRegistry) {
       try {
-        const models = filterByEnabledModels(inst.cachedModelRegistry.getAvailable().map(toModelInfo));
+        const models = annotateEnabledScope(inst.cachedModelRegistry.getAvailable().map(toModelInfo));
         inst.connection.send({ type: "models_list", sessionId: inst.sessionId, models });
         // See change: replace-hardcoded-provider-lists.
         inst.connection.send({ type: "providers_list", sessionId: inst.sessionId, providers: buildProviderCatalogue() });

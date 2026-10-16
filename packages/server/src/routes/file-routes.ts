@@ -222,10 +222,8 @@ async function performAtomicMdWrite(
 const nativeRequire = createRequire(import.meta.url);
 let asciidoctorInstance: any | null = null;
 function getAsciidoctor(): any {
-  if (!asciidoctorInstance) {
-    const factory = nativeRequire("asciidoctor");
-    asciidoctorInstance = factory();
-  }
+  // asciidoctor 4 exports the API object itself (no factory); `convert` returns a Promise.
+  if (!asciidoctorInstance) asciidoctorInstance = nativeRequire("asciidoctor");
   return asciidoctorInstance;
 }
 
@@ -522,8 +520,8 @@ export function registerFileRoutes(
         }
         // Classify by extension + a bounded sniff (first 1024 bytes) so binary
         // files are not slurped whole just to discriminate. Content is returned
-        // for text-renderable kinds (monaco / markdown viewers) AND any
-        // `editable` kind (`.csv`, `.adoc`, so Monaco Edit can load the raw
+        // for text-renderable kinds (monaco / markdown viewers, `.html` Source
+        // view) AND any `editable` kind (`.csv`, `.adoc`, so Monaco Edit can load the raw
         // text); image / pdf / binary / office tabs fetch their own bytes.
         // Binary spreadsheets (`.xlsx`/`.xls`) stay `editable:false` → no
         // `content` (no binary-bytes-in-JSON leak).
@@ -546,6 +544,7 @@ export function registerFileRoutes(
           if (
             kindResult.viewer === "monaco" ||
             kindResult.viewer === "markdown" ||
+            kindResult.viewer === "html" ||
             kindResult.editable === true
           ) {
             content = await fh.readFile("utf-8");
@@ -1217,7 +1216,7 @@ export function registerFileRoutes(
       try {
         const adoc = getAsciidoctor();
         // `showtitle`: embedded output otherwise drops the `= Title` doctitle.
-        const html = adoc.convert(source, { safe: "secure", standalone: false, attributes: { showtitle: "" } });
+        const html = await adoc.convert(source, { safe: "secure", standalone: false, attributes: { showtitle: "" } });
         return { success: true, data: { html: await sanitizeAdocHtml(String(html)) } } satisfies ApiResponse;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "render failed";

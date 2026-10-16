@@ -15,8 +15,7 @@ import Editor, { type Monaco } from "@monaco-editor/react";
 import { useEffect, useRef } from "react";
 import { buildMonacoTheme } from "../../lib/theme/monaco-theme.js";
 import { useThemeContext } from "../settings/ThemeProvider.js";
-// Side-effect import: worker wiring + loader.config (shared with MonacoBuffer).
-import "./monaco-setup.js";
+import { ensureMonacoLoader } from "./monaco-setup.js";
 
 interface Props {
   value: string;
@@ -25,6 +24,7 @@ interface Props {
 }
 
 export function MarkdownEditor({ value, onChange, readOnly = false }: Props) {
+  ensureMonacoLoader();
   const { resolved, themeName } = useThemeContext();
   const monacoRef = useRef<Monaco | null>(null);
 
@@ -60,6 +60,7 @@ export function MarkdownEditor({ value, onChange, readOnly = false }: Props) {
         readOnly,
         domReadOnly: readOnly,
         minimap: { enabled: false },
+        scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
         wordWrap: "on",
         scrollBeyondLastLine: false,
         fontSize: 13,

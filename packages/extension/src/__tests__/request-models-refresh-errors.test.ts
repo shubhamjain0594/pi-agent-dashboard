@@ -24,11 +24,11 @@ const LAST_KNOWN = [
 /** Stable projection so "degraded != broken" is asserted against the WHOLE
  *  last-known catalogue, not merely a non-empty list.
  *
- *  `request_models` pipes the catalogue through `filterByEnabledModels`, which
- *  reads `<HOME>/.pi/agent/settings.json`. Asserting the full catalogue is only
- *  valid because the repo pins `HOME` to an ephemeral tmp dir for the whole test
- *  run (`packages/shared/src/test-support/setup-home.ts` + the `npm test` HOME
- *  override), so no host `enabledModels` pattern can filter `LAST_KNOWN`. */
+ *  `request_models` annotates the catalogue with Pi's `enabledModels` scope,
+ *  read from `<HOME>/.pi/agent/settings.json`. Asserting the unmarked full
+ *  catalogue is only valid because the repo pins `HOME` to an ephemeral tmp dir
+ *  for the whole test run (`packages/shared/src/test-support/setup-home.ts` +
+ *  the `npm test` HOME override), so no host scope can mark `LAST_KNOWN`. */
 const catalogueOf = (models: Array<Record<string, unknown>>) =>
   models.map((m) => ({ provider: m.provider, id: m.id, name: m.name }));
 

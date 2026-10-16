@@ -19,6 +19,15 @@ function wrapper(sessionId = "s1", cwd = "/proj") {
 describe("SplitWorkspaceProvider / openInSplit", () => {
   beforeEach(() => localStorage.clear());
 
+  it("opens Changes as its own full review workspace without forcing the editor explorer open", () => {
+    localStorage.setItem("pi-dashboard:tree-visible:review-full", "false");
+    const { result } = renderHook(() => useSplitWorkspace(), { wrapper: wrapper("review-full") });
+    act(() => result.current.openChanges());
+    expect(result.current.workPanel).toBe("changes");
+    expect(result.current.split.mode).toBe("full");
+    expect(localStorage.getItem("pi-dashboard:tree-visible:review-full")).toBe("false");
+  });
+
   it("reveals tasks and changes without losing open file tabs", () => {
     const { result } = renderHook(() => useSplitWorkspace(), { wrapper: wrapper("review") });
     act(() => result.current.openInSplit("src/file.ts"));

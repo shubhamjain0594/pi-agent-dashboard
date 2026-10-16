@@ -22,7 +22,7 @@ import { errText, reportRefresh } from "./model-refresh.js";
 import { killProcessByPgid } from "./process-scanner.js";
 import { expandPromptTemplateFromDisk, loadPromptTemplate, readTemplate } from "./prompt-expander.js";
 import { buildProviderCatalogue, toModelInfo } from "./provider-register.js";
-import { filterByEnabledModels } from "./session-sync.js";
+import { annotateEnabledScope, readEnabledModelPatterns, syncLiveScopedModels } from "./session-sync.js";
 import { tryDispatchExtensionCommand } from "./slash-dispatch.js";
 
 const IGNORE_DIRS = new Set([".git", "node_modules", ".next", "dist", "build", ".cache", "__pycache__", ".venv"]);
@@ -442,6 +442,8 @@ export function createCommandHandler(
   sessionIdOrGetter: string | (() => string),
   options?: {
     getModelRegistry?: () => any;
+    /** Pi's live `ctx.scopedModels` array. `request_models` aligns it with the settings file. */
+    getScopedModels?: () => unknown;
     /** Re-sync dashboard-registered providers from providers.json (bridge wires
      *  `reloadProviders(pi)`). Awaited by `request_models` before the registry
      *  refresh. See change: refresh-models-on-provider-change (D1). */
@@ -1127,7 +1129,9 @@ export function createCommandHandler(
               // Local only: selector open must never fetch remote catalogues on the
               // serialized pump. See change: refresh-models-on-provider-change (D3).
               const refreshResult = await reportRefresh(registry.refresh({ allowNetwork: false }));
-              const models = filterByEnabledModels(registry.getAvailable().map(toModelInfo));
+              const available = registry.getAvailable();
+              syncLiveScopedModels(options?.getScopedModels?.(), available, readEnabledModelPatterns());
+              const models = annotateEnabledScope(available.map(toModelInfo));
               // Per-provider failures travel to the browser so the dropdown can
               // say WHY a model is missing. Omitted (never `[]`) on success so
               // the happy-path message is byte-identical to before.

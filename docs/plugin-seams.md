@@ -6,7 +6,6 @@ store, OAuth flow start, private bridge→server request/reply lane, editor-pane
 exposed on `ServerPluginContext` from
 `@blackbelt-technology/dashboard-plugin-runtime/server`. Worked example:
 `packages/demo-plugin` (fixture).
-First production consumer: `packages/gmail-plugin` → see [`gmail-plugin.md`](gmail-plugin.md).
 
 See change: `expose-plugin-credential-and-oauth-seams`.
 
@@ -309,13 +308,13 @@ Compatibility:
 
 First-party adoption (lazy):
 
-- settings-section: apple-tools, automation, blackhole, browser, chat-gateway, context-mode-settings, cost-estimator (+ CostView command-route), flows (FlowsSettings), flows-anthropic-bridge, goal, grammar, quota, roles, subagents, system-one.
+- settings-section: apple-tools, automation, blackhole, browser, context-mode-settings, cost-estimator (+ CostView command-route), flows (FlowsSettings), flows-anthropic-bridge, goal, grammar, quota, roles, subagents, system-one.
 - shell-overlay-route: AutomationBoard, AutomationRunMonitor, GoalsBoardClaim, GoalDetailClaim, KbSettingsClaim, FolderMcpPage, SubagentPopoutClaim.
 - mcp-client: McpSettingsClaim (settings).
 - blackhole: PipelineDetailView (content-view).
 - browser: BrowserPaneTab (editor-pane-tab).
 - flows: FlowDashboardClaim (content-header-sticky; pulls FlowGraph dagre/d3/lodash), FlowYamlPreviewClaim, FlowInputWiringClaim, FlowWriteToolRenderer.
-- Already lazy before this change (unchanged): gmail, hermes-memory, skill-atlas heavy parts.
+- Already lazy before this change (unchanged): hermes-memory, skill-atlas heavy parts.
 
 Known follow-up (not in this change): `yaml` (~98 KB raw) still in entry via client `FrontmatterProperties` + flows `flow-idle-state.ts`.
 
@@ -326,7 +325,7 @@ Known follow-up (not in this change): `yaml` (~98 KB raw) still in entry via cli
 - Wire `pluginId` claimed by the requesting code. Not verified against the socket.
 - Any code in any of the user's pi sessions can call any plugin's handler.
 - Handlers MUST treat every request as coming from "some session of this user"
-  and authorize on the payload. Gmail lease authorizes by account level, e.g.
+  and authorize on the payload.
 - Passive or other extensions can neither observe nor forge replies: a reply
   resolves a Promise held only by the caller.
 - Malicious in-process pi extension OUT OF SCOPE. It shares the process and the

@@ -23,6 +23,7 @@ const fakeMonaco = {
       typescriptDefaults: { setDiagnosticsOptions: vi.fn() },
       javascriptDefaults: { setDiagnosticsOptions: vi.fn() },
     },
+    setMonarchTokensProvider: vi.fn(),
   },
   editor: { defineTheme, setTheme },
 };
@@ -41,7 +42,7 @@ vi.mock("@monaco-editor/react", () => ({
     React.useEffect(() => {
       beforeMount?.(fakeMonaco);
       onMount?.(
-        { revealLineInCenter: vi.fn(), setPosition: vi.fn() },
+        { revealLineInCenter: vi.fn(), setPosition: vi.fn(), getAction: vi.fn(() => null), getModel: () => null },
         fakeMonaco,
       );
     }, []);
@@ -50,7 +51,7 @@ vi.mock("@monaco-editor/react", () => ({
 }));
 
 // Side-effect worker wiring — stub out in jsdom.
-vi.mock("../monaco-setup.js", () => ({}));
+vi.mock("../monaco-setup.js", () => ({ ensureMonacoLoader: () => {} }));
 // Deterministic theme build.
 vi.mock("../../../lib/theme/monaco-theme.js", () => ({
   buildMonacoTheme: (themeName: string, resolved: string) => ({

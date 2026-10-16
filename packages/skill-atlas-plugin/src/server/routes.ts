@@ -8,14 +8,14 @@
  * See change: add-skill-atlas-screen (design D8).
  */
 import rateLimit from "@fastify/rate-limit";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import type { SkillAtlasScope } from "../shared/types.js";
 import { AtlasRequestError, type AtlasService } from "./atlas-service.js";
 
 export const GRAPH_ROUTE = "/api/plugins/skill-atlas/graph";
 
 export async function mountAtlasRoutes(fastify: FastifyInstance, service: AtlasService | null): Promise<void> {
-  await fastify.register(async (scope) => {
+  const scoped: FastifyPluginAsync = async (scope) => {
     await scope.register(rateLimit, {
       global: true,
       max: 600,
@@ -38,5 +38,6 @@ export async function mountAtlasRoutes(fastify: FastifyInstance, service: AtlasS
         throw err;
       }
     });
-  });
+  };
+  await fastify.register(scoped);
 }

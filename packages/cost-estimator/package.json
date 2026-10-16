@@ -76,7 +76,8 @@
           "tab": "general"
         }
       }
-    ]
+    ],
+    "defaultEnabled": false
   },
   "files": [
     "src/",
@@ -101,7 +102,7 @@
     "@blackbelt-technology/pi-dashboard-shared": "^0.9.0"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "react": "^19.0.0"
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1"
   }
 }

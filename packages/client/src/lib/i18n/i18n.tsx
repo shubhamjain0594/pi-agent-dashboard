@@ -2,20 +2,18 @@ import type React from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { logRejection } from "../report-error.js";
 
-export type Language = "en" | "zh-CN" | "hu";
+export type Language = "en" | "hu";
 
 const STORAGE_KEY = "pi-dashboard-language";
 
 export const LANGUAGE_OPTIONS: Array<{ value: Language; label: string }> = [
   { value: "en", label: "English" },
-  { value: "zh-CN", label: "简体中文" },
   { value: "hu", label: "Magyar" },
 ];
 
 export const normalizeLanguage = (value: string | null | undefined): Language | null => {
   if (!value) return null;
   const v = value.toLowerCase();
-  if (v === "zh" || v === "zh-cn" || v.startsWith("zh-hans")) return "zh-CN";
   if (v === "hu" || v === "hu-hu" || v.startsWith("hu-")) return "hu";
   if (v === "en" || v.startsWith("en-")) return "en";
   return null;
@@ -46,14 +44,12 @@ const en: Record<string, string> = {};
  */
 const dictionaries: Record<Language, Record<string, string>> = {
   en,
-  "zh-CN": {},
   hu: {},
 };
 
 const catalogLoads = new Map<Language, Promise<void>>();
 
 function importCatalog(lang: Language): Promise<Record<string, string>> {
-  if (lang === "zh-CN") return import("./i18n-zh-CN.js").then((m) => m.zhCNCatalog);
   return import("./i18n-hu.js").then((m) => m.huCatalog);
 }
 
@@ -66,7 +62,7 @@ function importCatalog(lang: Language): Promise<Record<string, string>> {
 export function loadCatalog(lang: Language): Promise<void> {
   if (lang === "en") return Promise.resolve();
   const memo = catalogLoads.get(lang);
-  if (memo) return memo;
+  if (memo !== undefined) return memo;
   const load = importCatalog(lang).then(
     (catalog) => {
       Object.assign(dictionaries[lang], catalog);
@@ -113,35 +109,35 @@ export function registerPluginCatalog(
 
 // <reserved-label-translations:begin> generated — `node scripts/i18n-parity.mjs --fix`
 // Built-in settings-nav labels (the `BUILT_IN_SETTINGS_LABELS` keys in
-// lib/settings-promotions.ts) in every non-English shipped locale, [zh-CN, hu].
+// lib/settings-promotions.ts) in every non-English shipped locale, [hu].
 // Static so the reserved-label collision rule never depends on which catalog
 // happens to be loaded. Drift against the catalogs fails `npm run i18n:parity`.
 export const RESERVED_LABEL_TRANSLATIONS: Readonly<Record<string, readonly string[]>> = {
-  "settings.groupModels": ["模型", "Modellek"],
-  "settings.groupDashboard": ["仪表板", "Irányítópult"],
-  "settings.groupNetwork": ["网络", "Hálózat"],
-  "settings.groupAddons": ["附加组件", "Kiegészítők"],
-  "settings.groupResources": ["资源", "Erőforrások"],
-  "settings.groupAdvanced": ["高级", "Speciális"],
-  "settings.general": ["常规", "Általános"],
-  "common.server": ["服务器", "Szerver"],
-  "settings.sessions": ["会话", "Munkamenetek"],
-  "settings.remoteServers": ["远程服务器", "Távoli szerverek"],
-  "settings.gateway": ["网关", "Gateway"],
-  "settings.security": ["安全", "Biztonság"],
-  "settings.access": ["访问控制", "Hozzáférés"],
-  "settings.providers": ["提供商", "Szolgáltatók"],
-  "settings.vault": ["密钥库", "Széf"],
-  "settings.addons": ["附加组件", "Kiegészítők"],
-  "settings.plugins": ["插件", "Bővítmények"],
-  "settings.openspec": ["OpenSpec", "OpenSpec"],
-  "common.skills": ["技能", "Skillek"],
-  "common.agents": ["代理", "Ügynökök"],
-  "packages.extensions": ["扩展", "Bővítmények"],
-  "session.prompts": ["提示词", "Kérések"],
-  "common.themes": ["主题", "Témák"],
-  "settings.developer": ["开发者", "Fejlesztő"],
-  "common.instructions": ["说明", "Utasítások"],
+  "settings.groupModels": ["Modellek"],
+  "settings.groupDashboard": ["Irányítópult"],
+  "settings.groupNetwork": ["Hálózat"],
+  "settings.groupAddons": ["Kiegészítők"],
+  "settings.groupResources": ["Erőforrások"],
+  "settings.groupAdvanced": ["Speciális"],
+  "settings.general": ["Általános"],
+  "common.server": ["Szerver"],
+  "settings.sessions": ["Munkamenetek"],
+  "settings.remoteServers": ["Távoli szerverek"],
+  "settings.gateway": ["Gateway"],
+  "settings.security": ["Biztonság"],
+  "settings.access": ["Hozzáférés"],
+  "settings.providers": ["Szolgáltatók"],
+  "settings.vault": ["Széf"],
+  "settings.addons": ["Kiegészítők"],
+  "settings.plugins": ["Bővítmények"],
+  "settings.openspec": ["OpenSpec"],
+  "common.skills": ["Skillek"],
+  "common.agents": ["Ügynökök"],
+  "packages.extensions": ["Bővítmények"],
+  "session.prompts": ["Kérések"],
+  "common.themes": ["Témák"],
+  "settings.developer": ["Fejlesztő"],
+  "common.instructions": ["Utasítások"],
 };
 // <reserved-label-translations:end>
 

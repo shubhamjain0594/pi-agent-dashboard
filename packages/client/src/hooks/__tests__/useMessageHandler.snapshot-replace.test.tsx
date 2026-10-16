@@ -68,6 +68,7 @@ function setup(initialSessions?: DashboardSession[], initialOrders?: Record<stri
   const deps: any = {
     send: vi.fn(),
     navigate: vi.fn(),
+    setSpawnLoadingSince: () => {},
     clearSpawningCwd: vi.fn(),
     spawningCwdsRef: { current: new Set() },
     subscribedRef: { current: new Set() },
@@ -228,6 +229,7 @@ function useHarness(init: HarnessInit) {
   const deps: any = {
     send: vi.fn(),
     navigate: vi.fn(),
+    setSpawnLoadingSince: () => {},
     clearSpawningCwd: vi.fn(),
     spawningCwdsRef: { current: new Set<string>() },
     subscribedRef: { current: new Set<string>() },

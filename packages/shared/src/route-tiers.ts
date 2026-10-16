@@ -129,6 +129,10 @@ export const ROUTE_TIERS: readonly RouteTierEntry[] = [
   { method: "GET", path: "/api/git/worktrees", tier: "observe" },
   { method: "GET", path: "/api/grammar/health", tier: "observe" },
   { method: "GET", path: "/api/grep", tier: "observe" },
+  // Language-server status (installed + trusted) and workspace trust. Trusting a
+  // workspace lets its language server execute workspace code → operate.
+  { method: "GET", path: "/api/lsp/status", tier: "observe" },
+  { method: "PUT", path: "/api/lsp/trust", tier: "operate" },
   { method: "GET", path: "/api/health", tier: "observe" },
   { method: "GET", path: "/api/host-gate", tier: "operate" },
   { method: "GET", path: "/api/identity/login-config", tier: "observe" },

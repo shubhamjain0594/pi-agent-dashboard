@@ -1,8 +1,7 @@
 /**
  * Lazy math engine: `katex` + `rehype-katex` + the KaTeX stylesheet, fetched on
  * demand the first time rendered content contains math. All three are imported
- * together so they land in the single `katex` manual chunk and the stylesheet
- * leaves the entry CSS. `remark-math` (6 KB) stays static in `MarkdownContent`
+ * together so the stylesheet leaves the entry CSS. `remark-math` (6 KB) stays static in `MarkdownContent`
  * to detect math nodes, so parsing is identical before and after load.
  *
  * One memoized promise per page, shared by `MarkdownContent` and

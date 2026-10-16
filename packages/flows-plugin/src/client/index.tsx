@@ -25,11 +25,13 @@ export { FlowAgentsToolRenderer } from "./FlowAgentsToolRenderer.js";
 // session-card-badge claim was dropped because the badge belongs in the
 // FLOWS subcard, not WORKSPACE. SessionFlowActions now renders the badge
 // directly via the FlowActivityBadge component.
-export { computeLayout, FlowGraph, flowStateToGraphSteps } from "./FlowGraph.js";
+// FlowGraph / FlowSummary are not barrel exports: the barrel is statically
+// imported by the dashboard's plugin registry, so re-exporting them would put
+// dagre on the cold landing. They load only through the lazy FlowDashboard claim.
+// See change: lazy-plugin-claim-modules.
 // Input-wiring editor claimed into automation-plugin's `automation-action-editor`
 // slot for `flows.run`. See change: wire-flow-inputs-in-automation.
 export { FlowLaunchDialog } from "./FlowLaunchDialog.js";
-export { FlowSummary, FlowSummaryClaim } from "./FlowSummary.js";
 export type { FlowsPluginConfig } from "./FlowsSettings.js";
 
 // Settings section (global edit-mode default) — manifest `settings-section` claim.

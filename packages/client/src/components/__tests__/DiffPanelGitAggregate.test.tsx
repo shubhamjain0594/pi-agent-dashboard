@@ -53,8 +53,8 @@ vi.mock("@git-diff-view/lowlight", () => ({ highlighter: {} }));
 
 // RichDiff renders the change-derived (Path A/C) diff; probe newText.
 vi.mock("../diff/RichDiff.js", () => ({
-  RichDiff: (props: { newText?: string }) => (
-    <div data-testid="rich-diff" data-newtext={props.newText ?? ""} />
+  RichDiff: (props: { oldText?: string; newText?: string }) => (
+    <div data-testid="rich-diff" data-oldtext={props.oldText ?? ""} data-newtext={props.newText ?? ""} />
   ),
   getLang: () => "typescript",
 }));
@@ -126,5 +126,41 @@ describe("DiffPanel Path C — prefer a change with renderable texts", () => {
     const rd = screen.getByTestId("rich-diff");
     expect(rd.getAttribute("data-newtext")).toBe("const a = 2;");
     expect(screen.queryByText("No diff data available")).toBeNull();
+  });
+});
+
+describe("DiffPanel Path C — write followed by edits shows the cumulative file", () => {
+  // A session-created file (no git baseline): the Diff must cover the whole
+  // file as the session built it, matching the File view, not only the last edit.
+  it("renders the write with every later edit applied, as all additions", () => {
+    const f = {
+      path: "mockups/index.html",
+      changes: [
+        { type: "write", timestamp: 1, content: "<title>A</title>\n" },
+        {
+          type: "edit",
+          timestamp: 2,
+          edits: [{ oldText: "<title>A</title>", newText: '<meta name="theme-color" content="#141414"><title>A</title>' }],
+        },
+      ],
+    } as unknown as FileDiffEntry;
+    render1(f);
+    const rd = screen.getByTestId("rich-diff");
+    expect(rd.getAttribute("data-oldtext")).toBe("");
+    expect(rd.getAttribute("data-newtext")).toBe('<meta name="theme-color" content="#141414"><title>A</title>\n');
+  });
+
+  it("falls back to the latest change when a later edit no longer applies", () => {
+    const f = {
+      path: "mockups/index.html",
+      changes: [
+        { type: "write", timestamp: 1, content: "<p>other</p>\n" },
+        { type: "edit", timestamp: 2, edits: [{ oldText: "<title>A</title>", newText: "<title>B</title>" }] },
+      ],
+    } as unknown as FileDiffEntry;
+    render1(f);
+    const rd = screen.getByTestId("rich-diff");
+    expect(rd.getAttribute("data-oldtext")).toBe("<title>A</title>");
+    expect(rd.getAttribute("data-newtext")).toBe("<title>B</title>");
   });
 });
