@@ -374,12 +374,18 @@ function InteractiveUiCard({ request, onRespondToUi }: {
   );
   // A pending ask is the scroll/focus target of the question stack's
   // "Go to session" (`data-pending-ask`). See change: add-pending-question-stack.
+  // `ask-card` is the reading-type scope for confirm/select/input cards.
+  if (request.method === "notify") {
+    return request.status === "pending" ? (
+      <div data-pending-ask="" tabIndex={-1} className="focus-ring rounded-lg">{card}</div>
+    ) : card;
+  }
   return request.status === "pending" ? (
-    <div data-pending-ask="" tabIndex={-1} className="focus-ring rounded-lg">
+    <div data-pending-ask="" tabIndex={-1} className="ask-card focus-ring rounded-lg">
       {card}
     </div>
   ) : (
-    card
+    <div className="ask-card">{card}</div>
   );
 }
 

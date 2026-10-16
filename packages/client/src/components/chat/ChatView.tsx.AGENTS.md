@@ -10,6 +10,8 @@ Mounts `<ChatViewMenu sessionId={...}>` in toolbar.
 
 Reads `prefs = useDisplayPrefs(sessionId)`; gates `<ThinkingBlock>` on `prefs.thinking`, `<ToolCallStep>` on `prefs.toolCalls[toolCallPrefKey(name)]` (ask_user always shown), turn separators on `prefs.turnSeparators`.
 
+`InteractiveUiCard` wraps ask methods (not `notify`) in `.ask-card`, pending and resolved. Pending keeps `[data-pending-ask]`. Typography for that class lives in `styles/conversation.css`.
+
 Passes `showResultBody={prefs.toolResultBodies}` to `<ToolCallStep>`.
 
 See change: configurable-chat-display.

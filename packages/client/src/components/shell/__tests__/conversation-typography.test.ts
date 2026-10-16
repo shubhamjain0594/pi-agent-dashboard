@@ -31,6 +31,17 @@ describe("conversation typography and rhythm", () => {
     }
   });
 
+  it("sets reading text apart from chrome tracking and uses the compact mono in the column", () => {
+    expect(css).toContain("font-weight: 450");
+    expect(css).toContain("letter-spacing: 0");
+    expect(css).toContain('font-family: "Iosevka Term"');
+    expect(css).toContain("font-size: 0.92em");
+    expect(css).toContain("font-size: 13px; line-height: 1.55");
+    expect(css).toContain(".conversation-transcript .ask-card");
+    expect(css).toContain(".ask-card .text-xs");
+    expect(css).toContain(".ask-card .markdown-content");
+  });
+
   it("keeps small user cards and restrained heading sizes", () => {
     expect(css).toContain("--conversation-user-padding: 8px 12px");
     expect(css).toContain("padding: var(--conversation-user-padding)");

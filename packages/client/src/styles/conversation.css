@@ -44,7 +44,9 @@
 .desktop-workbench .conversation-transcript .markdown-content {
   font-family: var(--workbench-font-sans);
   font-size: var(--conversation-font-size);
+  font-weight: 450;
   line-height: var(--conversation-line-height);
+  letter-spacing: 0;
   color: var(--text-primary);
   overflow-wrap: anywhere;
 }
@@ -57,8 +59,41 @@
 .desktop-workbench .conversation-transcript .markdown-content ol { margin: 6px 0 12px; padding-left: 20px; }
 .desktop-workbench .conversation-transcript .markdown-content li { margin: 2px 0; line-height: var(--conversation-line-height); }
 .desktop-workbench .conversation-transcript .markdown-content strong { font-weight: 600; }
-.desktop-workbench .conversation-transcript .markdown-content pre { max-width: 100%; font-size: 12px; line-height: 1.6; border-radius: 6px; }
-.desktop-workbench .conversation-transcript .markdown-content :not(pre) > code { font-size: 0.86em; padding: 2px 4px; border-radius: 4px; background: var(--bg-surface); }
+/* Transcript code uses Iosevka Term so identifiers stay inside the 720px column. */
+.desktop-workbench .conversation-transcript :is(code, pre, kbd, .font-mono) {
+  font-family: "Iosevka Term", ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  letter-spacing: 0;
+  font-variant-ligatures: none;
+}
+.desktop-workbench .conversation-transcript .markdown-content pre { max-width: 100%; font-size: 13px; line-height: 1.55; border-radius: 6px; }
+.desktop-workbench .conversation-transcript .markdown-content :not(pre) > code {
+  font-size: 0.92em;
+  font-weight: 400;
+  line-height: 1.35;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  vertical-align: baseline;
+}
+/* Ask cards share the transcript's reading type. Their markup is text-xs,
+   which otherwise leaves the question a step smaller than the answer. */
+.desktop-workbench .conversation-transcript .ask-card {
+  letter-spacing: 0;
+  font-weight: 450;
+}
+.desktop-workbench .conversation-transcript .ask-card .text-xs {
+  font-size: var(--conversation-font-size);
+  line-height: var(--conversation-line-height);
+}
+.desktop-workbench .conversation-transcript .ask-card .markdown-content {
+  color: var(--text-secondary);
+}
+.desktop-workbench .conversation-transcript .ask-card :not(.markdown-content) :not(pre) > code {
+  font-size: 0.92em;
+  font-weight: 400;
+  line-height: 1.35;
+  padding: 1px 4px;
+}
 .desktop-workbench .conversation-message-actions {
   min-height: 24px;
   margin-top: 4px;
@@ -135,7 +170,12 @@
 .desktop-workbench .conversation-session [data-testid="composer-root"] { border-top: 0; background: var(--bg-secondary); padding: 6px max(var(--conversation-gutter), calc((100% - var(--conversation-width)) / 2)) 12px; }
 .desktop-workbench .conversation-session [data-testid="composer-card"] { border-color: var(--border-secondary); border-radius: 10px; background: var(--bg-tertiary); padding: 8px 10px 6px; box-shadow: none; }
 .desktop-workbench .conversation-session [data-testid="composer-card"]:focus-within { border-color: var(--text-tertiary); }
-.desktop-workbench .conversation-session [data-testid="composer-card"] textarea { font-size: 13px; line-height: 1.6; }
+.desktop-workbench .conversation-session [data-testid="composer-card"] textarea {
+  font-size: var(--conversation-font-size);
+  font-weight: 450;
+  line-height: var(--conversation-line-height);
+  letter-spacing: 0;
+}
 .desktop-workbench .conversation-session [data-testid="composer-card"] textarea::placeholder { color: var(--text-tertiary); }
 .desktop-workbench .conversation-session [data-testid="composer-input-row"] + div[aria-hidden="true"] { display: none; }
 .desktop-workbench .conversation-session [data-testid="composer-settings-row"] { gap: 6px; margin-top: 4px; }

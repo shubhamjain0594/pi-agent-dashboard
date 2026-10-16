@@ -46,11 +46,13 @@ describe("ChatView pending-ask marker", () => {
     const el = container.querySelector("[data-pending-ask]");
     expect(el).toBeTruthy();
     expect(el?.getAttribute("tabindex")).toBe("-1");
+    expect(el?.className).toContain("ask-card");
     expect(el?.textContent).toContain("Ship it?");
   });
 
   it("does not mark a resolved ask", () => {
     const { container } = renderChat(ui("resolved"));
     expect(container.querySelector("[data-pending-ask]")).toBeNull();
+    expect(container.querySelector(".ask-card")?.textContent).toContain("Ship it?");
   });
 });

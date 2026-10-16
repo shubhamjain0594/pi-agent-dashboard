@@ -34,7 +34,7 @@ export function MultiAskPanel({ requests, onRespondToUi }: {
         {requests.map((request) => {
           const Renderer = getInteractiveRenderer(request.method);
           return (
-            <div key={request.requestId} data-testid={`multi-ask-card-${request.requestId}`}>
+            <div key={request.requestId} data-testid={`multi-ask-card-${request.requestId}`} className="ask-card">
               <Renderer
                 requestId={request.requestId}
                 method={request.method}
