@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Dev build-on-reload helper.
  * Builds the Vite client and requests server shutdown.
@@ -22,17 +23,17 @@ export function runDevBuild(opts: DevBuildOptions): void {
   const fetchFn = opts._fetch ?? fetch;
 
   try {
-    console.log("🔨 Dashboard: building client...");
+    piDashboardConsole.log("🔨 Dashboard: building client...");
     execSyncFn("npm run build", { cwd: opts.packageRoot, stdio: "inherit" });
-    console.log("✅ Dashboard: client built");
+    piDashboardConsole.log("✅ Dashboard: client built");
   } catch (err: any) {
-    console.log(`❌ Dashboard: build failed — ${err.message}`);
+    piDashboardConsole.log(`❌ Dashboard: build failed — ${err.message}`);
   }
 
   try {
-    console.log("🛑 Dashboard: stopping server...");
+    piDashboardConsole.log("🛑 Dashboard: stopping server...");
     fetchFn(`http://localhost:${opts.serverPort}/api/shutdown`, { method: "POST" }).catch(() => {});
-    console.log("✅ Dashboard: server stopped");
+    piDashboardConsole.log("✅ Dashboard: server stopped");
   } catch {
     // Server may not be running — that's fine
   }

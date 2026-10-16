@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Model and thinking-level change detection.
  * Sends model_update only when values actually change.
@@ -236,7 +237,7 @@ export function sendPiVersionIfChanged(
   try {
     version = readVersion();
   } catch (e) {
-    console.warn("[dashboard] pi version read failed:", e);
+    piDashboardConsole.warn("[dashboard] pi version read failed:", e);
     return false;
   }
   if (!version) return false;

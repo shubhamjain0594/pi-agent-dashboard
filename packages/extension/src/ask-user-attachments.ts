@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * ask-user attachment store.
  *
@@ -74,7 +75,7 @@ export function persistAttachment(opts: {
   const { sessionId, image } = opts;
   const ext = extensionForMime(image.mimeType);
   if (!ext) {
-    console.warn(`[ask-user-attachments] unsupported MIME dropped: ${image.mimeType}`);
+    piDashboardConsole.warn(`[ask-user-attachments] unsupported MIME dropped: ${image.mimeType}`);
     return null;
   }
 
@@ -82,12 +83,12 @@ export function persistAttachment(opts: {
   try {
     bytes = Buffer.from(image.data, "base64");
   } catch (err) {
-    console.warn(`[ask-user-attachments] base64 decode failed: ${String(err)}`);
+    piDashboardConsole.warn(`[ask-user-attachments] base64 decode failed: ${String(err)}`);
     return null;
   }
 
   if (bytes.length > MAX_PER_IMAGE_BYTES) {
-    console.warn(
+    piDashboardConsole.warn(
       `[ask-user-attachments] image over per-image cap dropped: ${bytes.length} > ${MAX_PER_IMAGE_BYTES}`,
     );
     return null;
@@ -103,7 +104,7 @@ export function persistAttachment(opts: {
       fs.writeFileSync(filePath, bytes);
     }
   } catch (err) {
-    console.error(`[ask-user-attachments] write failed for ${filePath}: ${String(err)}`);
+    piDashboardConsole.error(`[ask-user-attachments] write failed for ${filePath}: ${String(err)}`);
     return null;
   }
 
@@ -116,6 +117,6 @@ export function cleanupAttachmentsForSession(sessionId: string): void {
   try {
     fs.rmSync(dir, { recursive: true, force: true });
   } catch (err) {
-    console.warn(`[ask-user-attachments] cleanup failed for ${dir}: ${String(err)}`);
+    piDashboardConsole.warn(`[ask-user-attachments] cleanup failed for ${dir}: ${String(err)}`);
   }
 }

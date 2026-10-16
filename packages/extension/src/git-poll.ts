@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Pure poll-tick body, extracted from bridge.ts so the session-start timer and
  * the session-change timer share ONE implementation and can never drift.
@@ -58,7 +59,7 @@ export async function runGitPollTick(deps: GitPollDeps): Promise<void> {
     } catch (err) {
       if (!state.gitErrorLogged) {
         state.gitErrorLogged = true;
-        (deps.log ?? ((l: string) => console.error(l)))(`[dashboard] git poll tick failed: ${String(err)}`);
+        (deps.log ?? ((l: string) => piDashboardConsole.error(l)))(`[dashboard] git poll tick failed: ${String(err)}`);
       }
     }
     deps.sendCwdMissingIfChanged(cwd);

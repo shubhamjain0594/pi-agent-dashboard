@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Session sync: register, replay, and handle session changes.
  * Extracted from bridge.ts for clarity.
@@ -76,7 +77,7 @@ export function readEnabledModelPatterns(): string[] | null {
       if (typeof entry === "string") {
         patterns.push(stripThinkingLevel(entry));
       } else {
-        console.warn(
+        piDashboardConsole.warn(
           `[pi-dashboard] enabledModels[${i}]: expected string, got ${typeof entry}. Skipping.`,
         );
       }

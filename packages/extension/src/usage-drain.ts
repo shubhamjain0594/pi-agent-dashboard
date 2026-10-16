@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Bridge-side drain of non-message usage entries (design D2).
  *
@@ -129,7 +130,7 @@ export function drainUsageAndSend(
     if (!sm) return;
     drain.drain(sm, send);
   } catch (err) {
-    console.error("[dashboard] usage drain failed:", err);
+    piDashboardConsole.error("[dashboard] usage drain failed:", err);
   }
 }
 
@@ -143,7 +144,7 @@ export function makeCacheWarmingDecisionHandler(runDrain: (ctx: unknown) => void
     try {
       runDrain(ctx);
     } catch (err) {
-      console.error("[dashboard] cache_warming_decision drain failed:", err);
+      piDashboardConsole.error("[dashboard] cache_warming_decision drain failed:", err);
     }
     return undefined;
   };
@@ -161,7 +162,7 @@ export function sendShutdownUsageThenUnregister(
   try {
     runDrain();
   } catch (err) {
-    console.error("[dashboard] shutdown usage drain failed:", err);
+    piDashboardConsole.error("[dashboard] shutdown usage drain failed:", err);
   }
   sendUnregister();
 }

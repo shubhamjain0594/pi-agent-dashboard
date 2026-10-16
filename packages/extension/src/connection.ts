@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * WebSocket connection manager with exponential backoff reconnection
  * and message buffering during disconnection.
@@ -648,7 +649,7 @@ export class ConnectionManager {
       const now = Date.now();
       if (now - this.lastInboundWarnAt >= ConnectionManager.DROP_WARN_WINDOW_MS) {
         this.lastInboundWarnAt = now;
-        console.warn(
+        piDashboardConsole.warn(
           `[bridge] refused inbound message (queue full) hop=server→bridge refusedType=${typeof type === "string" ? type : "unknown"} (total refused=${this.droppedInboundCount}, maxInboundQueue=${this.maxInboundQueue})`,
         );
       }
@@ -672,11 +673,11 @@ export class ConnectionManager {
       const result = this.onMessage?.(parsed);
       if (result && typeof (result as Promise<void>).catch === "function") {
         (result as Promise<void>).catch((err: unknown) => {
-          console.error("[bridge] inbound handler failed:", err);
+          piDashboardConsole.error("[bridge] inbound handler failed:", err);
         });
       }
     } catch (err) {
-      console.error("[bridge] inbound handler failed:", err);
+      piDashboardConsole.error("[bridge] inbound handler failed:", err);
     }
   }
 
@@ -689,7 +690,7 @@ export class ConnectionManager {
         await this.onMessage?.(msg);
       } catch (err) {
         // Failure isolation lives here: the pump owns the loop that could stall.
-        console.error("[bridge] inbound handler failed:", err);
+        piDashboardConsole.error("[bridge] inbound handler failed:", err);
       }
       // Superseded by a teardown while awaiting: retire WITHOUT touching the
       // queue or the guard — a replacement loop already owns both.
@@ -1272,7 +1273,7 @@ export class ConnectionManager {
    * rather than dying silently.
    */
   private handleRegisterRejected(sessionId: string | undefined, reason: string | undefined): void {
-    console.error(
+    piDashboardConsole.error(
       `[bridge] registration refused for session ${sessionId ?? "(unknown)"}: ` +
         `${reason ?? "no reason given"} — not retrying`,
     );

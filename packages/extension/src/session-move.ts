@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Explicit session move: overlap the two connections, then commit (D11).
  *
@@ -135,7 +136,7 @@ export function createMoveCoordinator(opts: {
   onServerMessage?: (msg: { type?: string }) => void;
 }): MoveCoordinator {
   const timeoutMs = opts.timeoutMs ?? MOVE_TIMEOUT;
-  const log = opts.log ?? ((line: string) => console.log(line));
+  const log = opts.log ?? ((line: string) => piDashboardConsole.log(line));
   /**
    * Path-gate frames arriving on the target BEFORE the commit: held, not applied.
    * The target does not own sends yet, so acting on its identity would let the

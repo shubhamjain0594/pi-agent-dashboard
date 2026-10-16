@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Provider Extension (Dashboard)
  *
@@ -234,7 +235,7 @@ function loadNativeModels(): NativeModelEntry[] {
   try {
     raw = JSON.parse(readFileSync(path, "utf-8"));
   } catch (err: any) {
-    console.warn(`[dashboard] models.json parse failed: ${err?.message ?? String(err)}`);
+    piDashboardConsole.warn(`[dashboard] models.json parse failed: ${err?.message ?? String(err)}`);
     return [];
   }
   return flattenModelsJson(raw);
@@ -488,7 +489,7 @@ function loadProviders(): Record<string, ProviderEntry> {
       }
       return providers;
     } catch (err: any) {
-      console.error(
+      piDashboardConsole.error(
         `[dashboard] providers.json reload failed: ${err?.message ?? String(err)}`,
       );
     }
@@ -571,7 +572,7 @@ async function tryDiscoverModels(baseUrl: string, apiKey: string): Promise<Disco
     });
 
     if (!response.ok) {
-      console.warn(`[provider] Model discovery failed for ${url}: HTTP ${response.status}`);
+      piDashboardConsole.warn(`[provider] Model discovery failed for ${url}: HTTP ${response.status}`);
       return null;
     }
 
@@ -581,12 +582,12 @@ async function tryDiscoverModels(baseUrl: string, apiKey: string): Promise<Disco
     // too early. See change: fix-custom-provider-model-metadata (design D2).
     const shaped = body as { data?: unknown; models?: unknown } | null;
     if (!Array.isArray(shaped?.data) && !Array.isArray(shaped?.models)) {
-      console.warn(`[provider] Model discovery: unexpected response format from ${url}`);
+      piDashboardConsole.warn(`[provider] Model discovery: unexpected response format from ${url}`);
       return null;
     }
     return mapAdvertisedModels(body);
   } catch (err: any) {
-    console.warn(`[provider] Model discovery failed for ${url}: ${err.message}`);
+    piDashboardConsole.warn(`[provider] Model discovery failed for ${url}: ${err.message}`);
     return null;
   }
 }
@@ -827,7 +828,7 @@ export function preRegisterProviderAuth(pi: ExtensionAPI, name: string, entry: P
       api: (entry.api ?? "openai-completions") as any,
     });
   } catch (err: any) {
-    console.error(
+    piDashboardConsole.error(
       `[dashboard] preRegisterProviderAuth("${name}") failed: ${err?.message ?? String(err)}`,
     );
   }
@@ -970,7 +971,7 @@ async function reloadProvidersNow(
     if (!prev || !next || !entriesEqual(prev, next)) continue;
     const found = await tryDiscoverModels(next.baseUrl, next.apiKey);
     if (found) forcedModels.set(name, found);
-    else console.warn(`[dashboard] refresh of "${name}" skipped: model discovery failed; keeping current models`);
+    else piDashboardConsole.warn(`[dashboard] refresh of "${name}" skipped: model discovery failed; keeping current models`);
   }
 
   // Detect removals and changes against previous snapshot.
@@ -980,7 +981,7 @@ async function reloadProvidersNow(
       try {
         pi.unregisterProvider(name);
       } catch (err: any) {
-        console.error(`[dashboard] unregisterProvider("${name}") failed: ${err?.message ?? String(err)}`);
+        piDashboardConsole.error(`[dashboard] unregisterProvider("${name}") failed: ${err?.message ?? String(err)}`);
       }
       lastRegistered.delete(name);
       removed.push(name);
@@ -988,7 +989,7 @@ async function reloadProvidersNow(
       try {
         pi.unregisterProvider(name);
       } catch (err: any) {
-        console.error(`[dashboard] unregisterProvider("${name}") failed: ${err?.message ?? String(err)}`);
+        piDashboardConsole.error(`[dashboard] unregisterProvider("${name}") failed: ${err?.message ?? String(err)}`);
       }
       lastRegistered.delete(name);
       changed.push(name);
@@ -1004,7 +1005,7 @@ async function reloadProvidersNow(
         added.push(name);
       }
     } catch (err: any) {
-      console.error(`[dashboard] registerProvider("${name}") failed: ${err?.message ?? String(err)}`);
+      piDashboardConsole.error(`[dashboard] registerProvider("${name}") failed: ${err?.message ?? String(err)}`);
     }
   }
 
@@ -1129,7 +1130,7 @@ export function activate(pi: ExtensionAPI) {
     // models via a full re-registration. See change: fix-flow-agent-model-resolution.
     preRegisterProviderAuth(pi, name, entry);
     startup.push(registerEntry(pi, name, entry).catch((err: any) => {
-      console.error(
+      piDashboardConsole.error(
         `[dashboard] registerEntry("${name}") failed during activate(): ${err?.message ?? String(err)}`,
       );
     }));
@@ -1208,7 +1209,7 @@ export function activate(pi: ExtensionAPI) {
               try {
                 await registerEntry(pi, name, entry);
               } catch (err: any) {
-                console.error(`[dashboard] re-registerProvider("${name}") failed: ${err?.message ?? String(err)}`);
+                piDashboardConsole.error(`[dashboard] re-registerProvider("${name}") failed: ${err?.message ?? String(err)}`);
               }
             }
           }
@@ -1231,7 +1232,7 @@ export function activate(pi: ExtensionAPI) {
               await (pi as any).setModel(refreshed);
             }
           } catch (err: any) {
-            console.error(`[dashboard] re-setModel after enrichment failed: ${err?.message ?? String(err)}`);
+            piDashboardConsole.error(`[dashboard] re-setModel after enrichment failed: ${err?.message ?? String(err)}`);
           }
         }
       }

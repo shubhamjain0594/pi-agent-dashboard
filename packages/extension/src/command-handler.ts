@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Handles server→extension messages by dispatching to pi API.
  */
@@ -645,8 +646,8 @@ export function createCommandHandler(
 
       // Ignore messages for other sessions (skip session-less messages like heartbeat_ack)
       if ((msg as any).sessionId !== undefined && (msg as any).sessionId !== sessionId) {
-        console.error(`[dashboard] Ignoring message type=${msg.type} for session ${(msg as any).sessionId}, current session is ${sessionId}`);
-        // This `console.error` is written to /dev/null whenever
+        piDashboardConsole.error(`[dashboard] Ignoring message type=${msg.type} for session ${(msg as any).sessionId}, current session is ${sessionId}`);
+        // This `piDashboardConsole.error` is written to /dev/null whenever
         // `keeperLog.capturePiOutput` is false (the default), so the drop is
         // ALSO reported over the socket. The guard cannot tell "never mine"
         // from "was mine, since replaced" — one reportable class.
@@ -1078,13 +1079,13 @@ export function createCommandHandler(
           // with no sessionId falls through. Require an exact match so an
           // unscoped message cannot mutate the active bridge's attached change.
           if (msg.sessionId !== sessionId) {
-            console.error("[dashboard] Ignoring attach_proposal_changed: missing/mismatched sessionId");
+            piDashboardConsole.error("[dashboard] Ignoring attach_proposal_changed: missing/mismatched sessionId");
             return undefined;
           }
           // Validate the socket payload shape before mirroring into
           // BridgeContext.attachedChange. See change: inject-session-context-into-agent.
           if (msg.attachedChange !== null && typeof msg.attachedChange !== "string") {
-            console.error("[dashboard] Ignoring attach_proposal_changed: attachedChange must be string|null");
+            piDashboardConsole.error("[dashboard] Ignoring attach_proposal_changed: attachedChange must be string|null");
             return undefined;
           }
           options?.onAttachProposalChanged?.(msg.attachedChange);
@@ -1117,7 +1118,7 @@ export function createCommandHandler(
               try {
                 await options?.reloadProviders?.();
               } catch (err) {
-                console.warn("[dashboard] request_models providers re-sync failed:", errText(err));
+                piDashboardConsole.warn("[dashboard] request_models providers re-sync failed:", errText(err));
               }
               registry.authStorage?.reload?.();
               // pi 0.84.0: refresh() is async and returns { aborted, errors }.
@@ -1151,7 +1152,7 @@ export function createCommandHandler(
                 ? { type: "models_list", sessionId, models, refreshErrors }
                 : { type: "models_list", sessionId, models };
             } catch (err) {
-              console.warn("[dashboard] request_models failed:", errText(err));
+              piDashboardConsole.warn("[dashboard] request_models failed:", errText(err));
             }
           }
           return { type: "models_list", sessionId, models: [] };
@@ -1178,7 +1179,7 @@ export function createCommandHandler(
           const pgid = (msg as { pgid: number }).pgid;
           if (pgid) {
             const killed = killProcessByPgid(pgid);
-            console.error(`[dashboard] kill_process pgid=${pgid} result=${killed}`);
+            piDashboardConsole.error(`[dashboard] kill_process pgid=${pgid} result=${killed}`);
           }
           return undefined;
         }
@@ -1252,7 +1253,7 @@ export interface ImageValidation {
  * Anthropic block (`{type:"image", source:{media_type, data}}`) as "invalid
  * mimeType". Survivors are normalised to the flat shape pi consumes.
  *
- * Dropped images are RETURNED rather than only logged — a bare `console.error`
+ * Dropped images are RETURNED rather than only logged — a bare `piDashboardConsole.error`
  * is invisible to a dashboard user, which is the same defect class as the image
  * drop this change fixes (design D7).
  *
@@ -1329,7 +1330,7 @@ function sendUserMessageWithImages(
   // Drops are logged here rather than surfaced: this path has no event sink.
   // The buffer path emits `command_feedback` instead (design D7).
   const { dropped } = validateImages(images);
-  for (const reason of dropped) console.error(`[dashboard] Dropping image — ${reason}`);
+  for (const reason of dropped) piDashboardConsole.error(`[dashboard] Dropping image — ${reason}`);
   (pi.sendUserMessage as any)(buildUserMessageContent(text, images), { deliverAs });
 }
 
@@ -1432,7 +1433,7 @@ function dispatchDashboardRetry(
   options?.disarmRetryChain?.();
   const emitFailure = (error: unknown) => {
     const finalError = errText(error);
-    console.error("[dashboard] Internal Retry dispatch failed:", finalError);
+    piDashboardConsole.error("[dashboard] Internal Retry dispatch failed:", finalError);
     options?.eventSink?.({
       type: "event_forward",
       sessionId,

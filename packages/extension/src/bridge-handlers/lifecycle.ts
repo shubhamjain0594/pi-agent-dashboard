@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "../logging.js";
 /**
  * pi lifecycle handlers (`session_start`, `turn_end`, `session_shutdown`, `session_info_changed`, `project_trust`).
  *
@@ -70,7 +71,7 @@ const ASK_USER_TIMEOUT_ENV = "PI_EXT_PI_DASHBOARD_ASK_USER_PROMPT_TIMEOUT_SECOND
 export function resolveAskUserTimeoutMs(
   configSeconds: number,
   env: NodeJS.ProcessEnv = process.env,
-  warn: (msg: string) => void = (m) => console.warn(m),
+  warn: (msg: string) => void = (m) => piDashboardConsole.warn(m),
 ): number {
   let seconds = configSeconds;
   const raw = env[ASK_USER_TIMEOUT_ENV]?.trim();
@@ -164,7 +165,7 @@ function startGitPollTimer(inst: BridgeInstance, ctx: any) {
       sendModelUpdateIfChanged: inst.sendModelUpdateIfChanged,
       sendPiVersionIfChanged: () => _sendPiVersionIfChanged(inst.syncBc()),
       state: pollState,
-    }).catch((err) => console.error("[dashboard] git poll tick failed:", err));
+    }).catch((err) => piDashboardConsole.error("[dashboard] git poll tick failed:", err));
   }, GIT_POLL_INTERVAL);
   inst.shared.timers!.push(inst.gitPollTimer);
 }
@@ -244,7 +245,7 @@ export function registerSessionStart(inst: BridgeInstance): void {
     try {
       usageSeed = inst.usageDrain.baseline(ctx.sessionManager);
     } catch (err) {
-      console.error("[dashboard] usage baseline failed:", err);
+      piDashboardConsole.error("[dashboard] usage baseline failed:", err);
     }
     const sessionChanged =
       (reason === "new" || reason === "fork" || reason === "resume") && !!inst.sessionId && inst.sessionId !== newSessionId;
@@ -459,17 +460,17 @@ export function registerSessionStart(inst: BridgeInstance): void {
         // a generic connection failure.
         const line = `[dashboard] remote identity ${verdict.cause}: ${verdict.reason}`;
         if (!verdict.allow) {
-          console.error(`${line} — not registering`);
+          piDashboardConsole.error(`${line} — not registering`);
           return;
         }
-        console.log(line);
+        piDashboardConsole.log(line);
         // Only a VERIFIED identity gets its address remembered.
         if (verdict.fingerprint) notePinEndpoint(pinsFile, verdict.fingerprint, inst.dashboardUrl);
         inst.connection.connect();
       };
       // Guarded discard: a failure here must be OBSERVED, never take the host
       // pi agent down.
-      void connectIfIdentityVerifies().catch((err) => console.error("[dashboard]", err));
+      void connectIfIdentityVerifies().catch((err) => piDashboardConsole.error("[dashboard]", err));
     } else {
       inst.connection.connect();
     }
@@ -511,13 +512,13 @@ export function registerSessionStart(inst: BridgeInstance): void {
         // so treating silence as refusal would kill every bridge on the host on
         // every rebuild. Unverified means we simply do not claim an identity.
         if (!verdict.conflict) {
-          console.error(
+          piDashboardConsole.error(
             `[dashboard] instance verification ${verdict.reason} — keeping the connection, identity unclaimed`,
           );
           inst.registeredInstanceId = undefined;
           return;
         }
-        console.error(`[dashboard] instance verification ${verdict.reason} — disconnecting`);
+        piDashboardConsole.error(`[dashboard] instance verification ${verdict.reason} — disconnecting`);
         inst.registeredInstanceId = undefined;
         try {
           inst.connection.disconnect();
@@ -528,7 +529,7 @@ export function registerSessionStart(inst: BridgeInstance): void {
       // Guarded discard: the verification runs alongside the connection and
       // must never take the host pi agent down, but its failure must still be
       // OBSERVED rather than dropped on the floor.
-      void verifyRecordedInstance().catch((err) => console.error("[dashboard]", err));
+      void verifyRecordedInstance().catch((err) => piDashboardConsole.error("[dashboard]", err));
     }
 
     // Extract first message (sessionFile/sessionDir already extracted above)
@@ -826,7 +827,7 @@ export function registerSessionStart(inst: BridgeInstance): void {
             identityVerified: false,
           });
           const refusedDetail = `${inst.dashboardUrl} -> ${candidateUrl}: ${decision.reason}`;
-          console.log(`[dashboard] re-target ${refusedDetail}`);
+          piDashboardConsole.log(`[dashboard] re-target ${refusedDetail}`);
           inst.transportDiagnostics.record({ event: "retarget_refused", detail: refusedDetail });
           return;
         }
@@ -841,9 +842,9 @@ export function registerSessionStart(inst: BridgeInstance): void {
             verify: () => probeEndpointReachability({ healthUrl }),
           })
           .then((accepted) => {
-            console.log(`[dashboard] re-target ${inst.dashboardUrl} -> ${candidateUrl}: ${accepted ? "accepted" : "refused by migration gate"}`);
+            piDashboardConsole.log(`[dashboard] re-target ${inst.dashboardUrl} -> ${candidateUrl}: ${accepted ? "accepted" : "refused by migration gate"}`);
           })
-          .catch((err: unknown) => console.error("[dashboard] re-target decision failed:", err));
+          .catch((err: unknown) => piDashboardConsole.error("[dashboard] re-target decision failed:", err));
       }
     }).catch(() => { stopSpinner(); });
 

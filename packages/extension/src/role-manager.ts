@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Role Manager Extension (Dashboard)
  *
@@ -70,7 +71,7 @@ function loadFullConfig(): Record<string, unknown> {
     const parsed = JSON.parse(readFileSync(path, "utf-8"));
     return parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
   } catch (err: any) {
-    console.warn(
+    piDashboardConsole.warn(
       `[dashboard] providers.json parse failed at ${path}: ${err?.message ?? String(err)}`,
     );
     return {};

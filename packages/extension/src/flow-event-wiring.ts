@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Flow event wiring: registers listeners for pi-flows events
  * and forwards them as protocol messages to the dashboard server.
@@ -81,7 +82,7 @@ export function forwardBusEvent(
         deps.sendEventForward(channel, deps.subagent.stripForForward(eventData, channel));
         deps.subagent.markForwarded(channel, eventData);
       } else if (!deps.subagent.buffer(channel, eventData)) {
-        console.warn(
+        piDashboardConsole.warn(
           `[dashboard] subagent frame dropped (no agentId) channel=${channel} while not ready`,
         );
       }

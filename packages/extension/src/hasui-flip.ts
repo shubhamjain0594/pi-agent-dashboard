@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * `flipHasUI(ctx)` — flip `ctx.hasUI` to `true` on the live pi extension
  * context after the bridge has installed PromptBus wrappers on `ctx.ui.*`.
@@ -36,7 +37,7 @@ export function flipHasUI(ctx: { hasUI?: boolean } | null | undefined): void {
     try {
       (ctx as { hasUI: boolean }).hasUI = true;
     } catch (err) {
-      console.warn("[dashboard] failed to flip ctx.hasUI", err);
+      piDashboardConsole.warn("[dashboard] failed to flip ctx.hasUI", err);
     }
     return;
   }
@@ -51,6 +52,6 @@ export function flipHasUI(ctx: { hasUI?: boolean } | null | undefined): void {
       enumerable: desc.enumerable ?? true,
     });
   } catch (err) {
-    console.warn("[dashboard] failed to flip ctx.hasUI", err);
+    piDashboardConsole.warn("[dashboard] failed to flip ctx.hasUI", err);
   }
 }

@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "../logging.js";
 /**
  * pi event forwarders: enriched and pass-through `pi.on` registrations.
  *
@@ -252,7 +253,7 @@ export function registerEnrichedForwarders(inst: BridgeInstance): void {
           if (typeof (ctx as any)?.shutdown === "function") (ctx as any).shutdown();
           else (ctx as any)?.abort?.();
         } catch (err) {
-          console.error("[dashboard] stop-after-turn shutdown failed:", err);
+          piDashboardConsole.error("[dashboard] stop-after-turn shutdown failed:", err);
         }
       }
 
@@ -509,7 +510,7 @@ export function registerEnrichedForwarders(inst: BridgeInstance): void {
             (event as any).result = inlined.result;
           }
         } catch (err) {
-          console.error("[dashboard] tool-result image inline failed:", err);
+          piDashboardConsole.error("[dashboard] tool-result image inline failed:", err);
         }
         // Forward the tool result's structured `details` to the client. pi's
         // live tool_execution_end extension event exposes the full ToolResult

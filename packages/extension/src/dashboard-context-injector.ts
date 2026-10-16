@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Per-turn system-prompt injector exposing the dashboard session context
  * (sessionId, cwd, attached OpenSpec change) to the pi agent.
@@ -106,7 +107,7 @@ export function registerDashboardContextInjector(
     // abort agent startup. Bail cleanly (no SP contribution) when systemPrompt
     // is not a string.
     if (typeof event?.systemPrompt !== "string") {
-      console.warn("[dashboard] before_agent_start: systemPrompt missing/non-string; skipping context injection");
+      piDashboardConsole.warn("[dashboard] before_agent_start: systemPrompt missing/non-string; skipping context injection");
       return undefined;
     }
     const bc = getBc();

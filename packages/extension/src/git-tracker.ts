@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Per-bridge git state tracker (change: optimize-polling-hot-paths, D4–D6).
  *
@@ -76,7 +77,7 @@ export interface GitTracker {
 export function createGitTracker(deps: GitTrackerDeps): GitTracker {
   const facts = deps.facts ?? new GitFactsCache();
   const statusProbe = deps.statusProbe ?? ((cwd: string) => git.gitStatusV2Async({ cwd }));
-  const log = deps.log ?? ((line: string) => console.error(line));
+  const log = deps.log ?? ((line: string) => piDashboardConsole.error(line));
 
   let disposed = false;
   let cwd: string | undefined;

@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Shared handling for pi 0.84.0's `ModelRegistry.refresh()` contract.
  *
@@ -64,7 +65,7 @@ export async function reportRefresh(
       }),
     ]);
   } catch (err) {
-    console.warn(`[dashboard] ${label} threw:`, errText(err));
+    piDashboardConsole.warn(`[dashboard] ${label} threw:`, errText(err));
     return undefined;
   } finally {
     if (timer) clearTimeout(timer);
@@ -72,18 +73,18 @@ export async function reportRefresh(
   if (result === TIMED_OUT) {
     // Degraded, never broken: the registry still serves its last-known
     // catalogue, and the caller (and the message pump behind it) moves on.
-    console.warn(`[dashboard] ${label} timed out after ${REFRESH_TIMEOUT_MS}ms — using the last-known catalogue`);
+    piDashboardConsole.warn(`[dashboard] ${label} timed out after ${REFRESH_TIMEOUT_MS}ms — using the last-known catalogue`);
     return undefined;
   }
   if (!result) return undefined;
 
   if (result.aborted) {
-    console.warn(`[dashboard] ${label} aborted before completing`);
+    piDashboardConsole.warn(`[dashboard] ${label} aborted before completing`);
   }
   // `errors` is keyed by provider id — name the provider, never a bare "failed".
   if (result.errors && result.errors.size > 0) {
     for (const [providerId, err] of result.errors) {
-      console.warn(`[dashboard] ${label} failed for provider '${providerId}':`, errText(err));
+      piDashboardConsole.warn(`[dashboard] ${label} failed for provider '${providerId}':`, errText(err));
     }
   }
   return result;

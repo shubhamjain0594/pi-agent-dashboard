@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Per-bridge PR-status scheduler. Probes `gh pr view` ASYNCHRONOUSLY on its
  * own cadence so the 30 s git-poll tick never blocks on `gh`.
@@ -100,7 +101,7 @@ const genKey = (g: PrGeneration) => `${g.sessionId}\u0000${g.cwd}\u0000${g.branc
 
 export function createPrStatusScheduler(deps: PrStatusSchedulerDeps): PrStatusScheduler {
   const now = deps.now ?? Date.now;
-  const log = deps.log ?? ((line: string) => console.error(line));
+  const log = deps.log ?? ((line: string) => piDashboardConsole.error(line));
   const setTimer = deps.setTimer ?? ((fn, ms) => setTimeout(fn, ms));
   const clearTimer = deps.clearTimer ?? ((t) => clearTimeout(t));
   const alive = deps.alive ?? (() => true);

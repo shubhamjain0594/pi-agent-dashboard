@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * `metadata` envelope for PromptBus dialog requests.
  *
@@ -22,7 +23,7 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 /** Validate `pluginMeta`; returns the object, or `undefined` after warning. */
 function sanitizePluginMeta(
   value: unknown,
-  warn: (msg: string) => void = (m) => console.warn(m),
+  warn: (msg: string) => void = (m) => piDashboardConsole.warn(m),
 ): Record<string, unknown> | undefined {
   if (value === undefined) return undefined;
   if (!isPlainObject(value)) {

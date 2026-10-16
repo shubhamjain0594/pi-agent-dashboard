@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "../logging.js";
 /**
  * `ctx.ui` → PromptBus patch applied at `session_start`.
  *
@@ -87,7 +88,7 @@ export function patchUiForPromptBus(inst: BridgeInstance, ctx: any, promptBus: P
           const persisted = persistAttachment({ sessionId: inst.sessionId, image });
           if (!persisted) continue;
           if (cumulative + persisted.bytes > ATTACH_MAX_PER_MESSAGE_BYTES) {
-            console.warn(`[bridge] ask_user image over cumulative cap dropped (${persisted.hash})`);
+            piDashboardConsole.warn(`[bridge] ask_user image over cumulative cap dropped (${persisted.hash})`);
             continue;
           }
           cumulative += persisted.bytes;
@@ -142,7 +143,7 @@ export function patchUiForPromptBus(inst: BridgeInstance, ctx: any, promptBus: P
         // Override is intentional — the bus-routed version is what
         // participates in PromptBus first-response-wins semantics.
         // eslint-disable-next-line no-console
-        console.warn("[bridge] ctx.ui.multiselect already exists — overriding for PromptBus routing");
+        piDashboardConsole.warn("[bridge] ctx.ui.multiselect already exists — overriding for PromptBus routing");
       }
       (ctx.ui as any).multiselect = (title: string, options: string[], opts?: any) =>
         bus.request({

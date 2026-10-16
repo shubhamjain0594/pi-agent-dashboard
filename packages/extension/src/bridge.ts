@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * PI Dashboard Bridge Extension
  *
@@ -136,7 +137,7 @@ export default function (pi: ExtensionAPI) {
     initBridge(pi);
   } catch (err) {
     // Never crash the host pi agent — dashboard is non-essential
-    console.error("[dashboard] Bridge init failed:", err);
+    piDashboardConsole.error("[dashboard] Bridge init failed:", err);
   }
 }
 
@@ -233,7 +234,7 @@ function initBridge(pi: ExtensionAPI) {
   /** Send flows_list message to the dashboard server */
   function sendFlowsList() {
     const flows = getFlowsList();
-    console.error(`[dashboard] sendFlowsList: ${flows.length} flows, sessionId=${inst.sessionId.slice(0,8)}`);
+    piDashboardConsole.error(`[dashboard] sendFlowsList: ${flows.length} flows, sessionId=${inst.sessionId.slice(0,8)}`);
     inst.connection.send({ type: "flows_list", sessionId: inst.sessionId, flows });
   }
   inst.sendFlowsList = sendFlowsList;
@@ -588,7 +589,7 @@ function initBridge(pi: ExtensionAPI) {
       ...(valid.length > 0 ? { images: valid } : {}),
     });
     if (!admitted.ok) {
-      console.warn("[dashboard] follow-up buffer refused entry:", admitted.message);
+      piDashboardConsole.warn("[dashboard] follow-up buffer refused entry:", admitted.message);
       sendCommandFeedback("send_prompt", admitted.message);
       return;
     }
@@ -662,7 +663,7 @@ function initBridge(pi: ExtensionAPI) {
       if (retryCount < 20) { // ~2s total (20 × 100ms)
         setTimeout(() => drainFollowupQueue(retryCount + 1), 100);
       } else {
-        console.warn("[dashboard] drainFollowupQueue: pi never idled after 2s; giving up");
+        piDashboardConsole.warn("[dashboard] drainFollowupQueue: pi never idled after 2s; giving up");
       }
       return;
     }
@@ -685,7 +686,7 @@ function initBridge(pi: ExtensionAPI) {
       try {
         (pi.sendUserMessage as any)(buildUserMessageContent(entry.text, entry.images));
       } catch (err) {
-        console.warn(
+        piDashboardConsole.warn(
           "[dashboard] drainFollowupQueue: pi.sendUserMessage threw — entry lost:",
           err,
         );
@@ -726,7 +727,7 @@ function initBridge(pi: ExtensionAPI) {
     if (typeof text !== "string" || text.length === 0) return;
     const admitted = bridgeFollowUp.push({ text });
     if (!admitted.ok) {
-      console.warn("[dashboard] follow-up buffer refused system entry:", admitted.message);
+      piDashboardConsole.warn("[dashboard] follow-up buffer refused system entry:", admitted.message);
       sendCommandFeedback("enqueue_followup", admitted.message);
       return;
     }
@@ -914,7 +915,7 @@ function initBridge(pi: ExtensionAPI) {
           }
         }
       } catch (err) {
-        console.error("[dashboard] entry_persisted emit failed:", err);
+        piDashboardConsole.error("[dashboard] entry_persisted emit failed:", err);
       }
       return result;
     };
@@ -970,7 +971,7 @@ function initBridge(pi: ExtensionAPI) {
           });
         }
       } catch (err) {
-        console.error("[dashboard] custom message forward failed:", err);
+        piDashboardConsole.error("[dashboard] custom message forward failed:", err);
       }
       return entryId;
     };
@@ -993,7 +994,7 @@ function initBridge(pi: ExtensionAPI) {
           });
         }
       } catch (err) {
-        console.error("[dashboard] custom entry forward failed:", err);
+        piDashboardConsole.error("[dashboard] custom entry forward failed:", err);
       }
       return entryId;
     };
@@ -1009,12 +1010,12 @@ function initBridge(pi: ExtensionAPI) {
         const result = fn(...args);
         if (result && typeof result.catch === "function") {
           return result.catch((err: unknown) => {
-            console.error("[dashboard]", err);
+            piDashboardConsole.error("[dashboard]", err);
           });
         }
         return result;
       } catch (err) {
-        console.error("[dashboard]", err);
+        piDashboardConsole.error("[dashboard]", err);
       }
     }) as T;
   }
@@ -1077,7 +1078,7 @@ function initBridge(pi: ExtensionAPI) {
   const endpointDetail = `${inst.dashboardUrl} (source=${
     endpointChoice.available ? endpointChoice.source : "legacy-config-piPort"
   } pinned=${endpointPinned})`;
-  console.log(`[dashboard] endpoint ${endpointDetail}`);
+  piDashboardConsole.log(`[dashboard] endpoint ${endpointDetail}`);
   // ...and again over the wire, because the line above is discarded under the
   // default `capturePiOutput:false` (task 10.5).
   const transportDiagnostics = createTransportDiagnostics();
@@ -1100,7 +1101,7 @@ function initBridge(pi: ExtensionAPI) {
     if (!httpBase) return undefined;
     const minted = await mintBridgeTicket({ httpBase, token: readDeviceToken() });
     if (!minted.ok) {
-      console.error(`[dashboard] bridge ticket ${minted.cause}: ${minted.reason}`);
+      piDashboardConsole.error(`[dashboard] bridge ticket ${minted.cause}: ${minted.reason}`);
       throw new Error(minted.reason);
     }
     return { url: withTicket(endpoint, minted.ticket) };
@@ -1156,7 +1157,7 @@ function initBridge(pi: ExtensionAPI) {
         return undefined;
       }
     },
-    log: (line) => console.log(line),
+    log: (line) => piDashboardConsole.log(line),
     notify: (message) => {
       try {
         inst.cachedCtx?.ui?.notify?.(message, "warning");
@@ -1173,7 +1174,7 @@ function initBridge(pi: ExtensionAPI) {
   const vaultDelivery = createVaultDelivery({
     send: (m) => inst.connection.sendIfOpen(m),
     sessionId: () => inst.sessionId ?? "",
-    log: (line) => console.log(line),
+    log: (line) => piDashboardConsole.log(line),
   });
   inst.vaultDelivery = vaultDelivery;
   // Redaction: the value set is vaultDelivery's process-global redaction registry,
@@ -1191,7 +1192,7 @@ function initBridge(pi: ExtensionAPI) {
         return undefined; // the forwarded copy is still masked
       }
     },
-    log: (line) => console.log(line),
+    log: (line) => piDashboardConsole.log(line),
   });
   const vaultForwardFilter = createVaultForwardFilter(vaultRedaction.masker);
   // tool_result / message_end / user_bash: masked before pi records the result.
@@ -1226,13 +1227,13 @@ function initBridge(pi: ExtensionAPI) {
     outboundFilter: (m) => vaultForwardFilter.filter(m),
     // fix-bridge-mdns-migration-hijack (D5): every migration decision —
     // accepted or refused, including a reversibility fallback — is reported
-    // through this single chokepoint. `console.log` serves capture-enabled
+    // through this single chokepoint. `piDashboardConsole.log` serves capture-enabled
     // runs; `bridge_diagnostic` serves the default, where pi's stdout is
     // discarded and server.log is the only durable record. A re-target
     // cannot occur without a corresponding record.
     onMigrationEvent: (r) => {
       const detail = `${r.from} -> ${r.to} (${r.trigger}): ${r.accepted ? "accepted" : "refused"} — ${r.reason}`;
-      console.log(`[dashboard] bridge migration ${detail}`);
+      piDashboardConsole.log(`[dashboard] bridge migration ${detail}`);
       transportDiagnostics.record({
         event: r.accepted ? "retarget_accepted" : "retarget_refused",
         detail,
@@ -1247,7 +1248,7 @@ function initBridge(pi: ExtensionAPI) {
     // counter-proof before `open`. See change: loopback-credential-proof (D6, D7).
     planDial: (base) => localCredentialPlan(base),
     onIdentityFailure: (report) => {
-      console.error(`[dashboard] server identity check failed (${report.cause}) at ${report.endpoint}`);
+      piDashboardConsole.error(`[dashboard] server identity check failed (${report.cause}) at ${report.endpoint}`);
       appendIdentityLog(report);
     },
     // Every accepted re-target (and every reversal) re-derives these from the
@@ -1268,7 +1269,7 @@ function initBridge(pi: ExtensionAPI) {
     // back to the buffer otherwise, so the report survives either way.
     onWatchdogFire: (w) => {
       const detail = formatWatchdogFire(w);
-      console.log(`[dashboard] watchdog force-close ${detail}`);
+      piDashboardConsole.log(`[dashboard] watchdog force-close ${detail}`);
       transportDiagnostics.record({ event: "watchdog_force_close", detail });
     },
     // Routing field for a drop report — the reporting bridge's OWN session,
@@ -1395,7 +1396,7 @@ function initBridge(pi: ExtensionAPI) {
     // See change: refresh-models-on-provider-change (D1).
     reloadProviders: async () => { await reloadProviders(pi); },
     // Surface a session-id-mismatch drop server-side; the guard's own
-    // `console.error` goes to /dev/null under the default
+    // `piDashboardConsole.error` goes to /dev/null under the default
     // `keeperLog.capturePiOutput:false`.
     // See change: fix-spawn-correlation-ttl-coupling (D6).
     reportInboundDrop: (drop) => inst.connection.reportInboundDrop(drop),
@@ -1488,7 +1489,7 @@ function initBridge(pi: ExtensionAPI) {
       try {
         inst.cachedCtx?.abort?.();
       } catch (err) {
-        console.warn("[dashboard] cachedCtx.abort threw in rawAbort:", err);
+        piDashboardConsole.warn("[dashboard] cachedCtx.abort threw in rawAbort:", err);
       }
     },
     isIdle: () => {
@@ -1659,11 +1660,11 @@ function initBridge(pi: ExtensionAPI) {
         instances: () => listLocalInstances(),
       });
       if (!resolved.ok) {
-        console.error(`[dashboard] connect refused: ${resolved.reason}`);
+        piDashboardConsole.error(`[dashboard] connect refused: ${resolved.reason}`);
         return;
       }
       if (resolved.endpoint === inst.dashboardUrl) {
-        console.error(`[dashboard] already on ${describeConnectTarget(parsed)}`);
+        piDashboardConsole.error(`[dashboard] already on ${describeConnectTarget(parsed)}`);
         return;
       }
 
@@ -1674,7 +1675,7 @@ function initBridge(pi: ExtensionAPI) {
         resolved.instanceId ??
         listLocalInstances().find((i) => i.endpoint === resolved.endpoint)?.instanceId;
       if (!expectInstanceId) {
-        console.error(
+        piDashboardConsole.error(
           `[dashboard] connect refused: cannot determine the instance id of ${describeConnectTarget(parsed)} — refusing to move to an unverified dashboard`,
         );
         return;
@@ -1720,7 +1721,7 @@ function initBridge(pi: ExtensionAPI) {
             // every post-move force-close would be silent again.
             onWatchdogFire: (w) => {
               const detail = formatWatchdogFire(w);
-              console.log(`[dashboard] watchdog force-close (move target) ${detail}`);
+              piDashboardConsole.log(`[dashboard] watchdog force-close (move target) ${detail}`);
               transportDiagnostics.record({ event: "watchdog_force_close", detail });
             },
             // On the FIRST open, not just reconnects: this is where the
@@ -1761,7 +1762,7 @@ function initBridge(pi: ExtensionAPI) {
       });
 
       if (!result.ok) {
-        console.error(
+        piDashboardConsole.error(
           `[dashboard] move to ${describeConnectTarget(parsed)} failed: ${result.cause} — still on ${inst.dashboardUrl}`,
         );
         return;
@@ -1775,7 +1776,7 @@ function initBridge(pi: ExtensionAPI) {
       if (inst.connection.isConnected) pluginLaneUp();
       inst.dashboardUrl = resolved.endpoint;
       inst.registeredInstanceId = expectInstanceId;
-      console.error(`[dashboard] moved to ${describeConnectTarget(parsed)} (${expectInstanceId})`);
+      piDashboardConsole.error(`[dashboard] moved to ${describeConnectTarget(parsed)} (${expectInstanceId})`);
     },
   });
 
@@ -1789,10 +1790,10 @@ function initBridge(pi: ExtensionAPI) {
       );
       const found = listLocalInstances();
       if (found.length === 0) {
-        console.error("[dashboard] no dashboard instances found under this HOME");
+        piDashboardConsole.error("[dashboard] no dashboard instances found under this HOME");
         return;
       }
-      console.error(
+      piDashboardConsole.error(
         `[dashboard] instances (* = default for this HOME):\n${found.map(formatInstanceLine).join("\n")}`,
       );
     },
@@ -1800,7 +1801,7 @@ function initBridge(pi: ExtensionAPI) {
 
   // `/dashboard-where` — endpoint + identity + pinned, for the session that
   // cannot otherwise answer "which dashboard am I actually on?" (task 9.6).
-  // Written with console.error because pi's stdout is discarded under the
+  // Written with piDashboardConsole.error because pi's stdout is discarded under the
   // default `capturePiOutput:false`.
   pi.registerCommand("dashboard-where", {
     handler: async () => {
@@ -1810,7 +1811,7 @@ function initBridge(pi: ExtensionAPI) {
         `pinned:   ${endpointPinned ? "yes (explicit configuration)" : "no (resolved from the $HOME rendezvous record)"}`,
         `pr-probe: ${prStatus.invocations()} gh invocation(s) this bridge`,
       ];
-      console.error(`[dashboard] where:\n${lines.join("\n")}`);
+      piDashboardConsole.error(`[dashboard] where:\n${lines.join("\n")}`);
     },
   });
 
@@ -1986,7 +1987,7 @@ function initBridge(pi: ExtensionAPI) {
       try {
         pi.appendEntry("subagent-admission-refused", record);
       } catch (err) {
-        console.error("[dashboard] subagent-admission-refused entry failed:", err);
+        piDashboardConsole.error("[dashboard] subagent-admission-refused entry failed:", err);
       }
     },
   });
@@ -2089,7 +2090,7 @@ function initBridge(pi: ExtensionAPI) {
     // here too, in emission order. See change: add-plugin-bridge-contributions.
     pluginForwardRegistry.flush();
     if (flushed === 0) return;
-    console.log(
+    piDashboardConsole.log(
       `[dashboard] flushed ${flushed} buffered subagent frame(s) on re-register` +
         ` (forwarded=${subagentFrameBuffer.stats.forwarded} buffered=${subagentFrameBuffer.stats.buffered}` +
         ` flushed=${subagentFrameBuffer.stats.flushed})`,

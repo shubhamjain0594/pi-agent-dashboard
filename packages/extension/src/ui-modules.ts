@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Extension UI System — Phase 1 (management-modal slot).
  *
@@ -81,7 +82,7 @@ export interface UiManagementInbound {
  * forwards the populated list to the server via `connection.send`.
  *
  * Last-write-wins on duplicate `id` within a single probe; collisions log a
- * single `console.warn` per duplicate id (Decision §2 / spec scenario
+ * single `piDashboardConsole.warn` per duplicate id (Decision §2 / spec scenario
  * "Last-write-wins on duplicate id").
  */
 export function refreshUiModules(ctx: UiModulesBridgeCtx): void {
@@ -94,7 +95,7 @@ export function refreshUiModules(ctx: UiModulesBridgeCtx): void {
   try {
     events.emit("ui:list-modules", probe);
   } catch (err) {
-    console.error("[dashboard][ui-modules] probe emit failed:", err);
+    piDashboardConsole.error("[dashboard][ui-modules] probe emit failed:", err);
     return;
   }
 
@@ -117,7 +118,7 @@ export function refreshUiModules(ctx: UiModulesBridgeCtx): void {
       if (typeof mod.id !== "string" || mod.id.length === 0) continue;
       if (byId.has(mod.id) && !moduleWarned.has(mod.id)) {
         moduleWarned.add(mod.id);
-        console.warn(`[dashboard][ui-modules] duplicate module id "${mod.id}" — last-write-wins`);
+        piDashboardConsole.warn(`[dashboard][ui-modules] duplicate module id "${mod.id}" — last-write-wins`);
       }
       byId.set(mod.id, mod);
       continue;
@@ -126,19 +127,19 @@ export function refreshUiModules(ctx: UiModulesBridgeCtx): void {
     if (DECORATOR_KINDS.has((entry as any).kind)) {
       const dec = entry as DecoratorDescriptor & { removed?: boolean };
       if (typeof dec.namespace !== "string" || !NAMESPACE_RE.test(dec.namespace)) {
-        console.warn(
+        piDashboardConsole.warn(
           `[dashboard][ui-modules] dropping ${dec.kind} descriptor: invalid namespace ${JSON.stringify(dec.namespace)} (must match /^[a-z0-9-]+$/)`,
         );
         continue;
       }
       if (typeof dec.id !== "string" || dec.id.length === 0) {
-        console.warn(`[dashboard][ui-modules] dropping ${dec.kind} descriptor: missing/empty id`);
+        piDashboardConsole.warn(`[dashboard][ui-modules] dropping ${dec.kind} descriptor: missing/empty id`);
         continue;
       }
       const key = `${dec.kind}:${dec.namespace}:${dec.id}`;
       if (decoratorByKey.has(key) && !decoratorWarned.has(key)) {
         decoratorWarned.add(key);
-        console.warn(`[dashboard][ui-modules] duplicate decorator key "${key}" — last-write-wins`);
+        piDashboardConsole.warn(`[dashboard][ui-modules] duplicate decorator key "${key}" — last-write-wins`);
       }
       decoratorByKey.set(key, dec);
       continue;
@@ -205,7 +206,7 @@ export function subscribeUiInvalidate(ctx: UiModulesBridgeCtx): void {
     }
     if (!burstWarned) {
       burstWarned = true;
-      console.warn(
+      piDashboardConsole.warn(
         `[dashboard][ui-modules] ui:invalidate rate cap exceeded ` +
         `(>${INVALIDATE_RATE_CAP_PER_SEC}/sec); coalescing further invalidations to a trailing-edge probe`,
       );
@@ -261,7 +262,7 @@ export function handleUiManagement(ctx: UiModulesBridgeCtx, msg: UiManagementInb
   try {
     events.emit(msg.event, data);
   } catch (err) {
-    console.error(`[dashboard][ui-modules] handler for "${msg.event}" threw:`, err);
+    piDashboardConsole.error(`[dashboard][ui-modules] handler for "${msg.event}" threw:`, err);
     return;
   }
 

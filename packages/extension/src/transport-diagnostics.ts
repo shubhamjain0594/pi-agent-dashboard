@@ -1,9 +1,10 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Transport diagnostics that survive the default configuration.
  *
  * The endpoint decision (10.1) and every refusal to re-target (10.2) are the
  * two facts you need to answer "why is this session on that dashboard". Both
- * were `console.log` only, and pi's stdout is discarded whenever
+ * were `piDashboardConsole.log` only, and pi's stdout is discarded whenever
  * `keeperLog.capturePiOutput` is false — which is the default. So they also
  * travel to the server, which writes its own stdout to `server.log`.
  *

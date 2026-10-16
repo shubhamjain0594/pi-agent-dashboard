@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "../logging.js";
 /**
  * Inbound dashboard→bridge WebSocket message dispatch.
  *
@@ -35,7 +36,7 @@ export async function handleInboundMessage(inst: BridgeInstance, data: unknown):
       ownSessionId: inst.sessionId,
     });
     if (!verdict.allow) {
-      console.warn(`[dashboard] transcript request refused: ${verdict.reason}`);
+      piDashboardConsole.warn(`[dashboard] transcript request refused: ${verdict.reason}`);
       inst.connection.send({
         type: "transcript_chunk",
         // Echo the caller's id: routing is the connection, and the server
@@ -82,7 +83,7 @@ export async function handleInboundMessage(inst: BridgeInstance, data: unknown):
     const quiesceMs = (msg as any).quiesceMs;
     if (typeof quiesceMs === "number" && quiesceMs > 0) {
       inst.connection.pauseAutoStart(quiesceMs);
-      console.log(`[dashboard] server announced restart (reason=${reason} quiesceMs=${quiesceMs})`);
+      piDashboardConsole.log(`[dashboard] server announced restart (reason=${reason} quiesceMs=${quiesceMs})`);
     }
     return;
   }
@@ -117,13 +118,13 @@ export async function handleInboundMessage(inst: BridgeInstance, data: unknown):
       const force = Array.isArray(msg.refreshProviders)
         ? msg.refreshProviders.filter((n: unknown): n is string => typeof n === "string")
         : [];
-      if (force.length) console.log(`[dashboard] refreshing provider models: ${JSON.stringify(force)}`);
+      if (force.length) piDashboardConsole.log(`[dashboard] refreshing provider models: ${JSON.stringify(force)}`);
       const diff = await (force.length ? reloadProviders(pi, { force }) : reloadProviders(pi)).catch((err) => {
-        console.error("[dashboard] reloadProviders failed:", err);
+        piDashboardConsole.error("[dashboard] reloadProviders failed:", err);
         return { added: [], removed: [], changed: [] };
       });
       if (diff.added.length || diff.removed.length || diff.changed.length) {
-        console.log(
+        piDashboardConsole.log(
           `[dashboard] hot-reloaded providers: added=${JSON.stringify(diff.added)} removed=${JSON.stringify(diff.removed)} changed=${JSON.stringify(diff.changed)}`,
         );
       }
@@ -133,7 +134,7 @@ export async function handleInboundMessage(inst: BridgeInstance, data: unknown):
       // (credential-only change) runs a local full refresh.
       // See changes: update-pi-core-0-84-adopt-apis, refresh-models-on-provider-change.
       await refreshAfterCredentialsReload(inst.cachedModelRegistry, diff);
-    } catch (err) { console.error("[dashboard] credentials reload failed:", err); }
+    } catch (err) { piDashboardConsole.error("[dashboard] credentials reload failed:", err); }
     // Push updated models list to dashboard client
     if (inst.cachedModelRegistry && inst.sessionReady) {
       try {
@@ -141,7 +142,7 @@ export async function handleInboundMessage(inst: BridgeInstance, data: unknown):
         inst.connection.send({ type: "models_list", sessionId: inst.sessionId, models });
         // See change: replace-hardcoded-provider-lists.
         inst.connection.send({ type: "providers_list", sessionId: inst.sessionId, providers: buildProviderCatalogue() });
-      } catch (err) { console.error("[dashboard] models_list push failed:", err); }
+      } catch (err) { piDashboardConsole.error("[dashboard] models_list push failed:", err); }
     }
     return;
   }
@@ -354,7 +355,7 @@ export async function handleInboundMessage(inst: BridgeInstance, data: unknown):
         typeof echoId === "string" && echoId.length > 0 ? echoId : undefined,
         (msg as { reason?: "open" | "cadence" }).reason,
       );
-      console.log(
+      piDashboardConsole.log(
         resolvedAgentId
           ? `[dashboard] served subagent resync for id=${requestedId} (resolved agentId=${resolvedAgentId})`
           : `[dashboard] subagent resync no-op (unknown/finished/not-ready) id=${requestedId}`,

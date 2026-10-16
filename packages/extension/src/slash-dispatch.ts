@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * Shared extension-slash-command dispatch branch used by both bridge.ts
  * (sessionPrompt callback) and command-handler.ts (slash else-arm fallback).
@@ -101,7 +102,7 @@ export async function tryDispatchExtensionCommand(
     const got = (pi as any)?.getCommands?.();
     if (Array.isArray(got)) commands = got;
   } catch (err) {
-    console.warn("[dashboard] getCommands stale on slash-dispatch", err);
+    piDashboardConsole.warn("[dashboard] getCommands stale on slash-dispatch", err);
     return false;
   }
 

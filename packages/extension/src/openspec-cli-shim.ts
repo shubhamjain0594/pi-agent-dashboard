@@ -1,3 +1,4 @@
+import { piDashboardConsole } from "./logging.js";
 /**
  * openspec-cli-shim — make bare `openspec` resolvable inside a pi session.
  *
@@ -38,7 +39,7 @@ export interface ProvisionDeps {
   execPath?: string;
   /** Env object whose PATH is prepended in place. Default: `process.env`. */
   env?: NodeJS.ProcessEnv;
-  /** Diagnostic logger. Default: `console.warn`. */
+  /** Diagnostic logger. Default: `piDashboardConsole.warn`. */
   log?: (msg: string, err?: unknown) => void;
   /** Hard-failure surface (bridge injects a dashboard `missingTool` emit). */
   onMissingTool?: (reason: string) => void;
@@ -143,7 +144,7 @@ export function provisionOpenspecCli(deps: ProvisionDeps = {}): ProvisionResult 
     baseDir = path.join(os.homedir(), ".pi", "dashboard"),
     execPath = process.execPath,
     env = process.env,
-    log = (msg, err) => console.warn(msg, err ?? ""),
+    log = (msg, err) => piDashboardConsole.warn(msg, err ?? ""),
     onMissingTool,
   } = deps;
 
