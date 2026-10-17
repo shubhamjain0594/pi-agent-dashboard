@@ -15,7 +15,8 @@
  *
  * Env: NEEDS_JSON (`toJSON(needs)` — a job that failed after writing a clean
  * report still makes the night red), GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_EVENT_NAME, GITHUB_SHA,
- * GITHUB_RUN_ID, GITHUB_SERVER_URL, GITHUB_STEP_SUMMARY.
+ * GITHUB_RUN_ID, GITHUB_SERVER_URL, GITHUB_API_URL, GITHUB_STEP_SUMMARY.
+ * GITHUB_API_URL is required on GitHub Enterprise: a GHE token is not valid on api.github.com.
  */
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -166,7 +167,11 @@ async function main(argv) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "timings.json"), `${JSON.stringify(timingsFrom(reports, root), null, 1)}\n`);
 
-  const api = githubApi({ token: env.GITHUB_TOKEN, repo: env.GITHUB_REPOSITORY });
+  const api = githubApi({
+    token: env.GITHUB_TOKEN,
+    repo: env.GITHUB_REPOSITORY,
+    server: (env.GITHUB_API_URL || "https://api.github.com").replace(/\/$/, ""),
+  });
   const isAncestor = (a) => {
     try {
       execFileSync("git", ["merge-base", "--is-ancestor", a, sha], { stdio: "ignore" });
